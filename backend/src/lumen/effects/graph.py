@@ -79,6 +79,7 @@ def evaluate_graph(
             if override_node_id == node_id:
                 node_data[param_key] = value
 
+        node_params = {param.key: param for param in definition.descriptor.params}
         resolved_inputs: dict[str, Value] = {}
         for socket in definition.descriptor.inputs:
             candidate_edges = incoming_by_target.get(node_id, [])
@@ -90,10 +91,15 @@ def evaluate_graph(
                 resolved_inputs[socket.key] = _resolve_source_value(
                     outputs[edge["source"]], edge.get("sourceHandle")
                 )
+            elif socket.key in node_data:
+                resolved_inputs[socket.key] = node_data[socket.key]
+            elif socket.key in node_params:
+                # No edge and no explicit data -- fall back to the node type's
+                # declared param default (e.g. RGB's r/g/b default to 1.0, not
+                # 0.0) rather than a blanket zero for every socket type.
+                resolved_inputs[socket.key] = node_params[socket.key].default
             else:
-                resolved_inputs[socket.key] = node_data.get(
-                    socket.key, _default_for_socket(socket.type, context.n)
-                )
+                resolved_inputs[socket.key] = _default_for_socket(socket.type, context.n)
 
         node_context = replace(context, node_id=node_id)
         raw = definition.compute(node_data, resolved_inputs, node_context)

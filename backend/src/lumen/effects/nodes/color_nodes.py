@@ -29,6 +29,15 @@ def _compute_hsv(data: dict[str, Any], inputs: dict[str, Value], context: EvalCo
     return _hsv_to_rgb(h, s, v)
 
 
+def _compute_rgb(data: dict[str, Any], inputs: dict[str, Value], context: EvalContext) -> Value:
+    r = inputs.get("r", data.get("r", 1.0))
+    g = inputs.get("g", data.get("g", 1.0))
+    b = inputs.get("b", data.get("b", 1.0))
+    r_arr, g_arr, b_arr = (np.asarray(x, dtype=np.float32) for x in (r, g, b))
+    r_arr, g_arr, b_arr = np.broadcast_arrays(r_arr, g_arr, b_arr)
+    return np.stack([r_arr, g_arr, b_arr], axis=-1).astype(np.float32)
+
+
 def _compute_color_ramp(
     data: dict[str, Any], inputs: dict[str, Value], context: EvalContext
 ) -> Value:
@@ -94,6 +103,25 @@ COLOR_NODES: dict[str, NodeDefinition] = {
             ],
         ),
         compute=_compute_hsv,
+    ),
+    "rgb": NodeDefinition(
+        descriptor=NodeTypeDescriptor(
+            type="rgb",
+            category="color",
+            label="RGB",
+            inputs=[
+                NodeSocket(key="r", type="field", label="R"),
+                NodeSocket(key="g", type="field", label="G"),
+                NodeSocket(key="b", type="field", label="B"),
+            ],
+            outputs=[NodeSocket(key="value", type="color", label="Color")],
+            params=[
+                NodeParam(key="r", type="float", default=1.0, min=0.0, max=1.0),
+                NodeParam(key="g", type="float", default=1.0, min=0.0, max=1.0),
+                NodeParam(key="b", type="float", default=1.0, min=0.0, max=1.0),
+            ],
+        ),
+        compute=_compute_rgb,
     ),
     "color_ramp": NodeDefinition(
         descriptor=NodeTypeDescriptor(

@@ -61,6 +61,49 @@ def test_hsv_field_position_produces_gradient():
     assert not np.allclose(result[0], result[2])
 
 
+def test_rgb_node_yields_direct_color():
+    graph = {
+        "nodes": [
+            {"id": "rgb", "type": "rgb", "data": {"r": 0.2, "g": 0.4, "b": 0.6}},
+            {"id": "out", "type": "led_color", "data": {}},
+        ],
+        "edges": [{"id": "e1", "source": "rgb", "target": "out", "targetHandle": "color"}],
+    }
+    result, node_outputs = evaluate_graph(graph, NODE_REGISTRY, _context(3))
+    assert result.shape == (3, 3)
+    assert np.allclose(result, [0.2, 0.4, 0.6])
+    assert np.allclose(node_outputs["rgb"]["value"], [0.2, 0.4, 0.6])
+
+
+def test_rgb_node_defaults_to_white():
+    graph = {
+        "nodes": [
+            {"id": "rgb", "type": "rgb", "data": {}},
+            {"id": "out", "type": "led_color", "data": {}},
+        ],
+        "edges": [{"id": "e1", "source": "rgb", "target": "out", "targetHandle": "color"}],
+    }
+    result, _ = evaluate_graph(graph, NODE_REGISTRY, _context(2))
+    assert np.allclose(result, 1.0)
+
+
+def test_rgb_node_accepts_per_channel_fields():
+    graph = {
+        "nodes": [
+            {"id": "idx", "type": "index_normalized", "data": {}},
+            {"id": "rgb", "type": "rgb", "data": {"g": 0.0, "b": 0.0}},
+            {"id": "out", "type": "led_color", "data": {}},
+        ],
+        "edges": [
+            {"id": "e1", "source": "idx", "target": "rgb", "targetHandle": "r"},
+            {"id": "e2", "source": "rgb", "target": "out", "targetHandle": "color"},
+        ],
+    }
+    result, _ = evaluate_graph(graph, NODE_REGISTRY, _context(4))
+    assert np.allclose(result[:, 0], [0.0, 1 / 3, 2 / 3, 1.0])
+    assert np.allclose(result[:, 1:], 0.0)
+
+
 def test_cycle_is_rejected():
     graph = {
         "nodes": [
