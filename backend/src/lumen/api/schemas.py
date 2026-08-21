@@ -54,6 +54,7 @@ class FixtureCreate(BaseModel):
 
 class FixtureUpdate(BaseModel):
     name: str | None = None
+    device_id: int | None = None
     start_channel: int | None = None
     led_count: int | None = None
     points: list[Point3] | None = None

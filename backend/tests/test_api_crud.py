@@ -51,6 +51,27 @@ def test_fixture_requires_two_points(client):
     assert resp.json()["led_count"] == 10
 
 
+def test_fixture_device_id_can_be_reassigned(client):
+    # Regression test: PATCH /api/fixtures/{id} used to silently drop device_id
+    # since it was missing from FixtureUpdate, so reassigning a fixture to a
+    # different device never actually took effect.
+    device_a = client.post("/api/devices", json={"name": "a", "ip": "10.0.0.10"}).json()
+    device_b = client.post("/api/devices", json={"name": "b", "ip": "10.0.0.11"}).json()
+    fixture = client.post(
+        "/api/fixtures",
+        json={
+            "name": "movable",
+            "device_id": device_a["id"],
+            "led_count": 5,
+            "points": [[0, 0, 0], [1, 0, 0]],
+        },
+    ).json()
+
+    resp = client.patch(f"/api/fixtures/{fixture['id']}", json={"device_id": device_b["id"]})
+    assert resp.status_code == 200
+    assert resp.json()["device_id"] == device_b["id"]
+
+
 def test_effect_and_scene_roundtrip(client):
     effect = client.post(
         "/api/effects",

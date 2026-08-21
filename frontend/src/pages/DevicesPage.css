@@ -77,6 +77,12 @@
   min-width: 10rem;
 }
 
+.device-row__rename-input {
+  font-weight: 600;
+  min-width: 10rem;
+  width: 10rem;
+}
+
 .device-row__ip {
   color: var(--text-dim);
   font-variant-numeric: tabular-nums;

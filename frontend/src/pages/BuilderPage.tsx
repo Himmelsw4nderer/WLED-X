@@ -24,17 +24,53 @@ function fixtureToDraft(f: Fixture): Draft {
   };
 }
 
-function emptyDraft(deviceId: number | ""): Draft {
+function emptyDraft(deviceId: number | "", startChannel: number): Draft {
   return {
     name: "",
     device_id: deviceId,
     led_count: 30,
-    start_channel: 0,
+    start_channel: startChannel,
     points: [
       [0, 0, 0],
       [1, 0, 0],
     ],
   };
+}
+
+/** One physical WLED device's pixel buffer can be carved into several fixtures
+ * (e.g. a strip that runs along three walls) by giving each a non-overlapping
+ * start_channel/led_count slice. This sums up what's already claimed on a
+ * device so the editor can suggest where the next segment should start. */
+function nextAvailableChannel(fixtures: Fixture[], deviceId: number, excludeFixtureId: number | null): number {
+  return fixtures
+    .filter((f) => f.device_id === deviceId && f.id !== excludeFixtureId)
+    .reduce((max, f) => Math.max(max, f.start_channel + f.led_count), 0);
+}
+
+/** Fixture ids whose channel range overlaps another fixture on the same device --
+ * they'll fight over the same pixels at render time and one will silently clobber
+ * the other's output. */
+function findChannelConflicts(fixtures: Fixture[]): Set<number> {
+  const conflicts = new Set<number>();
+  const byDevice = new Map<number, Fixture[]>();
+  for (const f of fixtures) {
+    if (!byDevice.has(f.device_id)) byDevice.set(f.device_id, []);
+    byDevice.get(f.device_id)!.push(f);
+  }
+  for (const group of byDevice.values()) {
+    for (let i = 0; i < group.length; i++) {
+      for (let j = i + 1; j < group.length; j++) {
+        const a = group[i];
+        const b = group[j];
+        const overlaps = a.start_channel < b.start_channel + b.led_count && b.start_channel < a.start_channel + a.led_count;
+        if (overlaps) {
+          conflicts.add(a.id);
+          conflicts.add(b.id);
+        }
+      }
+    }
+  }
+  return conflicts;
 }
 
 export function BuilderPage() {
@@ -70,7 +106,11 @@ export function BuilderPage() {
   function startNewFixture() {
     setSelectedId(null);
     setError(null);
-    setDraft(emptyDraft(devices[0]?.id ?? ""));
+    // Deliberately no default device: silently defaulting to the first device
+    // in the list caused fixtures to get saved against the wrong device
+    // whenever the user forgot to touch the dropdown. Forcing an explicit
+    // pick (the select's blank placeholder) is the only way to catch that.
+    setDraft(emptyDraft("", 0));
   }
 
   function updateDraft(patch: Partial<Draft>) {
@@ -145,6 +185,17 @@ export function BuilderPage() {
 
   const draftLength = draft ? polylineLength(draft.points) : 0;
 
+  const devicesById = useMemo(() => new Map(devices.map((d) => [d.id, d])), [devices]);
+  const channelConflicts = useMemo(() => findChannelConflicts(fixtures), [fixtures]);
+
+  const draftDevice = draft && draft.device_id !== "" ? devices.find((d) => d.id === draft.device_id) : undefined;
+  const siblingFixtures =
+    draft && draft.device_id !== "" ? fixtures.filter((f) => f.device_id === draft.device_id && f.id !== selectedId) : [];
+  const suggestedStartChannel =
+    draft && draft.device_id !== "" ? nextAvailableChannel(fixtures, draft.device_id, selectedId) : 0;
+  const draftEndChannel = draft ? draft.start_channel + draft.led_count : 0;
+  const draftOverflowsDevice = draftDevice ? draftEndChannel > draftDevice.led_count : false;
+
   return (
     <div className="builder-page">
       <div className="builder-page__viewport">
@@ -159,17 +210,24 @@ export function BuilderPage() {
         </div>
 
         <ul className="fixture-list">
-          {fixtures.map((f) => (
-            <li key={f.id}>
-              <button
-                className={`fixture-list__item ${f.id === selectedId ? "fixture-list__item--active" : ""}`}
-                onClick={() => selectFixture(f.id)}
-              >
-                <span>{f.name}</span>
-                <span className="fixture-list__meta">{f.led_count} LEDs</span>
-              </button>
-            </li>
-          ))}
+          {fixtures.map((f) => {
+            const deviceName = devicesById.get(f.device_id)?.name;
+            const hasConflict = channelConflicts.has(f.id);
+            return (
+              <li key={f.id}>
+                <button
+                  className={`fixture-list__item ${f.id === selectedId ? "fixture-list__item--active" : ""} ${hasConflict ? "fixture-list__item--conflict" : ""}`}
+                  onClick={() => selectFixture(f.id)}
+                >
+                  <span>{f.name}</span>
+                  <span className="fixture-list__meta">
+                    {f.led_count} LEDs · {deviceName ?? "⚠ unknown device"}
+                    {hasConflict && " · ⚠ channel conflict"}
+                  </span>
+                </button>
+              </li>
+            );
+          })}
           {fixtures.length === 0 && <li className="fixture-list__empty">No fixtures yet.</li>}
         </ul>
 
@@ -215,6 +273,31 @@ export function BuilderPage() {
                 />
               </label>
             </div>
+
+            {draft.device_id !== "" && (
+              <div className="fixture-editor__channel-hint">
+                <span>
+                  {siblingFixtures.length > 0
+                    ? `${siblingFixtures.length} other fixture${siblingFixtures.length === 1 ? "" : "s"} on this device use channels up to ${suggestedStartChannel - 1}.`
+                    : "This is the only fixture on this device so far."}
+                </span>
+                {draft.start_channel !== suggestedStartChannel && (
+                  <button
+                    type="button"
+                    className="btn btn--small"
+                    onClick={() => updateDraft({ start_channel: suggestedStartChannel })}
+                  >
+                    Use next available ({suggestedStartChannel})
+                  </button>
+                )}
+                {draftOverflowsDevice && (
+                  <span className="fixture-editor__channel-warning">
+                    ⚠ channels {draft.start_channel}–{draftEndChannel - 1} exceed this device's {draftDevice?.led_count}{" "}
+                    LEDs
+                  </span>
+                )}
+              </div>
+            )}
 
             <div className="fixture-editor__points">
               <div className="fixture-editor__points-header">
