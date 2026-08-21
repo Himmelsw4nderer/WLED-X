@@ -26,6 +26,16 @@ def _sine(data: dict[str, Any], inputs: dict[str, Value], context: EvalContext) 
     return np.sin(_num(data, inputs, "x", 0.0))
 
 
+def _square(data: dict[str, Any], inputs: dict[str, Value], context: EvalContext) -> Value:
+    """A hard on/off wave, not a curve: 1.0 for the first `duty` fraction of
+    each cycle of x, 0.0 for the rest. Feed it Time*frequency for a strobe,
+    or a spatial field for on/off bands along the strip."""
+    x = np.asarray(_num(data, inputs, "x", 0.0), dtype=np.float32)
+    duty = float(np.clip(data.get("duty", 0.5), 0.0, 1.0))
+    phase = np.mod(x, 1.0)
+    return np.where(phase < duty, 1.0, 0.0).astype(np.float32)
+
+
 def _clamp(data: dict[str, Any], inputs: dict[str, Value], context: EvalContext) -> Value:
     value = _num(data, inputs, "value", 0.0)
     lo = float(data.get("min", 0.0))
@@ -100,6 +110,20 @@ MATH_NODES: dict[str, NodeDefinition] = {
             params=[NodeParam(key="x", type="float", default=0.0)],
         ),
         compute=_sine,
+    ),
+    "square": NodeDefinition(
+        descriptor=NodeTypeDescriptor(
+            type="square",
+            category="math",
+            label="Square",
+            inputs=[NodeSocket(key="x", type="field", label="X")],
+            outputs=[NodeSocket(key="value", type="field", label="Value")],
+            params=[
+                NodeParam(key="x", type="float", default=0.0),
+                NodeParam(key="duty", type="float", default=0.5, min=0.0, max=1.0),
+            ],
+        ),
+        compute=_square,
     ),
     "clamp": NodeDefinition(
         descriptor=NodeTypeDescriptor(

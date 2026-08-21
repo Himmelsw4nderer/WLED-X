@@ -240,3 +240,21 @@ def test_modulo_with_zero_divisor_does_not_raise_or_produce_nan():
     }
     _, outputs = evaluate_graph(graph, NODE_REGISTRY, _context(1))
     assert np.all(np.isfinite(outputs["mod"]["value"]))
+
+
+def test_square_wave_is_hard_on_off_at_default_duty():
+    graph = {"nodes": [{"id": "sq", "type": "square", "data": {"x": 0.0}}], "edges": []}
+    cases = [(0.0, 1.0), (0.49, 1.0), (0.5, 0.0), (0.9, 0.0), (1.0, 1.0), (1.49, 1.0), (1.5, 0.0)]
+    for x, expected in cases:
+        graph["nodes"][0]["data"]["x"] = x
+        _, outputs = evaluate_graph(graph, NODE_REGISTRY, _context(1))
+        assert outputs["sq"]["value"] == pytest.approx(expected), f"x={x}"
+
+
+def test_square_wave_duty_cycle_controls_on_fraction():
+    graph = {"nodes": [{"id": "sq", "type": "square", "data": {"duty": 0.25}}], "edges": []}
+    cases = [(0.1, 1.0), (0.25, 0.0), (0.5, 0.0), (0.9, 0.0)]
+    for x, expected in cases:
+        graph["nodes"][0]["data"]["x"] = x
+        _, outputs = evaluate_graph(graph, NODE_REGISTRY, _context(1))
+        assert outputs["sq"]["value"] == pytest.approx(expected), f"x={x}"
