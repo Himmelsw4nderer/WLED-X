@@ -240,27 +240,3 @@ def test_modulo_with_zero_divisor_does_not_raise_or_produce_nan():
     }
     _, outputs = evaluate_graph(graph, NODE_REGISTRY, _context(1))
     assert np.all(np.isfinite(outputs["mod"]["value"]))
-
-
-def test_sawtooth_ramps_linearly_then_resets():
-    graph = {"nodes": [{"id": "saw", "type": "sawtooth", "data": {"x": 0.0}}], "edges": []}
-    cases = [(0.0, 0.0), (0.25, 0.25), (0.75, 0.75), (1.0, 0.0), (1.25, 0.25), (2.9, 0.9)]
-    for x, expected in cases:
-        graph["nodes"][0]["data"]["x"] = x
-        _, outputs = evaluate_graph(graph, NODE_REGISTRY, _context(1))
-        assert outputs["saw"]["value"] == pytest.approx(expected, abs=1e-5), f"x={x}"
-
-
-def test_sawtooth_is_a_sharp_ramp_not_a_smooth_curve():
-    # The defining difference from Sine: over one period, a sawtooth increases
-    # at a constant rate (equal steps produce equal deltas), where Sine's rate
-    # of change varies (it's fastest at the midpoint, ~flat at the peaks).
-    graph = {"nodes": [{"id": "saw", "type": "sawtooth", "data": {}}], "edges": []}
-    xs = [0.0, 0.2, 0.4, 0.6, 0.8]
-    values = []
-    for x in xs:
-        graph["nodes"][0]["data"]["x"] = x
-        _, outputs = evaluate_graph(graph, NODE_REGISTRY, _context(1))
-        values.append(float(outputs["saw"]["value"]))
-    deltas = [b - a for a, b in zip(values, values[1:], strict=False)]
-    assert all(d == pytest.approx(deltas[0], abs=1e-5) for d in deltas)

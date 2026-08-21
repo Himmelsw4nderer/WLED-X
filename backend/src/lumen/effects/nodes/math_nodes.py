@@ -26,14 +26,6 @@ def _sine(data: dict[str, Any], inputs: dict[str, Value], context: EvalContext) 
     return np.sin(_num(data, inputs, "x", 0.0))
 
 
-def _sawtooth(data: dict[str, Any], inputs: dict[str, Value], context: EvalContext) -> Value:
-    """A real sawtooth (linear ramp, sharp reset), not a curve: the fractional
-    part of x. Same shape as Sine -- feed it Time*frequency for an oscillator,
-    or a spatial field for a repeating pattern along the strip."""
-    x = np.asarray(_num(data, inputs, "x", 0.0), dtype=np.float32)
-    return np.mod(x, 1.0)
-
-
 def _clamp(data: dict[str, Any], inputs: dict[str, Value], context: EvalContext) -> Value:
     value = _num(data, inputs, "value", 0.0)
     lo = float(data.get("min", 0.0))
@@ -108,17 +100,6 @@ MATH_NODES: dict[str, NodeDefinition] = {
             params=[NodeParam(key="x", type="float", default=0.0)],
         ),
         compute=_sine,
-    ),
-    "sawtooth": NodeDefinition(
-        descriptor=NodeTypeDescriptor(
-            type="sawtooth",
-            category="math",
-            label="Sawtooth",
-            inputs=[NodeSocket(key="x", type="field", label="X")],
-            outputs=[NodeSocket(key="value", type="field", label="Value")],
-            params=[NodeParam(key="x", type="float", default=0.0)],
-        ),
-        compute=_sawtooth,
     ),
     "clamp": NodeDefinition(
         descriptor=NodeTypeDescriptor(
