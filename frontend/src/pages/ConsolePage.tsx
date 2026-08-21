@@ -119,7 +119,7 @@ export function ConsolePage() {
             <h3>{effect.name}</h3>
             <div className="fader-group__row">
               {effect.exposed_params.map((param) => {
-                const key = `${effect.id}:${param.param_key}`;
+                const key = `${effect.id}:${param.node_id}:${param.param_key}`;
                 const value = paramOverrides[key] ?? param.default;
                 return (
                   <ParamFader

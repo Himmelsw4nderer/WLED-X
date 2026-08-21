@@ -3,9 +3,11 @@ overrides, and a decaying "hype" pulse for pre-drop buildups. A single
 process-wide singleton; the render loop reads it, the WS hub's inbound
 messages write to it.
 
-`param_overrides` keys use the convention `"{effect_id}:{param_key}"` so the
-same effect used in two different scene assignments can still be overridden
-independently from the console.
+`param_overrides` keys use the convention `"{effect_id}:{node_id}:{param_key}"`
+-- effect_id so the same effect used in two different scene assignments can
+still be overridden independently, and node_id so two instances of the same
+node type in one graph (e.g. two Constant nodes both exposing "value") don't
+collide onto the same override and become impossible to control separately.
 """
 
 import time

@@ -178,7 +178,11 @@ class RenderLoop:
         for exposed in effect.exposed_params:
             node_id = exposed["node_id"]
             param_key = exposed["param_key"]
-            override_key = f"{effect.id}:{param_key}"
+            # Must include node_id, not just param_key: two instances of the same
+            # node type (e.g. two Constant nodes) can both expose a param called
+            # "value", and without node_id in the key they'd collide onto the same
+            # console override, making them impossible to control separately.
+            override_key = f"{effect.id}:{node_id}:{param_key}"
             if override_key in console_state.param_overrides:
                 value = console_state.param_overrides[override_key]
             elif param_key in scene_params:
