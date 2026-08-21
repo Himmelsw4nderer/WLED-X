@@ -211,3 +211,32 @@ def test_math_chain_produces_expected_field():
     }
     result, _ = evaluate_graph(graph, NODE_REGISTRY, _context(4))
     assert result.shape == (4, 3)
+
+
+def test_modulo_produces_a_sawtooth_ramp():
+    # A continuously increasing value wrapped by Modulo is exactly a sawtooth:
+    # it ramps up then snaps back to 0, unlike Sine's smooth curve.
+    graph = {
+        "nodes": [{"id": "mod", "type": "modulo", "data": {"value": 2.5, "divisor": 1.0}}],
+        "edges": [],
+    }
+    _, outputs = evaluate_graph(graph, NODE_REGISTRY, _context(1))
+    assert np.allclose(outputs["mod"]["value"], 0.5)
+
+
+def test_modulo_matches_numpy_mod_semantics_for_negative_values():
+    graph = {
+        "nodes": [{"id": "mod", "type": "modulo", "data": {"value": -0.3, "divisor": 1.0}}],
+        "edges": [],
+    }
+    _, outputs = evaluate_graph(graph, NODE_REGISTRY, _context(1))
+    assert np.allclose(outputs["mod"]["value"], 0.7)
+
+
+def test_modulo_with_zero_divisor_does_not_raise_or_produce_nan():
+    graph = {
+        "nodes": [{"id": "mod", "type": "modulo", "data": {"value": 5.0, "divisor": 0.0}}],
+        "edges": [],
+    }
+    _, outputs = evaluate_graph(graph, NODE_REGISTRY, _context(1))
+    assert np.all(np.isfinite(outputs["mod"]["value"]))

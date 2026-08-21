@@ -46,6 +46,13 @@ def _remap(data: dict[str, Any], inputs: dict[str, Value], context: EvalContext)
     return out_min + t * (out_max - out_min)
 
 
+def _modulo(data: dict[str, Any], inputs: dict[str, Value], context: EvalContext) -> Value:
+    value = np.asarray(_num(data, inputs, "value", 0.0), dtype=np.float32)
+    divisor = np.asarray(_num(data, inputs, "divisor", 1.0), dtype=np.float32)
+    safe_divisor = np.where(divisor == 0, 1e-6, divisor)
+    return np.mod(value, safe_divisor)
+
+
 def _mix(data: dict[str, Any], inputs: dict[str, Value], context: EvalContext) -> Value:
     a = _num(data, inputs, "a", 0.0)
     b = _num(data, inputs, "b", 1.0)
@@ -144,6 +151,23 @@ MATH_NODES: dict[str, NodeDefinition] = {
             ],
         ),
         compute=_mix,
+    ),
+    "modulo": NodeDefinition(
+        descriptor=NodeTypeDescriptor(
+            type="modulo",
+            category="math",
+            label="Modulo",
+            inputs=[
+                NodeSocket(key="value", type="field", label="Value"),
+                NodeSocket(key="divisor", type="field", label="Divisor"),
+            ],
+            outputs=[NodeSocket(key="value", type="field", label="Value")],
+            params=[
+                NodeParam(key="value", type="float", default=0.0),
+                NodeParam(key="divisor", type="float", default=1.0, min=0.0001, max=100.0),
+            ],
+        ),
+        compute=_modulo,
     ),
     "constant": NodeDefinition(
         descriptor=NodeTypeDescriptor(
