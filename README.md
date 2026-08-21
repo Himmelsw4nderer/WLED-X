@@ -12,8 +12,12 @@ together.
 
 - Python 3.13+ and [`uv`](https://docs.astral.sh/uv/)
 - Node 20+ and npm
-- Linux with PipeWire or PulseAudio (for desktop-audio loopback capture) —
-  the backend records from your default sink's `.monitor` source
+- Linux with PipeWire or PulseAudio, plus the `parec` CLI (from
+  `pulseaudio-utils`, or bundled with PipeWire's Pulse compatibility layer —
+  already present if `pactl` works) for desktop-audio loopback capture. The
+  backend records from your default sink's `.monitor` source; if `parec`
+  isn't available it falls back to `sounddevice`/PortAudio, picking any input
+  device with "monitor" in its name.
 - One or more WLED devices on the same LAN/subnet, with **Sync > Receive > DDP**
   enabled (Settings → Sync → "Receive DDP data")
 
@@ -37,6 +41,20 @@ npm run dev
 
 Open http://localhost:5173.
 
+## Using it
+
+1. **Devices** — scan the LAN (mDNS + a subnet fallback) for WLED units, or
+   add one manually by IP. Make sure DDP receive is enabled on the device
+   (see Requirements above).
+2. **Builder** — add fixtures: pick a device, set an LED count and a path (2+
+   points in meters), and see the strip laid out in the 3D viewer.
+3. **Effects** — build a node graph (position/time/audio/noise/math/color
+   nodes feeding a final LED Color output) and optionally expose a few
+   params as console sliders.
+4. **Console** — create a scene assigning effects to fixtures, activate it,
+   then ride the exposed faders, master brightness, and the "hit" button for
+   a pre-drop energy boost, all live against real desktop audio.
+
 ## Project layout
 
 - `backend/` — Python API, device discovery, audio analysis, effect engine, DDP output
@@ -45,4 +63,6 @@ Open http://localhost:5173.
 
 ## Status
 
-Actively under construction.
+Core loop is working end-to-end: discovery, 3D fixture layout, node-graph
+effects, audio-reactive rendering over DDP, and a live console. Backend has
+pytest coverage; frontend test coverage is in progress.

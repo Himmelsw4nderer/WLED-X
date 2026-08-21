@@ -3,7 +3,7 @@ from sqlmodel import Session, select
 
 from lumen.api.schemas import DeviceCreate, DeviceRead, DeviceUpdate
 from lumen.db import get_session
-from lumen.models.device import Device, DeviceSource
+from lumen.models.device import Device
 
 router = APIRouter(prefix="/api/devices", tags=["devices"])
 
@@ -26,7 +26,7 @@ def create_device(payload: DeviceCreate, session: Session = Depends(get_session)
     existing = session.exec(select(Device).where(Device.ip == payload.ip)).first()
     if existing is not None:
         raise HTTPException(409, "a device with this ip already exists")
-    device = Device(**payload.model_dump(), source=DeviceSource.MANUAL)
+    device = Device(**payload.model_dump())
     session.add(device)
     session.commit()
     session.refresh(device)

@@ -1,0 +1,75 @@
+.param-control {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  flex: 1;
+  min-width: 0;
+  justify-content: flex-end;
+}
+
+.param-control--compact .param-control__input,
+.param-control--compact .param-control__color {
+  width: 3.6rem;
+}
+
+.param-control__input {
+  width: 5rem;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  color: var(--text);
+  border-radius: 4px;
+  padding: 0.15rem 0.3rem;
+  font-size: 0.72rem;
+}
+
+.param-control__color {
+  width: 2.2rem;
+  height: 1.3rem;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--bg);
+}
+
+.param-control__json {
+  width: 8rem;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  color: var(--text);
+  border-radius: 4px;
+  font-size: 0.65rem;
+  font-family: ui-monospace, monospace;
+  resize: vertical;
+}
+
+.param-control__json--invalid {
+  border-color: #ff6b6b;
+}
+
+.param-control__pin {
+  flex: none;
+  width: 1.1rem;
+  height: 1.1rem;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text-dim);
+  font-size: 0.55rem;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+}
+
+.param-control__pin:hover {
+  border-color: var(--accent);
+  color: var(--text);
+}
+
+.param-control__pin--active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}

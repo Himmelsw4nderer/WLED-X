@@ -4,7 +4,13 @@ from sqlmodel import Session, SQLModel, create_engine
 from sqlmodel.pool import StaticPool
 
 from lumen import db
+from lumen.config import settings
 from lumen.main import create_app
+
+
+@pytest.fixture(autouse=True)
+def _disable_render_loop(monkeypatch):
+    monkeypatch.setattr(settings, "render_enabled", False)
 
 
 @pytest.fixture

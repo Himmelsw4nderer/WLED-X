@@ -1,0 +1,135 @@
+.builder-page {
+  display: flex;
+  height: 100%;
+  min-height: 0;
+}
+
+.builder-page__viewport {
+  flex: 1;
+  min-width: 0;
+}
+
+.builder-page__panel {
+  width: 320px;
+  flex: none;
+  border-left: 1px solid var(--border);
+  background: var(--bg-elevated);
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  padding: 1rem;
+  gap: 1rem;
+}
+
+.builder-panel__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.builder-panel__header h2 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.fixture-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.fixture-list__item {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  color: var(--text);
+  border-radius: 6px;
+  padding: 0.5rem 0.7rem;
+  font-size: 0.85rem;
+  cursor: pointer;
+  text-align: left;
+}
+
+.fixture-list__item:hover {
+  border-color: var(--accent);
+}
+
+.fixture-list__item--active {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.fixture-list__meta {
+  color: var(--text-dim);
+  font-size: 0.75rem;
+}
+
+.fixture-list__empty {
+  color: var(--text-dim);
+  font-size: 0.85rem;
+  padding: 0.5rem 0;
+}
+
+.fixture-editor {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  border-top: 1px solid var(--border);
+  padding-top: 1rem;
+}
+
+.fixture-editor label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  font-size: 0.8rem;
+  color: var(--text-dim);
+}
+
+.fixture-editor__row {
+  display: flex;
+  gap: 0.6rem;
+}
+
+.fixture-editor__row label {
+  flex: 1;
+}
+
+.fixture-editor__points-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.8rem;
+  color: var(--text-dim);
+  margin-bottom: 0.4rem;
+}
+
+.fixture-editor__length {
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+}
+
+.point-row {
+  display: grid;
+  grid-template-columns: 1.2rem repeat(3, 1fr) auto;
+  gap: 0.35rem;
+  align-items: center;
+  margin-bottom: 0.35rem;
+}
+
+.point-row__index {
+  color: var(--text-dim);
+  font-size: 0.75rem;
+  text-align: center;
+}
+
+.fixture-editor__actions {
+  display: flex;
+  gap: 0.6rem;
+}

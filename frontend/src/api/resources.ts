@@ -8,6 +8,7 @@ import type {
   Fixture,
   FixtureCreate,
   FixtureUpdate,
+  NodeTypeDescriptor,
   Scene,
   SceneCreate,
   SceneUpdate,
@@ -19,6 +20,19 @@ export const devicesApi = {
   update: (id: number, payload: Partial<DeviceCreate>) =>
     api.patch<Device>(`/api/devices/${id}`, payload),
   remove: (id: number) => api.delete<void>(`/api/devices/${id}`),
+};
+
+// A WLED device found by discovery but not yet added to the project (no id).
+export interface DiscoveredDevice {
+  name: string;
+  ip: string;
+  mac?: string | null;
+  led_count: number;
+}
+
+export const deviceDiscoveryApi = {
+  mdns: () => api.get<DiscoveredDevice[]>("/api/devices/discover/mdns"),
+  scan: () => api.post<DiscoveredDevice[]>("/api/devices/discover/scan"),
 };
 
 export const fixturesApi = {
@@ -40,4 +54,8 @@ export const scenesApi = {
   create: (payload: SceneCreate) => api.post<Scene>("/api/scenes", payload),
   update: (id: number, payload: SceneUpdate) => api.patch<Scene>(`/api/scenes/${id}`, payload),
   remove: (id: number) => api.delete<void>(`/api/scenes/${id}`),
+};
+
+export const nodesApi = {
+  list: () => api.get<NodeTypeDescriptor[]>("/api/nodes"),
 };

@@ -25,7 +25,9 @@ class DeviceRead(BaseModel):
 class DeviceCreate(BaseModel):
     name: str
     ip: str
+    mac: str | None = None
     led_count: int = 0
+    source: DeviceSource = DeviceSource.MANUAL
 
 
 class DeviceUpdate(BaseModel):

@@ -20,5 +20,8 @@ class Settings(BaseSettings):
 
     hype_decay_seconds: float = 6.0
 
+    render_enabled: bool = True
+    """Set False in tests: skips starting the render loop (audio capture, background task)."""
+
 
 settings = Settings()

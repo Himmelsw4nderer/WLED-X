@@ -1,0 +1,51 @@
+.node-palette {
+  width: 190px;
+  flex: none;
+  overflow-y: auto;
+  border-right: 1px solid var(--border);
+  background: var(--bg-elevated);
+  padding: 0.75rem;
+}
+
+.node-palette__title {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-dim);
+  margin-bottom: 0.6rem;
+}
+
+.node-palette__empty {
+  color: var(--text-dim);
+  font-size: 0.8rem;
+}
+
+.node-palette__group {
+  margin-bottom: 0.9rem;
+}
+
+.node-palette__group-title {
+  font-size: 0.68rem;
+  text-transform: capitalize;
+  color: var(--text-dim);
+  margin-bottom: 0.35rem;
+}
+
+.node-palette__item {
+  padding: 0.4rem 0.55rem;
+  margin-bottom: 0.3rem;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--bg);
+  font-size: 0.78rem;
+  cursor: grab;
+}
+
+.node-palette__item:hover {
+  border-color: var(--accent);
+  color: var(--text);
+}
+
+.node-palette__item:active {
+  cursor: grabbing;
+}

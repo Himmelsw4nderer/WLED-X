@@ -1,0 +1,51 @@
+.node-canvas {
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+}
+
+.node-canvas .react-flow {
+  background: var(--bg);
+}
+
+.node-canvas .react-flow__attribution {
+  background: transparent;
+  color: var(--text-dim);
+}
+
+.node-canvas .react-flow__controls {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  overflow: hidden;
+  box-shadow: none;
+}
+
+.node-canvas .react-flow__controls-button {
+  background: var(--bg-elevated);
+  border-bottom: 1px solid var(--border);
+  fill: var(--text);
+}
+
+.node-canvas .react-flow__controls-button:hover {
+  background: var(--bg);
+}
+
+.node-canvas .react-flow__minimap {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+}
+
+.node-canvas .react-flow__edge-path {
+  stroke: var(--text-dim);
+  stroke-width: 1.5;
+}
+
+.node-canvas .react-flow__edge.selected .react-flow__edge-path {
+  stroke: var(--accent);
+}
+
+.node-canvas .react-flow__handle {
+  border-radius: 50%;
+}

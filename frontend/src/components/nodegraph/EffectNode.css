@@ -1,0 +1,86 @@
+.effect-node {
+  min-width: 210px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-top: 3px solid var(--accent);
+  border-radius: 8px;
+  color: var(--text);
+  font-size: 0.78rem;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
+}
+
+.effect-node--selected {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px var(--accent-soft);
+}
+
+.effect-node--unknown {
+  min-width: 160px;
+  padding: 0.6rem;
+  background: var(--bg-elevated);
+  border: 1px solid #ff6b6b;
+  border-radius: 8px;
+  color: #ff9c9c;
+  font-size: 0.78rem;
+}
+
+.effect-node__header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.45rem 0.6rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.effect-node__label {
+  font-weight: 600;
+}
+
+.effect-node__category {
+  color: var(--text-dim);
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.effect-node__body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  padding: 0.55rem 0.6rem 0.65rem;
+}
+
+.effect-node__row {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  min-height: 1.4rem;
+}
+
+.effect-node__row--in {
+  padding-left: 0.5rem;
+}
+
+.effect-node__row--out {
+  padding-right: 0.5rem;
+  justify-content: flex-end;
+}
+
+.effect-node__row--param {
+  justify-content: space-between;
+}
+
+.effect-node__socket-label,
+.effect-node__param-label {
+  color: var(--text-dim);
+  font-size: 0.72rem;
+  white-space: nowrap;
+}
+
+.effect-node__handle {
+  width: 9px;
+  height: 9px;
+  border: 1px solid var(--bg);
+}
