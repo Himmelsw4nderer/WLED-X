@@ -1,6 +1,12 @@
 """Position/index fields derived from a fixture's LED layout, plus a
 self-contained vectorized value-noise generator (no native noise dependency:
-a seeded sum-of-sines, cheap enough to re-evaluate every frame)."""
+a seeded sum-of-sines, cheap enough to re-evaluate every frame).
+
+Two flavors of position are exposed: PositionX/Y/Z are normalized 0..1
+against the whole scene's bounding box (for room-relative sweeps that don't
+care how large the room actually is), while GlobalX/Y/Z return the same
+positions in raw meters (for effects that need an absolute scale, e.g. a
+fixed 1.2m height threshold regardless of room size)."""
 
 from functools import lru_cache
 from typing import Any
@@ -41,6 +47,18 @@ def _position_y(data: dict[str, Any], inputs: dict[str, Value], context: EvalCon
 
 def _position_z(data: dict[str, Any], inputs: dict[str, Value], context: EvalContext) -> Value:
     return _normalized_axis(context, 2)
+
+
+def _global_x(data: dict[str, Any], inputs: dict[str, Value], context: EvalContext) -> Value:
+    return context.positions[:, 0].astype(np.float32)
+
+
+def _global_y(data: dict[str, Any], inputs: dict[str, Value], context: EvalContext) -> Value:
+    return context.positions[:, 1].astype(np.float32)
+
+
+def _global_z(data: dict[str, Any], inputs: dict[str, Value], context: EvalContext) -> Value:
+    return context.positions[:, 2].astype(np.float32)
 
 
 def _index_normalized(
@@ -97,6 +115,9 @@ SPATIAL_NODES: dict[str, NodeDefinition] = {
     "position_x": _field_node("position_x", "Position X", _position_x),
     "position_y": _field_node("position_y", "Position Y", _position_y),
     "position_z": _field_node("position_z", "Position Z", _position_z),
+    "global_x": _field_node("global_x", "Global X", _global_x),
+    "global_y": _field_node("global_y", "Global Y", _global_y),
+    "global_z": _field_node("global_z", "Global Z", _global_z),
     "index_normalized": _field_node("index_normalized", "Index Normalized", _index_normalized),
     "distance_from_origin": _field_node(
         "distance_from_origin", "Distance From Origin", _distance_from_origin

@@ -42,6 +42,25 @@ def test_position_axis_is_zero_for_a_degenerate_range():
     assert np.allclose(outputs["py"]["value"], 0.0)
 
 
+def test_global_axis_returns_raw_meters_unlike_normalized_position():
+    graph = {
+        "nodes": [
+            {"id": "px", "type": "position_x", "data": {}},
+            {"id": "gx", "type": "global_x", "data": {}},
+        ],
+        "edges": [],
+    }
+    positions = np.array([[4.0, 0.0, 0.0], [5.0, 0.0, 0.0], [6.0, 0.0, 0.0]], dtype=np.float32)
+    scene_bounds = (np.array([0.0, 0.0, 0.0]), np.array([10.0, 0.0, 0.0]))
+    _, outputs = evaluate_graph(
+        graph, NODE_REGISTRY, _context(3, positions=positions, scene_bounds=scene_bounds)
+    )
+    # Normalized against the wider scene...
+    assert np.allclose(outputs["px"]["value"], [0.4, 0.5, 0.6])
+    # ...but the raw meter positions are unaffected by scene_bounds entirely.
+    assert np.allclose(outputs["gx"]["value"], [4.0, 5.0, 6.0])
+
+
 def test_one_source_feeding_multiple_sockets_on_the_same_node_is_not_a_cycle():
     # Regression test: wiring one output into several input sockets of the same
     # downstream node (e.g. one field into RGB's r, g, and b) used to corrupt the
