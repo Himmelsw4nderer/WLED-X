@@ -61,6 +61,45 @@ def test_global_axis_returns_raw_meters_unlike_normalized_position():
     assert np.allclose(outputs["gx"]["value"], [4.0, 5.0, 6.0])
 
 
+def test_local_x_normalizes_against_this_fixture_only_ignoring_scene_bounds():
+    # Same setup as test_position_x_normalizes_against_scene_bounds_not_fixture_bounds:
+    # this fixture spans x in [4, 6], the room spans [0, 10]. PositionX reads
+    # against the room (0.4/0.5/0.6); LocalX must read against just this fixture
+    # (0/0.5/1) even though scene_bounds is supplied -- that's the whole point of
+    # "local", it deliberately ignores the wider scene.
+    graph = {
+        "nodes": [
+            {"id": "px", "type": "position_x", "data": {}},
+            {"id": "lx", "type": "local_x", "data": {}},
+        ],
+        "edges": [],
+    }
+    positions = np.array([[4.0, 0.0, 0.0], [5.0, 0.0, 0.0], [6.0, 0.0, 0.0]], dtype=np.float32)
+    scene_bounds = (np.array([0.0, 0.0, 0.0]), np.array([10.0, 0.0, 0.0]))
+    _, outputs = evaluate_graph(
+        graph, NODE_REGISTRY, _context(3, positions=positions, scene_bounds=scene_bounds)
+    )
+    assert np.allclose(outputs["px"]["value"], [0.4, 0.5, 0.6])
+    assert np.allclose(outputs["lx"]["value"], [0.0, 0.5, 1.0])
+
+
+def test_local_and_position_agree_with_no_scene_bounds():
+    # With only one fixture in play (e.g. the debug preview's single synthetic
+    # strip), there's no wider "room" to normalize against -- Position falls back
+    # to the fixture's own range, so it necessarily matches Local exactly. This
+    # is expected, not a bug: the distinction only shows with multiple fixtures.
+    graph = {
+        "nodes": [
+            {"id": "px", "type": "position_x", "data": {}},
+            {"id": "lx", "type": "local_x", "data": {}},
+        ],
+        "edges": [],
+    }
+    positions = np.array([[4.0, 0.0, 0.0], [5.0, 0.0, 0.0], [6.0, 0.0, 0.0]], dtype=np.float32)
+    _, outputs = evaluate_graph(graph, NODE_REGISTRY, _context(3, positions=positions))
+    assert np.allclose(outputs["px"]["value"], outputs["lx"]["value"])
+
+
 def test_one_source_feeding_multiple_sockets_on_the_same_node_is_not_a_cycle():
     # Regression test: wiring one output into several input sockets of the same
     # downstream node (e.g. one field into RGB's r, g, and b) used to corrupt the

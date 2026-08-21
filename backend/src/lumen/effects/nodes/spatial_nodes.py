@@ -2,11 +2,21 @@
 self-contained vectorized value-noise generator (no native noise dependency:
 a seeded sum-of-sines, cheap enough to re-evaluate every frame).
 
-Two flavors of position are exposed: PositionX/Y/Z are normalized 0..1
-against the whole scene's bounding box (for room-relative sweeps that don't
-care how large the room actually is), while GlobalX/Y/Z return the same
-positions in raw meters (for effects that need an absolute scale, e.g. a
-fixed 1.2m height threshold regardless of room size)."""
+Three flavors of position are exposed, all reading the same underlying LED
+coordinates:
+- PositionX/Y/Z: 0..1 against the whole *scene's* bounding box (all fixtures
+  combined) -- for effects that should sweep across the entire installation,
+  e.g. a wave that crosses every fixture in the room together.
+- LocalX/Y/Z: 0..1 against *this fixture's own* bounding box only, regardless
+  of where it sits in the room or how the other fixtures are laid out -- for
+  effects that should look the same on every fixture independently.
+- GlobalX/Y/Z: the same positions in raw, unnormalized meters -- for effects
+  that need an absolute scale (e.g. a fixed 1.2m height threshold).
+
+In the debug preview (a single synthetic strip, no wider scene) Position and
+Local necessarily produce identical output -- there's only one "element" to
+normalize against either way. The difference only shows with multiple real
+fixtures in an actual scene."""
 
 from functools import lru_cache
 from typing import Any
@@ -19,34 +29,56 @@ from lumen.effects.graph import EvalContext, NodeDefinition, Value
 _NOISE_OCTAVES = 4
 
 
-def _normalized_axis(context: EvalContext, axis: int) -> np.ndarray:
-    """0..1 along `axis`, 0 at the lowest point in the scene and 1 at the highest
-    -- so effects can think in terms of "sweep from x=0 to x=1" regardless of how
-    many meters wide the actual room is. Falls back to this fixture's own range
-    when there's no wider scene bounding box available."""
-    raw = context.positions[:, axis].astype(np.float32)
-    if context.scene_bounds is not None:
-        lo, hi = float(context.scene_bounds[0][axis]), float(context.scene_bounds[1][axis])
-    elif raw.size:
-        lo, hi = float(raw.min()), float(raw.max())
-    else:
-        lo, hi = 0.0, 0.0
+def _axis_range(values: np.ndarray) -> tuple[float, float]:
+    if values.size:
+        return float(values.min()), float(values.max())
+    return 0.0, 0.0
+
+
+def _normalize(raw: np.ndarray, lo: float, hi: float) -> np.ndarray:
     span = hi - lo
     if span <= 1e-9:
         return np.zeros_like(raw)
     return np.clip((raw - lo) / span, 0.0, 1.0).astype(np.float32)
 
 
+def _normalized_axis_scene(context: EvalContext, axis: int) -> np.ndarray:
+    raw = context.positions[:, axis].astype(np.float32)
+    if context.scene_bounds is not None:
+        lo, hi = float(context.scene_bounds[0][axis]), float(context.scene_bounds[1][axis])
+    else:
+        lo, hi = _axis_range(raw)
+    return _normalize(raw, lo, hi)
+
+
+def _normalized_axis_local(context: EvalContext, axis: int) -> np.ndarray:
+    raw = context.positions[:, axis].astype(np.float32)
+    lo, hi = _axis_range(raw)
+    return _normalize(raw, lo, hi)
+
+
 def _position_x(data: dict[str, Any], inputs: dict[str, Value], context: EvalContext) -> Value:
-    return _normalized_axis(context, 0)
+    return _normalized_axis_scene(context, 0)
 
 
 def _position_y(data: dict[str, Any], inputs: dict[str, Value], context: EvalContext) -> Value:
-    return _normalized_axis(context, 1)
+    return _normalized_axis_scene(context, 1)
 
 
 def _position_z(data: dict[str, Any], inputs: dict[str, Value], context: EvalContext) -> Value:
-    return _normalized_axis(context, 2)
+    return _normalized_axis_scene(context, 2)
+
+
+def _local_x(data: dict[str, Any], inputs: dict[str, Value], context: EvalContext) -> Value:
+    return _normalized_axis_local(context, 0)
+
+
+def _local_y(data: dict[str, Any], inputs: dict[str, Value], context: EvalContext) -> Value:
+    return _normalized_axis_local(context, 1)
+
+
+def _local_z(data: dict[str, Any], inputs: dict[str, Value], context: EvalContext) -> Value:
+    return _normalized_axis_local(context, 2)
 
 
 def _global_x(data: dict[str, Any], inputs: dict[str, Value], context: EvalContext) -> Value:
@@ -115,6 +147,9 @@ SPATIAL_NODES: dict[str, NodeDefinition] = {
     "position_x": _field_node("position_x", "Position X", _position_x),
     "position_y": _field_node("position_y", "Position Y", _position_y),
     "position_z": _field_node("position_z", "Position Z", _position_z),
+    "local_x": _field_node("local_x", "Local X", _local_x),
+    "local_y": _field_node("local_y", "Local Y", _local_y),
+    "local_z": _field_node("local_z", "Local Z", _local_z),
     "global_x": _field_node("global_x", "Global X", _global_x),
     "global_y": _field_node("global_y", "Global Y", _global_y),
     "global_z": _field_node("global_z", "Global Z", _global_z),
