@@ -36,6 +36,12 @@ def _square(data: dict[str, Any], inputs: dict[str, Value], context: EvalContext
     return np.where(phase < duty, 1.0, 0.0).astype(np.float32)
 
 
+def _invert(data: dict[str, Any], inputs: dict[str, Value], context: EvalContext) -> Value:
+    """Flips a 0..1 value around its midpoint (1 - x): on becomes off, a
+    gradient's low end becomes its high end, a fade-in becomes a fade-out."""
+    return 1.0 - _num(data, inputs, "value", 0.0)
+
+
 def _clamp(data: dict[str, Any], inputs: dict[str, Value], context: EvalContext) -> Value:
     value = _num(data, inputs, "value", 0.0)
     lo = float(data.get("min", 0.0))
@@ -124,6 +130,17 @@ MATH_NODES: dict[str, NodeDefinition] = {
             ],
         ),
         compute=_square,
+    ),
+    "invert": NodeDefinition(
+        descriptor=NodeTypeDescriptor(
+            type="invert",
+            category="math",
+            label="Invert",
+            inputs=[NodeSocket(key="value", type="field", label="Value")],
+            outputs=[NodeSocket(key="value", type="field", label="Value")],
+            params=[NodeParam(key="value", type="float", default=0.0)],
+        ),
+        compute=_invert,
     ),
     "clamp": NodeDefinition(
         descriptor=NodeTypeDescriptor(

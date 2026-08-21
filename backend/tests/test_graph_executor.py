@@ -258,3 +258,22 @@ def test_square_wave_duty_cycle_controls_on_fraction():
         graph["nodes"][0]["data"]["x"] = x
         _, outputs = evaluate_graph(graph, NODE_REGISTRY, _context(1))
         assert outputs["sq"]["value"] == pytest.approx(expected), f"x={x}"
+
+
+def test_invert_flips_a_value_around_its_midpoint():
+    graph = {"nodes": [{"id": "inv", "type": "invert", "data": {"value": 0.3}}], "edges": []}
+    _, outputs = evaluate_graph(graph, NODE_REGISTRY, _context(1))
+    assert outputs["inv"]["value"] == pytest.approx(0.7)
+
+
+def test_invert_flips_square_waves_on_state():
+    graph = {
+        "nodes": [
+            {"id": "sq", "type": "square", "data": {"x": 0.1}},
+            {"id": "inv", "type": "invert", "data": {}},
+        ],
+        "edges": [{"id": "e1", "source": "sq", "target": "inv", "targetHandle": "value"}],
+    }
+    _, outputs = evaluate_graph(graph, NODE_REGISTRY, _context(1))
+    assert outputs["sq"]["value"] == pytest.approx(1.0)
+    assert outputs["inv"]["value"] == pytest.approx(0.0)
