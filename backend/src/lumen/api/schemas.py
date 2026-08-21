@@ -154,6 +154,7 @@ class ConsoleState(BaseModel):
 class PreviewRequest(BaseModel):
     graph: dict[str, Any]
     led_count: int = 30
+    length_meters: float = 1.0
     param_overrides: dict[str, float] = {}
 
 

@@ -11,7 +11,12 @@ const POLL_MS = 150;
  * ever actually evaluated -- there's no client-side evaluator to keep in
  * sync with it.
  */
-export function useDebugPreview(enabled: boolean, graph: EffectGraph, ledCount: number) {
+export function useDebugPreview(
+  enabled: boolean,
+  graph: EffectGraph,
+  ledCount: number,
+  lengthMeters: number,
+) {
   const [result, setResult] = useState<PreviewResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
   const graphRef = useRef(graph);
@@ -27,7 +32,11 @@ export function useDebugPreview(enabled: boolean, graph: EffectGraph, ledCount: 
 
     async function tick() {
       try {
-        const res = await effectsApi.preview({ graph: graphRef.current, led_count: ledCount });
+        const res = await effectsApi.preview({
+          graph: graphRef.current,
+          led_count: ledCount,
+          length_meters: lengthMeters,
+        });
         if (!cancelled) {
           setResult(res);
           setError(null);
@@ -44,7 +53,7 @@ export function useDebugPreview(enabled: boolean, graph: EffectGraph, ledCount: 
       cancelled = true;
       clearTimeout(timer);
     };
-  }, [enabled, ledCount]);
+  }, [enabled, ledCount, lengthMeters]);
 
   // Stale results from before the user turned debug off are masked here rather than
   // cleared via setState in the effect above, so turning it back on doesn't need to

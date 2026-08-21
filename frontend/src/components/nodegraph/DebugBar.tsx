@@ -6,11 +6,22 @@ interface DebugBarProps {
   onToggle: (enabled: boolean) => void;
   ledCount: number;
   onLedCountChange: (count: number) => void;
+  lengthMeters: number;
+  onLengthMetersChange: (length: number) => void;
   result: PreviewResponse | null;
   error: string | null;
 }
 
-export function DebugBar({ enabled, onToggle, ledCount, onLedCountChange, result, error }: DebugBarProps) {
+export function DebugBar({
+  enabled,
+  onToggle,
+  ledCount,
+  onLedCountChange,
+  lengthMeters,
+  onLengthMetersChange,
+  result,
+  error,
+}: DebugBarProps) {
   return (
     <div className={`debug-bar ${enabled ? "debug-bar--on" : ""}`}>
       <div className="debug-bar__controls">
@@ -29,6 +40,19 @@ export function DebugBar({ enabled, onToggle, ledCount, onLedCountChange, result
               max={300}
               value={ledCount}
               onChange={(e) => onLedCountChange(Math.max(1, Math.min(300, Number(e.target.value))))}
+            />
+          </label>
+        )}
+        {enabled && (
+          <label className="debug-bar__led-count" title="Real length of the test strip -- matters for Global X/Y/Z, which report raw meters instead of Position X/Y/Z's 0..1 normalization">
+            Length (m)
+            <input
+              type="number"
+              min={0.01}
+              max={1000}
+              step={0.1}
+              value={lengthMeters}
+              onChange={(e) => onLengthMetersChange(Math.max(0.01, Math.min(1000, Number(e.target.value))))}
             />
           </label>
         )}

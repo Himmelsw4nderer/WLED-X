@@ -87,3 +87,24 @@ def test_preview_caps_led_count(client):
     resp = client.post("/api/effects/preview", json={"graph": graph, "led_count": 10_000})
     assert resp.status_code == 200
     assert len(resp.json()["colors"]) == 300
+
+
+def test_preview_length_meters_controls_global_x_but_not_position_x(client):
+    # The debug strip defaults to exactly 1 meter, which makes Global X
+    # (raw meters) numerically identical to Position X (0..1 normalized) --
+    # indistinguishable in the tool meant to demonstrate the difference.
+    # length_meters lets the user pick a more representative real distance.
+    graph = {
+        "nodes": [
+            {"id": "px", "type": "position_x", "data": {}},
+            {"id": "gx", "type": "global_x", "data": {}},
+        ],
+        "edges": [],
+    }
+    resp = client.post(
+        "/api/effects/preview",
+        json={"graph": graph, "led_count": 3, "length_meters": 5.0},
+    )
+    body = resp.json()
+    assert body["nodes"]["px"]["values"] == [0.0, 0.5, 1.0]
+    assert body["nodes"]["gx"]["values"] == [0.0, 2.5, 5.0]

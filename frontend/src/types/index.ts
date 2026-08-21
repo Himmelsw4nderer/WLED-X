@@ -129,6 +129,7 @@ export interface ConsoleState {
 export interface PreviewRequest {
   graph: EffectGraph;
   led_count: number;
+  length_meters?: number;
   param_overrides?: Record<string, number>;
 }
 

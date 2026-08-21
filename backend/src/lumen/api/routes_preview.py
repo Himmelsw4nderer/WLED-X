@@ -17,12 +17,14 @@ from lumen.effects.nodes import NODE_REGISTRY
 router = APIRouter(prefix="/api/effects", tags=["effects"])
 
 MAX_PREVIEW_LEDS = 300
+MAX_PREVIEW_LENGTH_METERS = 1000.0
 
 
 @router.post("/preview", response_model=PreviewResponse)
 def preview_effect(payload: PreviewRequest) -> PreviewResponse:
     led_count = max(1, min(payload.led_count, MAX_PREVIEW_LEDS))
-    positions = led_positions([(0.0, 0.0, 0.0), (1.0, 0.0, 0.0)], led_count)
+    length = max(0.01, min(payload.length_meters, MAX_PREVIEW_LENGTH_METERS))
+    positions = led_positions([(0.0, 0.0, 0.0), (length, 0.0, 0.0)], led_count)
 
     overrides: dict[tuple[str, str], float] = {}
     for key, value in payload.param_overrides.items():

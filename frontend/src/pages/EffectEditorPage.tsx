@@ -38,6 +38,7 @@ export function EffectEditorPage() {
 
   const [debugOn, setDebugOn] = useState(false);
   const [debugLedCount, setDebugLedCount] = useState(24);
+  const [debugLengthMeters, setDebugLengthMeters] = useState(2);
 
   const initializedForId = useRef<number | null>(null);
   const effect = effects.find((e) => e.id === numericId);
@@ -138,7 +139,12 @@ export function EffectEditorPage() {
     [nodes, edges],
   );
 
-  const { result: debugResult, error: debugError } = useDebugPreview(debugOn, currentGraph, debugLedCount);
+  const { result: debugResult, error: debugError } = useDebugPreview(
+    debugOn,
+    currentGraph,
+    debugLedCount,
+    debugLengthMeters,
+  );
 
   const graphContextValue = useMemo<NodeGraphContextValue>(
     () => ({
@@ -231,6 +237,8 @@ export function EffectEditorPage() {
         onToggle={setDebugOn}
         ledCount={debugLedCount}
         onLedCountChange={setDebugLedCount}
+        lengthMeters={debugLengthMeters}
+        onLengthMetersChange={setDebugLengthMeters}
         result={debugResult}
         error={debugError}
       />
