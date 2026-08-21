@@ -12,6 +12,7 @@ interface Draft {
   led_count: number;
   start_channel: number;
   points: Point3[];
+  reverse: boolean;
 }
 
 function fixtureToDraft(f: Fixture): Draft {
@@ -21,6 +22,7 @@ function fixtureToDraft(f: Fixture): Draft {
     led_count: f.led_count,
     start_channel: f.start_channel,
     points: f.points.map((p) => [...p] as Point3),
+    reverse: f.reverse,
   };
 }
 
@@ -34,6 +36,7 @@ function emptyDraft(deviceId: number | "", startChannel: number): Draft {
       [0, 0, 0],
       [1, 0, 0],
     ],
+    reverse: false,
   };
 }
 
@@ -151,6 +154,7 @@ export function BuilderPage() {
       led_count: draft.led_count,
       start_channel: draft.start_channel,
       points: draft.points,
+      reverse: draft.reverse,
     };
     setSaving(true);
     setError(null);
@@ -304,6 +308,14 @@ export function BuilderPage() {
                 <span>Path points</span>
                 <span className="fixture-editor__length">{draftLength.toFixed(2)} m</span>
               </div>
+              <label className="fixture-editor__reverse">
+                <input
+                  type="checkbox"
+                  checked={draft.reverse}
+                  onChange={(e) => updateDraft({ reverse: e.target.checked })}
+                />
+                Reverse — LED 1 is at the {draft.reverse ? "last" : "first"} point below
+              </label>
               {draft.points.map((p, i) => (
                 <div className="point-row" key={i}>
                   <span className="point-row__index">{i + 1}</span>

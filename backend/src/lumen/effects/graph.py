@@ -33,6 +33,11 @@ class EvalContext:
     hype: float
     node_id: str = ""
     state: dict[str, Any] = field(default_factory=dict)
+    # (min, max) meters across every fixture in the scene, for normalizing
+    # PositionX/Y/Z to 0..1 across the whole installation. None falls back to
+    # this fixture's own position range (e.g. the debug preview's synthetic strip,
+    # which has no wider "scene" to normalize against).
+    scene_bounds: tuple[np.ndarray, np.ndarray] | None = None
 
 
 ComputeFn = Callable[[dict[str, Any], dict[str, Value], EvalContext], "Value | dict[str, Value]"]
@@ -119,14 +124,19 @@ def evaluate_graph(
 
 
 def _topo_sort(nodes: dict[str, dict[str, Any]], edges: list[dict[str, Any]]) -> list[str]:
+    # Both keyed by node id and deduplicated by set, not list: a node can
+    # legitimately have several edges to the same downstream node (e.g. one
+    # field wired into all three of an RGB node's r/g/b inputs), and counting
+    # each such edge separately here would re-queue the successor once per
+    # edge instead of once per node, corrupting the sort.
     incoming: dict[str, set[str]] = {node_id: set() for node_id in nodes}
-    outgoing: dict[str, list[str]] = {node_id: [] for node_id in nodes}
+    outgoing: dict[str, set[str]] = {node_id: set() for node_id in nodes}
     for edge in edges:
         src, tgt = edge.get("source"), edge.get("target")
         if src not in nodes or tgt not in nodes:
             continue
         incoming[tgt].add(src)
-        outgoing[src].append(tgt)
+        outgoing[src].add(tgt)
 
     ready = sorted(node_id for node_id, deps in incoming.items() if not deps)
     order: list[str] = []

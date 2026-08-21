@@ -5,7 +5,14 @@ the run and still space LEDs evenly along the total path length."""
 import numpy as np
 
 
-def led_positions(points: list[tuple[float, float, float]], led_count: int) -> np.ndarray:
+def led_positions(
+    points: list[tuple[float, float, float]], led_count: int, reverse: bool = False
+) -> np.ndarray:
+    result = _led_positions_forward(points, led_count)
+    return result[::-1].copy() if reverse else result
+
+
+def _led_positions_forward(points: list[tuple[float, float, float]], led_count: int) -> np.ndarray:
     if led_count <= 0:
         return np.zeros((0, 3), dtype=np.float32)
 
@@ -26,3 +33,19 @@ def led_positions(points: list[tuple[float, float, float]], led_count: int) -> n
     for axis in range(3):
         result[:, axis] = np.interp(targets, cumulative, pts[:, axis])
     return result.astype(np.float32)
+
+
+Bounds = tuple[np.ndarray, np.ndarray]
+
+
+def scene_bounds(all_points: list[list[tuple[float, float, float]]]) -> Bounds | None:
+    """Bounding box (min, max) in meters across every fixture's control points --
+    used to normalize PositionX/Y/Z to 0..1 across the whole installation rather
+    than per-fixture. Control points alone are sufficient (and exact, not an
+    approximation): every LED is interpolated between them, so the min/max over
+    LEDs can never exceed the min/max over the points they're interpolated from."""
+    flat = [p for points in all_points for p in points]
+    if not flat:
+        return None
+    arr = np.asarray(flat, dtype=np.float32)
+    return arr.min(axis=0), arr.max(axis=0)

@@ -29,6 +29,7 @@ export interface Fixture {
   start_channel: number;
   led_count: number;
   points: Point3[];
+  reverse: boolean;
 }
 
 export type FixtureCreate = Omit<Fixture, "id">;

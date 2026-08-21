@@ -23,7 +23,7 @@ from lumen.audio.capture import AudioCapture
 from lumen.config import settings
 from lumen.console.state import console
 from lumen.db import engine as db_engine
-from lumen.effects.geometry import led_positions
+from lumen.effects.geometry import led_positions, scene_bounds
 from lumen.effects.graph import EvalContext, evaluate_graph
 from lumen.effects.nodes import NODE_REGISTRY
 from lumen.models.device import Device
@@ -121,6 +121,7 @@ class RenderLoop:
             devices_by_id = {d.id: d for d in session.exec(select(Device)).all()}
             effects_by_id = {e.id: e for e in session.exec(select(Effect)).all()}
 
+        bounds = scene_bounds([f.points for f in fixtures_by_id.values()])
         device_buffers: dict[int, np.ndarray] = {}
         preview: dict[str, list[list[int]]] = {}
 
@@ -142,7 +143,7 @@ class RenderLoop:
 
             for fixture in target_fixtures:
                 colors = self._render_fixture(
-                    fixture, effect, param_overrides, now, console_state.hype
+                    fixture, effect, param_overrides, now, console_state.hype, bounds
                 )
                 colors = np.clip(colors, 0.0, 1.0) * brightness
                 colors = np.clip(colors, 0.0, 1.0)
@@ -194,8 +195,9 @@ class RenderLoop:
         param_overrides: dict[tuple[str, str], float],
         now: float,
         hype: float,
+        bounds: tuple[np.ndarray, np.ndarray] | None,
     ) -> np.ndarray:
-        positions = led_positions(fixture.points, fixture.led_count)
+        positions = led_positions(fixture.points, fixture.led_count, reverse=fixture.reverse)
         node_state = self._node_state.setdefault(fixture.id, {})
         context = EvalContext(
             n=fixture.led_count,
@@ -204,6 +206,7 @@ class RenderLoop:
             audio=self._latest_audio,
             hype=hype,
             state=node_state,
+            scene_bounds=bounds,
         )
         try:
             colors, _node_outputs = evaluate_graph(

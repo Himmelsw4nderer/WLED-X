@@ -13,16 +13,34 @@ from lumen.effects.graph import EvalContext, NodeDefinition, Value
 _NOISE_OCTAVES = 4
 
 
+def _normalized_axis(context: EvalContext, axis: int) -> np.ndarray:
+    """0..1 along `axis`, 0 at the lowest point in the scene and 1 at the highest
+    -- so effects can think in terms of "sweep from x=0 to x=1" regardless of how
+    many meters wide the actual room is. Falls back to this fixture's own range
+    when there's no wider scene bounding box available."""
+    raw = context.positions[:, axis].astype(np.float32)
+    if context.scene_bounds is not None:
+        lo, hi = float(context.scene_bounds[0][axis]), float(context.scene_bounds[1][axis])
+    elif raw.size:
+        lo, hi = float(raw.min()), float(raw.max())
+    else:
+        lo, hi = 0.0, 0.0
+    span = hi - lo
+    if span <= 1e-9:
+        return np.zeros_like(raw)
+    return np.clip((raw - lo) / span, 0.0, 1.0).astype(np.float32)
+
+
 def _position_x(data: dict[str, Any], inputs: dict[str, Value], context: EvalContext) -> Value:
-    return context.positions[:, 0].astype(np.float32)
+    return _normalized_axis(context, 0)
 
 
 def _position_y(data: dict[str, Any], inputs: dict[str, Value], context: EvalContext) -> Value:
-    return context.positions[:, 1].astype(np.float32)
+    return _normalized_axis(context, 1)
 
 
 def _position_z(data: dict[str, Any], inputs: dict[str, Value], context: EvalContext) -> Value:
-    return context.positions[:, 2].astype(np.float32)
+    return _normalized_axis(context, 2)
 
 
 def _index_normalized(

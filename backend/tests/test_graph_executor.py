@@ -6,12 +6,63 @@ from lumen.effects.graph import EvalContext, GraphError, evaluate_graph
 from lumen.effects.nodes import NODE_REGISTRY
 
 
-def _context(n: int = 4) -> EvalContext:
-    positions = np.zeros((n, 3), dtype=np.float32)
+def _context(n: int = 4, positions: np.ndarray | None = None, scene_bounds=None) -> EvalContext:
+    if positions is None:
+        positions = np.zeros((n, 3), dtype=np.float32)
     audio = AudioFrame(
         level=0.0, bands=np.zeros(NUM_BANDS, dtype=np.float32), low=0.0, mid=0.0, high=0.0, beat=0.0
     )
-    return EvalContext(n=n, positions=positions, time=0.0, audio=audio, hype=0.0)
+    return EvalContext(
+        n=n, positions=positions, time=0.0, audio=audio, hype=0.0, scene_bounds=scene_bounds
+    )
+
+
+def test_position_x_normalizes_against_scene_bounds_not_fixture_bounds():
+    graph = {"nodes": [{"id": "px", "type": "position_x", "data": {}}], "edges": []}
+    # This fixture only spans x in [4, 6], but the room (scene_bounds) spans [0, 10] --
+    # PositionX should read against the room, not just this one strip's own extent.
+    positions = np.array([[4.0, 0.0, 0.0], [5.0, 0.0, 0.0], [6.0, 0.0, 0.0]], dtype=np.float32)
+    scene_bounds = (np.array([0.0, 0.0, 0.0]), np.array([10.0, 0.0, 0.0]))
+    _, outputs = evaluate_graph(
+        graph, NODE_REGISTRY, _context(3, positions=positions, scene_bounds=scene_bounds)
+    )
+    assert np.allclose(outputs["px"]["value"], [0.4, 0.5, 0.6])
+
+
+def test_position_x_falls_back_to_fixture_bounds_without_a_scene():
+    graph = {"nodes": [{"id": "px", "type": "position_x", "data": {}}], "edges": []}
+    positions = np.array([[4.0, 0.0, 0.0], [5.0, 0.0, 0.0], [6.0, 0.0, 0.0]], dtype=np.float32)
+    _, outputs = evaluate_graph(graph, NODE_REGISTRY, _context(3, positions=positions))
+    assert np.allclose(outputs["px"]["value"], [0.0, 0.5, 1.0])
+
+
+def test_position_axis_is_zero_for_a_degenerate_range():
+    graph = {"nodes": [{"id": "py", "type": "position_y", "data": {}}], "edges": []}
+    _, outputs = evaluate_graph(graph, NODE_REGISTRY, _context(3))
+    assert np.allclose(outputs["py"]["value"], 0.0)
+
+
+def test_one_source_feeding_multiple_sockets_on_the_same_node_is_not_a_cycle():
+    # Regression test: wiring one output into several input sockets of the same
+    # downstream node (e.g. one field into RGB's r, g, and b) used to corrupt the
+    # topological sort -- outgoing edges were tracked as a list, so the successor
+    # got re-queued once per duplicate edge, producing more entries in `order`
+    # than there are nodes, which was misreported as "a cycle".
+    graph = {
+        "nodes": [
+            {"id": "c1", "type": "constant", "data": {"value": 0.4}},
+            {"id": "rgb", "type": "rgb", "data": {}},
+            {"id": "out", "type": "led_color", "data": {}},
+        ],
+        "edges": [
+            {"id": "e1", "source": "c1", "target": "rgb", "targetHandle": "r"},
+            {"id": "e2", "source": "c1", "target": "rgb", "targetHandle": "g"},
+            {"id": "e3", "source": "c1", "target": "rgb", "targetHandle": "b"},
+            {"id": "e4", "source": "rgb", "target": "out", "targetHandle": "color"},
+        ],
+    }
+    result, _ = evaluate_graph(graph, NODE_REGISTRY, _context(3))
+    assert np.allclose(result, 0.4)
 
 
 def test_constant_to_led_color_yields_solid_color():

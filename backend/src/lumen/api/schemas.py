@@ -42,6 +42,7 @@ class FixtureRead(BaseModel):
     start_channel: int
     led_count: int
     points: list[Point3]
+    reverse: bool
 
 
 class FixtureCreate(BaseModel):
@@ -50,6 +51,7 @@ class FixtureCreate(BaseModel):
     start_channel: int = 0
     led_count: int
     points: list[Point3]
+    reverse: bool = False
 
 
 class FixtureUpdate(BaseModel):
@@ -58,6 +60,7 @@ class FixtureUpdate(BaseModel):
     start_channel: int | None = None
     led_count: int | None = None
     points: list[Point3] | None = None
+    reverse: bool | None = None
 
 
 class ExposedParam(BaseModel):

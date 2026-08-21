@@ -24,10 +24,12 @@ export function FixtureStrip({ fixture, selected, onSelect }: FixtureStripProps)
   const framePixels = useRef<Array<[number, number, number]> | null>(null);
   const instanceCount = Math.max(fixture.led_count, 1);
 
-  const ledPositions = useMemo(
-    () => distributeAlongPolyline(fixture.points, fixture.led_count),
-    [fixture.points, fixture.led_count],
-  );
+  const ledPositions = useMemo(() => {
+    const positions = distributeAlongPolyline(fixture.points, fixture.led_count);
+    // Must mirror the backend's led_positions(..., reverse=...) so LED i here is
+    // the same physical LED i the "frame" broadcast is coloring.
+    return fixture.reverse ? [...positions].reverse() : positions;
+  }, [fixture.points, fixture.led_count, fixture.reverse]);
 
   useEffect(() => {
     const mesh = meshRef.current;

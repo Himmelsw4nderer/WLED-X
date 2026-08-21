@@ -51,6 +51,23 @@ def test_fixture_requires_two_points(client):
     assert resp.json()["led_count"] == 10
 
 
+def test_fixture_reverse_defaults_false_and_can_be_toggled(client):
+    device = client.post("/api/devices", json={"name": "d2", "ip": "10.0.0.7"}).json()
+    fixture = client.post(
+        "/api/fixtures",
+        json={
+            "name": "reversible",
+            "device_id": device["id"],
+            "led_count": 5,
+            "points": [[0, 0, 0], [1, 0, 0]],
+        },
+    ).json()
+    assert fixture["reverse"] is False
+
+    resp = client.patch(f"/api/fixtures/{fixture['id']}", json={"reverse": True})
+    assert resp.json()["reverse"] is True
+
+
 def test_fixture_device_id_can_be_reassigned(client):
     # Regression test: PATCH /api/fixtures/{id} used to silently drop device_id
     # since it was missing from FixtureUpdate, so reassigning a fixture to a

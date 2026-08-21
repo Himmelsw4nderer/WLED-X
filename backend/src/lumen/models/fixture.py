@@ -20,4 +20,8 @@ class Fixture(SQLModel, table=True):
     start_channel: int = 0
     led_count: int = 1
     points: list[Point3] = Field(default_factory=list, sa_column=Column(JSON))
+    reverse: bool = False
+    """Flip LED order along the path -- LED 0 sits at `points[-1]` instead of
+    `points[0]`. Fixes a strip whose physical wiring runs opposite to however
+    its path was drawn, without needing to redraw the path itself."""
     created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
