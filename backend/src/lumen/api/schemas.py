@@ -145,3 +145,21 @@ class ConsoleState(BaseModel):
     active_scene_id: int | None = None
     param_overrides: dict[str, float] = {}
     hype: float = 0.0
+
+
+class PreviewRequest(BaseModel):
+    graph: dict[str, Any]
+    led_count: int = 30
+    param_overrides: dict[str, float] = {}
+
+
+class NodePreview(BaseModel):
+    socket_type: str  # "scalar" | "field" | "color"
+    # scalar: length-1 list; field: one float per LED; color: one [r,g,b] (0-255) per LED.
+    values: list[Any]
+
+
+class PreviewResponse(BaseModel):
+    colors: list[list[int]]
+    nodes: dict[str, NodePreview]
+    warning: str | None = None

@@ -56,6 +56,12 @@ class RenderLoop:
         self._task: asyncio.Task[None] | None = None
         self._running = False
 
+    def live_audio(self) -> AudioFrame:
+        return self._latest_audio
+
+    def elapsed_time(self) -> float:
+        return time.monotonic() - self._start_time
+
     def start(self) -> asyncio.Task[None]:
         if self._task is None or self._task.done():
             self._task = asyncio.create_task(self.run())
@@ -200,7 +206,10 @@ class RenderLoop:
             state=node_state,
         )
         try:
-            return evaluate_graph(effect.graph, NODE_REGISTRY, context, param_overrides)
+            colors, _node_outputs = evaluate_graph(
+                effect.graph, NODE_REGISTRY, context, param_overrides
+            )
+            return colors
         except Exception:
             logger.exception("effect %r failed to evaluate for fixture %r", effect.id, fixture.id)
             return np.zeros((fixture.led_count, 3), dtype=np.float32)
@@ -239,3 +248,14 @@ def start_render_loop() -> asyncio.Task[None]:
 
 async def stop_render_loop() -> None:
     await _render_loop.stop()
+
+
+def live_audio() -> AudioFrame:
+    """Latest analyzed audio frame, for callers outside the render loop (the
+    effect editor's debug preview) that want Audio/Beat nodes to animate
+    against the same live signal the real show uses."""
+    return _render_loop.live_audio()
+
+
+def elapsed_time() -> float:
+    return _render_loop.elapsed_time()

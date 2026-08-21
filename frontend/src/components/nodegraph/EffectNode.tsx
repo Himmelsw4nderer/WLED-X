@@ -2,6 +2,7 @@ import { memo } from "react";
 import { Handle, Position } from "reactflow";
 import type { NodeProps } from "reactflow";
 import { useNodeGraphContext } from "./NodeGraphContext";
+import { NodePreviewBadge } from "./NodePreviewBadge";
 import { ParamControl } from "./ParamControl";
 import { categoryColor, SOCKET_COLORS } from "./socketColors";
 import "./EffectNode.css";
@@ -10,8 +11,9 @@ import "./EffectNode.css";
 // node's shape (sockets, params, category) comes from the NodeTypeDescriptor looked
 // up via NodeGraphContext, not from hand-built per-type components.
 function EffectNodeComponent({ id, type, data, selected }: NodeProps<Record<string, unknown>>) {
-  const { descriptorsByType, updateParam, isExposed, toggleExposed } = useNodeGraphContext();
+  const { descriptorsByType, updateParam, isExposed, toggleExposed, nodePreview } = useNodeGraphContext();
   const descriptor = type ? descriptorsByType.get(type) : undefined;
+  const preview = nodePreview?.[id];
 
   if (!descriptor) {
     return (
@@ -78,6 +80,7 @@ function EffectNodeComponent({ id, type, data, selected }: NodeProps<Record<stri
 
         {descriptor.outputs.map((socket) => (
           <div key={socket.key} className="effect-node__row effect-node__row--out">
+            {preview && <NodePreviewBadge preview={preview} />}
             <span className="effect-node__socket-label" title={socket.type}>
               {socket.label}
             </span>
@@ -90,6 +93,15 @@ function EffectNodeComponent({ id, type, data, selected }: NodeProps<Record<stri
             />
           </div>
         ))}
+
+        {/* Sink nodes (e.g. LED Color) declare no output socket but still get a
+            preview -- otherwise the single most important node to debug would
+            never show one. */}
+        {descriptor.outputs.length === 0 && preview && (
+          <div className="effect-node__row effect-node__row--out">
+            <NodePreviewBadge preview={preview} />
+          </div>
+        )}
       </div>
     </div>
   );

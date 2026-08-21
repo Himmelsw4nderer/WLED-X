@@ -1,0 +1,60 @@
+.debug-bar {
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  padding: 0.5rem 1.5rem;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg);
+}
+
+.debug-bar--on {
+  background: var(--bg-elevated);
+}
+
+.debug-bar__controls {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  flex-wrap: wrap;
+}
+
+.debug-bar__led-count {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.75rem;
+  color: var(--text-dim);
+}
+
+.debug-bar__led-count input {
+  width: 4.5rem;
+}
+
+.debug-bar__hint {
+  font-size: 0.78rem;
+  color: var(--text-dim);
+}
+
+.debug-bar__error {
+  font-size: 0.78rem;
+  color: #ff9c9c;
+}
+
+.debug-bar__warning {
+  font-size: 0.78rem;
+  color: #ffcf6b;
+}
+
+.debug-bar__strip {
+  display: flex;
+  height: 1.4rem;
+  border-radius: 4px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+}
+
+.debug-bar__led {
+  flex: 1;
+  min-width: 1px;
+}

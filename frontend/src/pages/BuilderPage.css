@@ -17,6 +17,7 @@
   display: flex;
   flex-direction: column;
   overflow-y: auto;
+  overflow-x: hidden;
   padding: 1rem;
   gap: 1rem;
 }
@@ -90,15 +91,24 @@
   gap: 0.3rem;
   font-size: 0.8rem;
   color: var(--text-dim);
+  min-width: 0;
+}
+
+.fixture-editor label input,
+.fixture-editor label select {
+  width: 100%;
+  min-width: 0;
 }
 
 .fixture-editor__row {
   display: flex;
   gap: 0.6rem;
+  min-width: 0;
 }
 
 .fixture-editor__row label {
   flex: 1;
+  min-width: 0;
 }
 
 .fixture-editor__points-header {
@@ -117,7 +127,7 @@
 
 .point-row {
   display: grid;
-  grid-template-columns: 1.2rem repeat(3, 1fr) auto;
+  grid-template-columns: 1.2rem repeat(3, minmax(0, 1fr)) auto;
   gap: 0.35rem;
   align-items: center;
   margin-bottom: 0.35rem;
@@ -127,6 +137,11 @@
   color: var(--text-dim);
   font-size: 0.75rem;
   text-align: center;
+}
+
+.point-row input {
+  width: 100%;
+  min-width: 0;
 }
 
 .fixture-editor__actions {

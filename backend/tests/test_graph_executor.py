@@ -30,14 +30,15 @@ def test_constant_to_led_color_yields_solid_color():
             },
         ],
     }
-    result = evaluate_graph(graph, NODE_REGISTRY, _context(4))
+    result, node_outputs = evaluate_graph(graph, NODE_REGISTRY, _context(4))
     assert result.shape == (4, 3)
     assert np.allclose(result, 0.5)
+    assert node_outputs["c1"]["value"] == 0.5
 
 
 def test_missing_led_color_node_yields_black():
     graph = {"nodes": [{"id": "c1", "type": "constant", "data": {"value": 1.0}}], "edges": []}
-    result = evaluate_graph(graph, NODE_REGISTRY, _context(3))
+    result, _ = evaluate_graph(graph, NODE_REGISTRY, _context(3))
     assert result.shape == (3, 3)
     assert np.allclose(result, 0.0)
 
@@ -54,7 +55,7 @@ def test_hsv_field_position_produces_gradient():
             {"id": "e2", "source": "hsv", "target": "out", "targetHandle": "color"},
         ],
     }
-    result = evaluate_graph(graph, NODE_REGISTRY, _context(5))
+    result, _ = evaluate_graph(graph, NODE_REGISTRY, _context(5))
     assert result.shape == (5, 3)
     # hue wraps (h=0 and h=1 are both red), so compare against the midpoint instead
     assert not np.allclose(result[0], result[2])
@@ -95,5 +96,5 @@ def test_math_chain_produces_expected_field():
             {"id": "e3", "source": "hsv", "target": "out", "targetHandle": "color"},
         ],
     }
-    result = evaluate_graph(graph, NODE_REGISTRY, _context(4))
+    result, _ = evaluate_graph(graph, NODE_REGISTRY, _context(4))
     assert result.shape == (4, 3)

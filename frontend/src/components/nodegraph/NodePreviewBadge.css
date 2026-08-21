@@ -1,0 +1,33 @@
+.node-preview-badge {
+  display: inline-flex;
+  align-items: center;
+}
+
+.node-preview-badge--scalar {
+  font-size: 0.7rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--text);
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 0.05rem 0.3rem;
+}
+
+.node-preview-badge--bar {
+  width: 3.2rem;
+  height: 0.55rem;
+  border-radius: 3px;
+  border: 1px solid var(--border);
+  flex: none;
+}
+
+.node-preview-badge--field-wrap {
+  gap: 0.3rem;
+}
+
+.node-preview-badge__range {
+  font-size: 0.62rem;
+  color: var(--text-dim);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}

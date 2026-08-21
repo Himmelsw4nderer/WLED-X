@@ -11,6 +11,7 @@ from lumen.api import (
     routes_discovery,
     routes_effects,
     routes_fixtures,
+    routes_preview,
     routes_scenes,
     ws,
 )
@@ -45,6 +46,7 @@ def create_app() -> FastAPI:
     app.include_router(routes_discovery.router)
     app.include_router(routes_fixtures.router)
     app.include_router(routes_effects.router)
+    app.include_router(routes_preview.router)
     app.include_router(routes_scenes.router)
     app.include_router(nodes_registry.router)
     app.include_router(ws.router)

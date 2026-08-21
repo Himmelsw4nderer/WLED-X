@@ -124,3 +124,21 @@ export interface ConsoleState {
   param_overrides: Record<string, number>;
   hype: number;
 }
+
+export interface PreviewRequest {
+  graph: EffectGraph;
+  led_count: number;
+  param_overrides?: Record<string, number>;
+}
+
+export interface NodePreviewValue {
+  socket_type: NodeSocketType;
+  // scalar: length-1; field: one float per LED; color: one [r,g,b] (0-255) per LED.
+  values: number[] | [number, number, number][];
+}
+
+export interface PreviewResponse {
+  colors: [number, number, number][];
+  nodes: Record<string, NodePreviewValue>;
+  warning: string | null;
+}

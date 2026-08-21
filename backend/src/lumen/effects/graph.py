@@ -49,7 +49,12 @@ def evaluate_graph(
     registry: dict[str, NodeDefinition],
     context: EvalContext,
     param_overrides: dict[tuple[str, str], float] | None = None,
-) -> np.ndarray:
+) -> tuple[np.ndarray, dict[str, dict[str, Value]]]:
+    """Returns (led colors, per-node output values) -- the latter is the raw
+    `outputs` map keyed by node id then output socket key, used both to drive
+    the final LedColor node and to power the effect editor's debug view (see
+    api/routes_preview.py), which needs to see what every node produced, not
+    just the final color."""
     nodes_list: list[dict[str, Any]] = graph.get("nodes", [])
     edges: list[dict[str, Any]] = graph.get("edges", [])
     nodes = {node["id"]: node for node in nodes_list}
@@ -101,10 +106,10 @@ def evaluate_graph(
 
     led_color_node = next((n for n in nodes_list if n.get("type") == "led_color"), None)
     if led_color_node is None or led_color_node["id"] not in outputs:
-        return np.zeros((context.n, 3), dtype=np.float32)
+        return np.zeros((context.n, 3), dtype=np.float32), outputs
 
     result = _resolve_source_value(outputs[led_color_node["id"]], None)
-    return _broadcast_color(result, context.n)
+    return _broadcast_color(result, context.n), outputs
 
 
 def _topo_sort(nodes: dict[str, dict[str, Any]], edges: list[dict[str, Any]]) -> list[str]:

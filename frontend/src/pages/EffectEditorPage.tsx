@@ -3,11 +3,13 @@ import { Link, useNavigate, useParams } from "react-router-dom";
 import { useEdgesState, useNodesState } from "reactflow";
 import type { Edge, Node } from "reactflow";
 import { nodesApi } from "../api/resources";
+import { DebugBar } from "../components/nodegraph/DebugBar";
 import { ExposedParamsPanel } from "../components/nodegraph/ExposedParamsPanel";
 import { NodeCanvas } from "../components/nodegraph/NodeCanvas";
 import { NodeGraphContext } from "../components/nodegraph/NodeGraphContext";
 import type { NodeGraphContextValue } from "../components/nodegraph/NodeGraphContext";
 import { NodePalette } from "../components/nodegraph/NodePalette";
+import { useDebugPreview } from "../components/nodegraph/useDebugPreview";
 import { useEffectStore } from "../store/useEffectStore";
 import type { EffectGraph, ExposedParam, NodeParam, NodeTypeDescriptor } from "../types";
 import "./EffectEditorPage.css";
@@ -33,6 +35,9 @@ export function EffectEditorPage() {
   const [dirty, setDirty] = useState(false);
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
+
+  const [debugOn, setDebugOn] = useState(false);
+  const [debugLedCount, setDebugLedCount] = useState(24);
 
   const initializedForId = useRef<number | null>(null);
   const effect = effects.find((e) => e.id === numericId);
@@ -119,9 +124,31 @@ export function EffectEditorPage() {
     [markDirty],
   );
 
+  const currentGraph = useMemo<EffectGraph>(
+    () => ({
+      nodes: nodes.map((n) => ({ id: n.id, type: n.type ?? "", position: n.position, data: n.data })),
+      edges: edges.map((e) => ({
+        id: e.id,
+        source: e.source,
+        sourceHandle: e.sourceHandle ?? null,
+        target: e.target,
+        targetHandle: e.targetHandle ?? null,
+      })),
+    }),
+    [nodes, edges],
+  );
+
+  const { result: debugResult, error: debugError } = useDebugPreview(debugOn, currentGraph, debugLedCount);
+
   const graphContextValue = useMemo<NodeGraphContextValue>(
-    () => ({ descriptorsByType, updateParam, isExposed, toggleExposed }),
-    [descriptorsByType, updateParam, isExposed, toggleExposed],
+    () => ({
+      descriptorsByType,
+      updateParam,
+      isExposed,
+      toggleExposed,
+      nodePreview: debugResult?.nodes ?? null,
+    }),
+    [descriptorsByType, updateParam, isExposed, toggleExposed, debugResult],
   );
 
   async function handleSave() {
@@ -129,17 +156,7 @@ export function EffectEditorPage() {
     setSaving(true);
     setSaveError(null);
     try {
-      const graph: EffectGraph = {
-        nodes: nodes.map((n) => ({ id: n.id, type: n.type ?? "", position: n.position, data: n.data })),
-        edges: edges.map((e) => ({
-          id: e.id,
-          source: e.source,
-          sourceHandle: e.sourceHandle ?? null,
-          target: e.target,
-          targetHandle: e.targetHandle ?? null,
-        })),
-      };
-      await update(effect.id, { name, description, graph, exposed_params: exposedParams });
+      await update(effect.id, { name, description, graph: currentGraph, exposed_params: exposedParams });
       setDirty(false);
     } catch {
       setSaveError("Failed to save. Your edits are still here — try again.");
@@ -203,11 +220,20 @@ export function EffectEditorPage() {
           }}
         />
         <p className="effect-editor__hint">
-          This editor builds the effect graph only — there's no client-side preview. Assign this effect to a
-          fixture from the <Link to="/console">Console</Link>, then watch it render live on the{" "}
-          <Link to="/builder">3D Builder</Link> page.
+          Toggle Debug below to see this graph running live against a synthetic strip — every node shows its
+          current output. For the real thing, assign this effect to a fixture from the{" "}
+          <Link to="/console">Console</Link> and watch it on the <Link to="/builder">3D Builder</Link> page.
         </p>
       </header>
+
+      <DebugBar
+        enabled={debugOn}
+        onToggle={setDebugOn}
+        ledCount={debugLedCount}
+        onLedCountChange={setDebugLedCount}
+        result={debugResult}
+        error={debugError}
+      />
 
       <div className="effect-editor__body">
         <NodeGraphContext.Provider value={graphContextValue}>
