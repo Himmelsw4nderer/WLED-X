@@ -149,6 +149,95 @@ class ConsoleState(BaseModel):
     active_scene_id: int | None = None
     param_overrides: dict[str, float] = {}
     hype: float = 0.0
+    # Which configured audio source ("desktop" / "mic" / ...) drives every
+    # audio-reactive node and the phrase-clock. Chosen once here instead of
+    # per node -- see lumen.effects.nodes.audio_nodes.
+    audio_source: str = "desktop"
+
+
+class PhraseClockState(BaseModel):
+    """Live snapshot of lumen.effects.phrase_clock.PhraseClock, pushed over the
+    WS as {"type": "phrase", ...} and returned by GET /api/phrase."""
+
+    bpm: float = 0.0
+    total_beats: int = 0
+    phrase_beat: int = 0
+    phrase_index: int = 0
+    phrase_beats: int = 64
+    bar: int = 0
+    phrase_phase: float = 0.0
+
+
+class PlaylistEntry(BaseModel):
+    scene_id: int
+
+
+class PlaylistRead(BaseModel):
+    id: int
+    name: str
+    entries: list[PlaylistEntry]
+    mode: str
+    advance_trigger: str
+    advance_beats: int
+    advance_seconds: float
+    hype_threshold: float
+    active: bool
+
+
+class PlaylistCreate(BaseModel):
+    name: str
+    entries: list[PlaylistEntry] = []
+    mode: str = "sequential"
+    advance_trigger: str = "beats"
+    advance_beats: int = 32
+    advance_seconds: float = 30.0
+    hype_threshold: float = 0.8
+
+
+class PlaylistUpdate(BaseModel):
+    name: str | None = None
+    entries: list[PlaylistEntry] | None = None
+    mode: str | None = None
+    advance_trigger: str | None = None
+    advance_beats: int | None = None
+    advance_seconds: float | None = None
+    hype_threshold: float | None = None
+    active: bool | None = None
+
+
+class PlaylistStatus(BaseModel):
+    """Where the active playlist is right now -- for the console panel."""
+
+    playlist_id: int | None = None
+    index: int = 0
+    scene_id: int | None = None
+    next_scene_id: int | None = None
+    beats_until_advance: int | None = None
+    seconds_until_advance: float | None = None
+
+
+class AudioDeviceOption(BaseModel):
+    """One selectable entry in the audio device picker -- see
+    `lumen.audio.capture.discover_audio_devices`."""
+
+    id: str
+    label: str
+    mode: str
+    device: str | None
+    is_default: bool = False
+
+
+class AudioSourceRead(BaseModel):
+    name: str
+    enabled: bool
+    mode: str
+    device: str | None
+
+
+class AudioSourceUpdate(BaseModel):
+    enabled: bool | None = None
+    mode: str | None = None
+    device: str | None = None
 
 
 class PreviewRequest(BaseModel):

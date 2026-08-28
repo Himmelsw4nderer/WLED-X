@@ -2,7 +2,14 @@ import { useEffect, useRef, useState } from "react";
 import { effectsApi } from "../../api/resources";
 import type { EffectGraph, PreviewResponse } from "../../types";
 
-const POLL_MS = 150;
+// A full round trip to /api/effects/preview for one small synthetic strip is
+// sub-millisecond server-side and a few ms over loopback HTTP, so this can
+// run much faster than it looks like it "should" -- 40ms (~25fps) reads as a
+// live animation rather than a slideshow, without meaningfully loading the
+// server. The loop is self-pacing (each tick only schedules the next after
+// the previous response lands), so a slow request just backs off the rate
+// instead of piling up requests.
+const POLL_MS = 40;
 
 /**
  * Polls the backend's /api/effects/preview endpoint while `enabled`, always

@@ -14,6 +14,9 @@
 }
 
 .console-page__meter {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
   border: 1px solid var(--border);
   border-radius: 10px;
   background: var(--bg-elevated);
@@ -310,6 +313,59 @@
   font-size: 0.75rem;
   color: var(--text-dim);
   align-self: center;
+}
+
+.audio-meter__bpm {
+  font-size: 0.75rem;
+  color: var(--text-dim);
+  font-variant-numeric: tabular-nums;
+  flex-shrink: 0;
+}
+
+.audio-source-picker {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem 1.5rem;
+  align-items: center;
+}
+
+.audio-source-picker__error {
+  color: #ff6b6b;
+  font-size: 0.75rem;
+  width: 100%;
+}
+
+.audio-source-picker__row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.audio-source-picker__enabled {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.8rem;
+  color: var(--text-dim);
+  white-space: nowrap;
+}
+
+.audio-source-picker__enabled input {
+  accent-color: var(--accent);
+}
+
+.audio-source-picker__select {
+  background: var(--bg);
+  color: inherit;
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  padding: 0.25rem 0.5rem;
+  font-size: 0.8rem;
+  max-width: 220px;
+}
+
+.audio-source-picker__select:disabled {
+  opacity: 0.5;
 }
 
 .console-modal {

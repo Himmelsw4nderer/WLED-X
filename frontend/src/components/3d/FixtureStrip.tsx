@@ -8,6 +8,11 @@ import { distributeAlongPolyline } from "../../utils/polyline";
 import { useLiveMessage } from "../../api/useLiveSocket";
 
 const DEFAULT_LED_COLOR = new THREE.Color(0xcfd4e0);
+// Reused across every LED of every frame instead of `new THREE.Color(...)`
+// per LED -- at 60fps with a few hundred LEDs that's tens of thousands of
+// throwaway objects a second, real GC pressure for no reason since
+// setColorAt only reads the value, it doesn't keep the instance.
+const SCRATCH_COLOR = new THREE.Color();
 const LED_RADIUS = 0.03;
 const SELECTED_LINE_COLOR = "#7c5cff";
 const IDLE_LINE_COLOR = "#4a4f5c";
@@ -57,8 +62,17 @@ export function FixtureStrip({ fixture, selected, onSelect }: FixtureStripProps)
     const pixels = framePixels.current;
     for (let i = 0; i < ledPositions.length; i++) {
       const pixel = pixels?.[i];
-      if (pixel) mesh.setColorAt(i, new THREE.Color(pixel[0], pixel[1], pixel[2]));
-      else mesh.setColorAt(i, DEFAULT_LED_COLOR);
+      if (pixel) {
+        // Pixel bytes from the "frame" WS message are 0-255 (see
+        // engine.py's `(colors * 255).astype(uint8)`), but THREE.Color's
+        // (r, g, b) constructor/setRGB takes 0-1 and does not clamp or
+        // rescale out-of-range input -- feeding it raw 0-255 values made
+        // every lit LED read as blown-out white instead of its real color.
+        SCRATCH_COLOR.setRGB(pixel[0] / 255, pixel[1] / 255, pixel[2] / 255);
+        mesh.setColorAt(i, SCRATCH_COLOR);
+      } else {
+        mesh.setColorAt(i, DEFAULT_LED_COLOR);
+      }
     }
     if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
   });

@@ -7,6 +7,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from lumen.api import (
     nodes_registry,
+    routes_audio,
     routes_devices,
     routes_discovery,
     routes_effects,
@@ -42,6 +43,7 @@ def create_app() -> FastAPI:
         allow_headers=["*"],
     )
 
+    app.include_router(routes_audio.router)
     app.include_router(routes_devices.router)
     app.include_router(routes_discovery.router)
     app.include_router(routes_fixtures.router)

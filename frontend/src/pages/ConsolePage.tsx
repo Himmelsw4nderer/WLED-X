@@ -9,6 +9,7 @@ import { MasterFader } from "../components/console/MasterFader";
 import { ParamFader } from "../components/console/ParamFader";
 import { HitButton } from "../components/console/HitButton";
 import { AudioMeter } from "../components/console/AudioMeter";
+import { AudioSourcePicker } from "../components/console/AudioSourcePicker";
 import type { Effect, Scene, SceneCreate, SceneUpdate } from "../types";
 import "../components/console/console.css";
 
@@ -107,6 +108,7 @@ export function ConsolePage() {
 
       <div className="console-page__meter">
         <AudioMeter />
+        <AudioSourcePicker />
       </div>
 
       <div className="console-page__faders">

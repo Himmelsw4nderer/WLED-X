@@ -1,3 +1,6 @@
+from lumen.api import routes_preview
+
+
 def _edge(edge_id: str, source: str, target: str, target_handle: str) -> dict:
     return {
         "id": edge_id,
@@ -87,6 +90,44 @@ def test_preview_caps_led_count(client):
     resp = client.post("/api/effects/preview", json={"graph": graph, "led_count": 10_000})
     assert resp.status_code == 200
     assert len(resp.json()["colors"]) == 300
+
+
+def _preview_count(client, graph, trigger):
+    resp = client.post(
+        "/api/effects/preview",
+        json={"graph": graph, "led_count": 3, "param_overrides": {"cnt:trigger": trigger}},
+    )
+    assert resp.status_code == 200
+    return resp.json()["nodes"]["cnt"]["values"][0]
+
+
+def test_preview_stateful_node_persists_across_polls(client):
+    # The editor's debug preview is a series of independent HTTP requests; a
+    # Counter must still accumulate across them instead of resetting 0->1->0
+    # every poll.
+    routes_preview._preview_state.clear()
+    routes_preview._preview_signature = None
+
+    graph = {
+        "nodes": [
+            {"id": "cnt", "type": "counter", "data": {"max": 8}},
+            {"id": "out", "type": "led_color", "data": {}},
+        ],
+        "edges": [],
+    }
+    assert _preview_count(client, graph, 0.0) == 0
+    assert _preview_count(client, graph, 1.0) == 1  # rising edge across two requests
+    assert _preview_count(client, graph, 1.0) == 1  # still high -> no re-trigger
+    assert _preview_count(client, graph, 0.0) == 1  # re-arms
+    assert _preview_count(client, graph, 1.0) == 2
+    assert _preview_count(client, graph, 0.0) == 2
+
+    # Adding a node changes the graph's node set -> persistent state is wiped.
+    graph_plus = {
+        "nodes": graph["nodes"] + [{"id": "k", "type": "constant", "data": {"value": 1.0}}],
+        "edges": [],
+    }
+    assert _preview_count(client, graph_plus, 1.0) == 1  # fresh run
 
 
 def test_preview_length_meters_controls_global_x_but_not_position_x(client):

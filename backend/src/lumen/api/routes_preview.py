@@ -4,6 +4,9 @@ colors and every node's raw output, so the editor can show what each node is
 actually producing instead of the user having to guess from a dark strip.
 """
 
+import threading
+from typing import Any
+
 import numpy as np
 from fastapi import APIRouter, HTTPException
 
@@ -19,6 +22,18 @@ router = APIRouter(prefix="/api/effects", tags=["effects"])
 MAX_PREVIEW_LEDS = 300
 MAX_PREVIEW_LENGTH_METERS = 1000.0
 
+# Stateful nodes (Counter, Beat Counter, Beat/Bass Hit decay, Square's phase)
+# keep their working state in `EvalContext.state` and rely on it surviving from
+# one render tick to the next. The debug preview is polled ~25x/s as a series
+# of independent HTTP requests, so without somewhere persistent to hang that
+# state a Counter just ticks 0 -> 1 -> 0 forever. Keep one process-wide bucket
+# and reuse it across polls; wipe it whenever the graph's node set changes
+# (node added/removed/retyped) so stale buckets and dead node ids don't linger,
+# while plain param edits leave a running counter alone.
+_preview_lock = threading.Lock()
+_preview_state: dict[str, Any] = {}
+_preview_signature: frozenset[tuple[Any, Any]] | None = None
+
 
 @router.post("/preview", response_model=PreviewResponse)
 def preview_effect(payload: PreviewRequest) -> PreviewResponse:
@@ -32,18 +47,32 @@ def preview_effect(payload: PreviewRequest) -> PreviewResponse:
         if node_id:
             overrides[(node_id, param_key)] = value
 
-    context = EvalContext(
-        n=led_count,
-        positions=positions,
-        time=engine.elapsed_time(),
-        audio=engine.live_audio(),
-        hype=console.snapshot().hype,
+    signature = frozenset(
+        (node.get("id"), node.get("type")) for node in payload.graph.get("nodes", [])
     )
 
-    try:
-        colors, node_outputs = evaluate_graph(payload.graph, NODE_REGISTRY, context, overrides)
-    except GraphError as exc:
-        raise HTTPException(422, str(exc)) from exc
+    with _preview_lock:
+        global _preview_signature
+        if signature != _preview_signature:
+            _preview_state.clear()
+            _preview_signature = signature
+
+        context = EvalContext(
+            n=led_count,
+            positions=positions,
+            time=engine.elapsed_time(),
+            audio=engine.live_audio(),
+            hype=console.snapshot().hype,
+            audio_sources=engine.live_audio_sources(),
+            state=_preview_state,
+        )
+
+        try:
+            colors, node_outputs = evaluate_graph(
+                payload.graph, NODE_REGISTRY, context, overrides
+            )
+        except GraphError as exc:
+            raise HTTPException(422, str(exc)) from exc
 
     node_types = {node["id"]: node.get("type") for node in payload.graph.get("nodes", [])}
     nodes_preview = {

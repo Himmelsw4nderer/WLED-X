@@ -316,3 +316,176 @@ def test_invert_flips_square_waves_on_state():
     _, outputs = evaluate_graph(graph, NODE_REGISTRY, _context(1))
     assert outputs["sq"]["value"] == pytest.approx(1.0)
     assert outputs["inv"]["value"] == pytest.approx(0.0)
+
+
+def test_abs_turns_negative_values_positive():
+    graph = {"nodes": [{"id": "abs", "type": "abs", "data": {"value": -3.0}}], "edges": []}
+    _, outputs = evaluate_graph(graph, NODE_REGISTRY, _context(1))
+    assert outputs["abs"]["value"] == pytest.approx(3.0)
+
+
+def test_abs_leaves_positive_values_unchanged():
+    graph = {"nodes": [{"id": "abs", "type": "abs", "data": {"value": 3.0}}], "edges": []}
+    _, outputs = evaluate_graph(graph, NODE_REGISTRY, _context(1))
+    assert outputs["abs"]["value"] == pytest.approx(3.0)
+
+
+def test_greater_than_fires_above_threshold_only():
+    above = {
+        "nodes": [{"id": "gt", "type": "greater_than", "data": {"value": 0.8, "threshold": 0.5}}],
+        "edges": [],
+    }
+    below = {
+        "nodes": [{"id": "gt", "type": "greater_than", "data": {"value": 0.2, "threshold": 0.5}}],
+        "edges": [],
+    }
+    _, above_out = evaluate_graph(above, NODE_REGISTRY, _context(1))
+    _, below_out = evaluate_graph(below, NODE_REGISTRY, _context(1))
+    assert above_out["gt"]["value"] == pytest.approx(1.0)
+    assert below_out["gt"]["value"] == pytest.approx(0.0)
+
+
+def test_less_than_fires_below_threshold_only():
+    above = {
+        "nodes": [{"id": "lt", "type": "less_than", "data": {"value": 0.8, "threshold": 0.5}}],
+        "edges": [],
+    }
+    below = {
+        "nodes": [{"id": "lt", "type": "less_than", "data": {"value": 0.2, "threshold": 0.5}}],
+        "edges": [],
+    }
+    _, above_out = evaluate_graph(above, NODE_REGISTRY, _context(1))
+    _, below_out = evaluate_graph(below, NODE_REGISTRY, _context(1))
+    assert above_out["lt"]["value"] == pytest.approx(0.0)
+    assert below_out["lt"]["value"] == pytest.approx(1.0)
+
+
+def test_and_or_combines_two_gates():
+    def _run(mode: str, a: float, b: float) -> float:
+        graph = {
+            "nodes": [{"id": "c", "type": "and_or", "data": {"a": a, "b": b, "mode": mode}}],
+            "edges": [],
+        }
+        _, outputs = evaluate_graph(graph, NODE_REGISTRY, _context(1))
+        return outputs["c"]["value"]
+
+    assert _run("and", 1.0, 1.0) == pytest.approx(1.0)
+    assert _run("and", 1.0, 0.0) == pytest.approx(0.0)
+    assert _run("or", 1.0, 0.0) == pytest.approx(1.0)
+    assert _run("or", 0.0, 0.0) == pytest.approx(0.0)
+
+
+def test_audio_level_reads_the_selected_source():
+    desktop = AudioFrame(
+        level=0.2, bands=np.zeros(NUM_BANDS, dtype=np.float32), low=0.0, mid=0.0, high=0.0, beat=0.0
+    )
+    mic = AudioFrame(
+        level=0.9, bands=np.zeros(NUM_BANDS, dtype=np.float32), low=0.0, mid=0.0, high=0.0, beat=0.0
+    )
+    context = EvalContext(
+        n=1,
+        positions=np.zeros((1, 3), dtype=np.float32),
+        time=0.0,
+        audio=desktop,
+        hype=0.0,
+        audio_sources={"desktop": desktop, "mic": mic},
+    )
+    graph = {
+        "nodes": [
+            {"id": "d", "type": "audio_level", "data": {"source": "desktop"}},
+            {"id": "m", "type": "audio_level", "data": {"source": "mic"}},
+        ],
+        "edges": [],
+    }
+    _, outputs = evaluate_graph(graph, NODE_REGISTRY, context)
+    assert outputs["d"]["value"] == pytest.approx(0.2)
+    assert outputs["m"]["value"] == pytest.approx(0.9)
+
+
+def test_audio_level_falls_back_to_primary_audio_when_source_missing():
+    # audio_sources is empty in most test/preview contexts (e.g. a fixture
+    # rendered before the render loop's audio drain task has run) -- every
+    # audio node should still read `context.audio` rather than going silent.
+    audio = AudioFrame(
+        level=0.5, bands=np.zeros(NUM_BANDS, dtype=np.float32), low=0.0, mid=0.0, high=0.0, beat=0.0
+    )
+    context = EvalContext(
+        n=1, positions=np.zeros((1, 3), dtype=np.float32), time=0.0, audio=audio, hype=0.0
+    )
+    graph = {"nodes": [{"id": "a", "type": "audio_level", "data": {}}], "edges": []}
+    _, outputs = evaluate_graph(graph, NODE_REGISTRY, context)
+    assert outputs["a"]["value"] == pytest.approx(0.5)
+
+
+def test_counter_increments_on_each_rising_edge_and_wraps():
+    graph = {"nodes": [{"id": "c", "type": "counter", "data": {"max": 3}}], "edges": []}
+    state: dict = {}
+    audio = AudioFrame(
+        level=0.0, bands=np.zeros(NUM_BANDS, dtype=np.float32), low=0.0, mid=0.0, high=0.0, beat=0.0
+    )
+
+    def _tick(trigger: float) -> tuple[float, float]:
+        graph["nodes"][0]["data"]["trigger"] = trigger
+        context = EvalContext(
+            n=1,
+            positions=np.zeros((1, 3), dtype=np.float32),
+            time=0.0,
+            audio=audio,
+            hype=0.0,
+            state=state,
+        )
+        _, outputs = evaluate_graph(graph, NODE_REGISTRY, context)
+        return outputs["c"]["count"], outputs["c"]["phase"]
+
+    assert _tick(0.0) == (0.0, 0.0)
+    assert _tick(1.0) == (1.0, pytest.approx(1 / 3))  # rising edge -> 1
+    assert _tick(1.0) == (1.0, pytest.approx(1 / 3))  # still high -> no re-trigger
+    assert _tick(0.0) == (1.0, pytest.approx(1 / 3))  # falls back to 0 -> re-arms
+    assert _tick(1.0) == (2.0, pytest.approx(2 / 3))
+    assert _tick(0.0) == (2.0, pytest.approx(2 / 3))
+    assert _tick(1.0) == (3.0, pytest.approx(1.0))
+    assert _tick(0.0) == (3.0, pytest.approx(1.0))
+    assert _tick(1.0) == (1.0, pytest.approx(1 / 3))  # wraps back past max to 1
+
+
+def test_counter_reset_forces_count_back_to_zero():
+    graph = {"nodes": [{"id": "c", "type": "counter", "data": {"max": 64}}], "edges": []}
+    state: dict = {}
+    audio = AudioFrame(
+        level=0.0, bands=np.zeros(NUM_BANDS, dtype=np.float32), low=0.0, mid=0.0, high=0.0, beat=0.0
+    )
+
+    def _tick(trigger: float, reset: float) -> float:
+        graph["nodes"][0]["data"]["trigger"] = trigger
+        graph["nodes"][0]["data"]["reset"] = reset
+        context = EvalContext(
+            n=1,
+            positions=np.zeros((1, 3), dtype=np.float32),
+            time=0.0,
+            audio=audio,
+            hype=0.0,
+            state=state,
+        )
+        _, outputs = evaluate_graph(graph, NODE_REGISTRY, context)
+        return outputs["c"]["count"]
+
+    assert _tick(1.0, 0.0) == 1.0
+    assert _tick(1.0, 1.0) == 0.0  # reset wins over a simultaneous trigger
+
+
+def test_and_or_chains_off_threshold_gates():
+    graph = {
+        "nodes": [
+            {"id": "gt", "type": "greater_than", "data": {"value": 0.9, "threshold": 0.5}},
+            {"id": "lt", "type": "less_than", "data": {"value": 0.9, "threshold": 0.5}},
+            {"id": "c", "type": "and_or", "data": {"mode": "or"}},
+        ],
+        "edges": [
+            {"id": "e1", "source": "gt", "target": "c", "targetHandle": "a"},
+            {"id": "e2", "source": "lt", "target": "c", "targetHandle": "b"},
+        ],
+    }
+    _, outputs = evaluate_graph(graph, NODE_REGISTRY, _context(1))
+    assert outputs["gt"]["value"] == pytest.approx(1.0)
+    assert outputs["lt"]["value"] == pytest.approx(0.0)
+    assert outputs["c"]["value"] == pytest.approx(1.0)

@@ -1,6 +1,103 @@
+import asyncio
+
+import pytest
+from sqlmodel import Session, SQLModel, create_engine
+from sqlmodel.pool import StaticPool
+
+from lumen import db
 from lumen.api.schemas import ConsoleState
+from lumen.effects import engine as engine_module
 from lumen.effects.engine import RenderLoop
+from lumen.models.audio_source import AudioSourceConfig
 from lumen.models.effect import Effect
+
+
+class _FakeCapture:
+    """Stands in for AudioCapture so reconfigure_audio_sources's bookkeeping
+    (which source is running, which capture backs it) can be tested without
+    touching real audio hardware."""
+
+    def __init__(self, device: str | None = None, mode: str = "loopback") -> None:
+        self.device = device
+        self.mode = mode
+        self.started = False
+        self.stopped = False
+
+    def start(self) -> None:
+        self.started = True
+
+    def stop(self) -> None:
+        self.stopped = True
+
+    async def get(self):
+        await asyncio.Event().wait()  # never resolves; cancellation is what ends it
+
+
+@pytest.fixture
+def audio_db(monkeypatch):
+    eng = create_engine(
+        "sqlite://", connect_args={"check_same_thread": False}, poolclass=StaticPool
+    )
+    SQLModel.metadata.create_all(eng)
+    monkeypatch.setattr(db, "engine", eng)
+    monkeypatch.setattr(engine_module, "AudioCapture", _FakeCapture)
+    return eng
+
+
+async def test_reconfigure_audio_sources_starts_and_stops_by_enabled_flag(audio_db):
+    with Session(audio_db) as session:
+        session.add(AudioSourceConfig(name="desktop", enabled=True, mode="loopback", device=None))
+        session.add(AudioSourceConfig(name="mic", enabled=False, mode="input", device=None))
+        session.commit()
+
+    loop = RenderLoop()
+    loop._running = True
+    try:
+        await loop.reconfigure_audio_sources()
+        assert "desktop" in loop._drain_tasks
+        assert "mic" not in loop._drain_tasks
+        assert loop._sources["desktop"].capture.started is True
+
+        with Session(audio_db) as session:
+            row = session.get(AudioSourceConfig, "mic")
+            row.enabled = True
+            session.add(row)
+            session.commit()
+        await loop.reconfigure_audio_sources()
+        assert "mic" in loop._drain_tasks
+        assert loop._sources["mic"].capture.started is True
+    finally:
+        for name in list(loop._drain_tasks):
+            await loop._stop_source(name)
+
+
+async def test_reconfigure_audio_sources_swaps_capture_when_device_changes(audio_db):
+    with Session(audio_db) as session:
+        session.add(AudioSourceConfig(name="desktop", enabled=True, mode="loopback", device=None))
+        session.add(AudioSourceConfig(name="mic", enabled=False, mode="input", device=None))
+        session.commit()
+
+    loop = RenderLoop()
+    loop._running = True
+    try:
+        await loop.reconfigure_audio_sources()
+        old_capture = loop._sources["desktop"].capture
+
+        with Session(audio_db) as session:
+            row = session.get(AudioSourceConfig, "desktop")
+            row.device = "custom_sink.monitor"
+            session.add(row)
+            session.commit()
+        await loop.reconfigure_audio_sources()
+
+        new_capture = loop._sources["desktop"].capture
+        assert old_capture.stopped is True
+        assert new_capture is not old_capture
+        assert new_capture.device == "custom_sink.monitor"
+        assert new_capture.started is True
+    finally:
+        for name in list(loop._drain_tasks):
+            await loop._stop_source(name)
 
 
 def test_two_instances_of_the_same_node_type_are_overridden_independently():

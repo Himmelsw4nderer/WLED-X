@@ -33,6 +33,12 @@ class EvalContext:
     hype: float
     node_id: str = ""
     state: dict[str, Any] = field(default_factory=dict)
+    # Every currently-running audio source, keyed by name (e.g. "desktop",
+    # "mic"), so nodes with a Source param can read one specifically. `audio`
+    # above is always audio_sources["desktop"] when that source is running --
+    # kept as its own field so every existing node that doesn't care about
+    # multi-source audio never has to look this up.
+    audio_sources: dict[str, AudioFrame] = field(default_factory=dict)
     # (min, max) meters across every fixture in the scene, for normalizing
     # PositionX/Y/Z to 0..1 across the whole installation. None falls back to
     # this fixture's own position range (e.g. the debug preview's synthetic strip,

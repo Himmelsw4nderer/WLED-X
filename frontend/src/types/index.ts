@@ -144,3 +144,28 @@ export interface PreviewResponse {
   nodes: Record<string, NodePreviewValue>;
   warning: string | null;
 }
+
+export type AudioSourceMode = "loopback" | "input";
+
+// One selectable entry in the audio device picker -- `id` is a UI-only key,
+// `mode`/`device` are what actually gets written to an AudioSourceConfig row.
+export interface AudioDeviceOption {
+  id: string;
+  label: string;
+  mode: AudioSourceMode;
+  device: string | null;
+  is_default: boolean;
+}
+
+export interface AudioSource {
+  name: string;
+  enabled: boolean;
+  mode: AudioSourceMode;
+  device: string | null;
+}
+
+export interface AudioSourceUpdate {
+  enabled?: boolean;
+  mode?: AudioSourceMode;
+  device?: string | null;
+}

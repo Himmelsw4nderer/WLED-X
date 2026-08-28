@@ -7,10 +7,10 @@ __pycache__/
 .pytest_cache/
 .ruff_cache/
 .mypy_cache/
-backend/*.db
-backend/*.db-journal
-backend/*.db-wal
-backend/*.db-shm
+backend/**/*.db
+backend/**/*.db-journal
+backend/**/*.db-wal
+backend/**/*.db-shm
 backend/.env
 
 # Node / frontend

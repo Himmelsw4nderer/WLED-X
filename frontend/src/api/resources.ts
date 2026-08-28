@@ -1,5 +1,8 @@
 import { api } from "./client";
 import type {
+  AudioDeviceOption,
+  AudioSource,
+  AudioSourceUpdate,
   Device,
   DeviceCreate,
   Effect,
@@ -61,4 +64,11 @@ export const scenesApi = {
 
 export const nodesApi = {
   list: () => api.get<NodeTypeDescriptor[]>("/api/nodes"),
+};
+
+export const audioApi = {
+  devices: () => api.get<AudioDeviceOption[]>("/api/audio/devices"),
+  sources: () => api.get<AudioSource[]>("/api/audio/sources"),
+  updateSource: (name: string, payload: AudioSourceUpdate) =>
+    api.put<AudioSource>(`/api/audio/sources/${name}`, payload),
 };

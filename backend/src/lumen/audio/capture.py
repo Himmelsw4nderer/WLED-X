@@ -1,19 +1,30 @@
-"""Desktop audio loopback capture.
+"""Audio capture, in two flavors selected by `mode`:
 
-On PipeWire/PulseAudio (this project's target platform, see README) shells
-out to `parec` reading the default sink's `.monitor` source directly. This is
-more reliable than going through `sounddevice`/PortAudio: PortAudio's ALSA
-hostapi (the one available on a stock PipeWire install) has no concept of a
-Pulse ".monitor" source at all, so `sounddevice.query_devices()` never sees
-one there even though `pactl` does. Falls back to a `sounddevice` InputStream
-(picking any device with "monitor" in its name, else the system default
-input) when `parec` isn't available -- non-Linux or Pulse-less setups.
+- `"loopback"` (the original desktop-audio capture): on PipeWire/PulseAudio
+  (this project's target platform, see README) shells out to `parec` reading
+  the default sink's `.monitor` source directly. This is more reliable than
+  going through `sounddevice`/PortAudio: PortAudio's ALSA hostapi (the one
+  available on a stock PipeWire install) has no concept of a Pulse
+  ".monitor" source at all, so `sounddevice.query_devices()` never sees one
+  there even though `pactl` does. Falls back to a `sounddevice` InputStream
+  (picking any device with "monitor" in its name, else the system default
+  input) when `parec` isn't available -- non-Linux or Pulse-less setups.
+- `"input"` (a plain microphone/line-in): goes straight to a `sounddevice`
+  InputStream on an ordinary input device. No monitor source is involved, so
+  the `parec` path doesn't apply here.
+
+Each `AudioCapture` instance is independent and takes its own `device`
+override, so the render loop can run a loopback capture and an input capture
+side by side against two different physical devices (see
+`lumen.effects.engine.RenderLoop`, which keeps one `_AudioSource` per
+configured source).
 """
 
 import asyncio
 import contextlib
 import logging
 import shutil
+from typing import TypedDict
 
 import numpy as np
 import sounddevice as sd
@@ -23,30 +34,123 @@ from lumen.config import settings
 logger = logging.getLogger(__name__)
 
 
-def _select_fallback_device() -> tuple[int | None, int]:
+class AudioDeviceOption(TypedDict):
+    id: str
+    label: str
+    mode: str  # "loopback" | "input"
+    device: str | None
+    is_default: bool
+
+
+async def _list_pulse_sinks() -> list[str]:
+    """Sink names from `pactl list sinks short` (first field is the index,
+    second is the name) -- used to offer a specific output's monitor as a
+    loopback source, not just "whatever the default sink currently is"."""
+    try:
+        proc = await asyncio.create_subprocess_exec(
+            "pactl",
+            "list",
+            "sinks",
+            "short",
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.DEVNULL,
+        )
+        stdout, _ = await proc.communicate()
+    except OSError:
+        return []
+    sinks = []
+    for line in stdout.decode().splitlines():
+        fields = line.split("\t")
+        if len(fields) >= 2 and fields[1]:
+            sinks.append(fields[1])
+    return sinks
+
+
+async def discover_audio_devices() -> list[AudioDeviceOption]:
+    """Every audio device an `AudioSourceConfig` row could point at, for the
+    console's device picker: a "default" loopback plus one per detected
+    Pulse sink, and a "default" input plus every sounddevice input device.
+    `id` is a UI-only key; `mode`/`device` are what actually gets stored."""
+    options: list[AudioDeviceOption] = []
+
+    if shutil.which("parec"):
+        options.append(
+            {
+                "id": "loopback:default",
+                "label": "System audio (default output)",
+                "mode": "loopback",
+                "device": None,
+                "is_default": True,
+            }
+        )
+        for sink in await _list_pulse_sinks():
+            options.append(
+                {
+                    "id": f"loopback:{sink}",
+                    "label": f"System audio — {sink}",
+                    "mode": "loopback",
+                    "device": f"{sink}.monitor",
+                    "is_default": False,
+                }
+            )
+
+    try:
+        devices = sd.query_devices()
+        default_input_index = sd.default.device[0]
+    except Exception:
+        logger.exception("failed to enumerate sounddevice input devices")
+        devices, default_input_index = [], -1
+
+    options.append(
+        {
+            "id": "input:default",
+            "label": "Default input device",
+            "mode": "input",
+            "device": None,
+            "is_default": default_input_index is None or default_input_index < 0,
+        }
+    )
+    for index, info in enumerate(devices):
+        if info["max_input_channels"] > 0:
+            options.append(
+                {
+                    "id": f"input:{index}",
+                    "label": info["name"],
+                    "mode": "input",
+                    "device": info["name"],
+                    "is_default": index == default_input_index,
+                }
+            )
+    return options
+
+
+def _select_fallback_device(device: str | None, prefer_monitor: bool) -> tuple[int | None, int]:
     devices = sd.query_devices()
 
-    if settings.audio_device:
-        needle = settings.audio_device.lower()
+    if device:
+        needle = device.lower()
         for index, info in enumerate(devices):
             if info["max_input_channels"] > 0 and needle in info["name"].lower():
                 return index, info["max_input_channels"]
         logger.warning(
-            "configured audio_device %r not found among input devices, falling back",
-            settings.audio_device,
+            "configured audio device %r not found among input devices, falling back",
+            device,
         )
 
-    for index, info in enumerate(devices):
-        if info["max_input_channels"] > 0 and "monitor" in info["name"].lower():
-            return index, info["max_input_channels"]
+    if prefer_monitor:
+        for index, info in enumerate(devices):
+            if info["max_input_channels"] > 0 and "monitor" in info["name"].lower():
+                return index, info["max_input_channels"]
+        logger.warning(
+            "no '.monitor' loopback input device found, falling back to the default input"
+        )
 
-    logger.warning("no '.monitor' loopback input device found, falling back to the default input")
     return None, 1
 
 
-async def _default_monitor_source() -> str | None:
-    if settings.audio_device:
-        return settings.audio_device
+async def _default_monitor_source(device: str | None) -> str | None:
+    if device:
+        return device
     try:
         proc = await asyncio.create_subprocess_exec(
             "pactl",
@@ -62,7 +166,15 @@ async def _default_monitor_source() -> str | None:
 
 
 class AudioCapture:
-    def __init__(self) -> None:
+    def __init__(self, device: str | None = None, mode: str = "loopback") -> None:
+        """`device` overrides the substring/exact device match this capture
+        uses (independent of any other `AudioCapture` instance, so several
+        can run in parallel against different physical devices). `mode`
+        is `"loopback"` for desktop/system audio (tries `parec` on the
+        default sink monitor first) or `"input"` for a plain mic/line-in
+        (sounddevice only, no monitor preference)."""
+        self._device = device
+        self._mode = mode
         self._queue: asyncio.Queue[np.ndarray] = asyncio.Queue(maxsize=8)
         self._loop: asyncio.AbstractEventLoop | None = None
         self._proc: asyncio.subprocess.Process | None = None
@@ -74,15 +186,18 @@ class AudioCapture:
         self._loop.create_task(self._start_async())
 
     async def _start_async(self) -> None:
+        if self._mode != "loopback":
+            self._start_sounddevice(prefer_monitor=False)
+            return
         try:
             if shutil.which("parec") and await self._start_pulse():
                 return
         except Exception:
             logger.exception("pulse audio capture failed, falling back to PortAudio")
-        self._start_sounddevice()
+        self._start_sounddevice(prefer_monitor=True)
 
     async def _start_pulse(self) -> bool:
-        source = await _default_monitor_source()
+        source = await _default_monitor_source(self._device)
         if not source:
             return False
         self._proc = await asyncio.create_subprocess_exec(
@@ -116,8 +231,8 @@ class AudioCapture:
         except Exception:
             logger.exception("parec read loop failed")
 
-    def _start_sounddevice(self) -> None:
-        device, channels = _select_fallback_device()
+    def _start_sounddevice(self, prefer_monitor: bool) -> None:
+        device, channels = _select_fallback_device(self._device, prefer_monitor)
         channels = max(min(channels, 2), 1)
         self._stream = sd.InputStream(
             samplerate=settings.audio_sample_rate,

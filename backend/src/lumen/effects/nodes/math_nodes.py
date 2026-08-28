@@ -42,6 +42,36 @@ def _invert(data: dict[str, Any], inputs: dict[str, Value], context: EvalContext
     return 1.0 - _num(data, inputs, "value", 0.0)
 
 
+def _abs(data: dict[str, Any], inputs: dict[str, Value], context: EvalContext) -> Value:
+    """Absolute value: flips negative values positive, leaves positives alone."""
+    return np.abs(_num(data, inputs, "value", 0.0))
+
+
+def _greater_than(data: dict[str, Any], inputs: dict[str, Value], context: EvalContext) -> Value:
+    """1.0 where value is above the threshold, 0.0 otherwise."""
+    value = np.asarray(_num(data, inputs, "value", 0.0), dtype=np.float32)
+    threshold = np.asarray(_num(data, inputs, "threshold", 0.5), dtype=np.float32)
+    return np.where(value > threshold, 1.0, 0.0).astype(np.float32)
+
+
+def _less_than(data: dict[str, Any], inputs: dict[str, Value], context: EvalContext) -> Value:
+    """1.0 where value is below the threshold, 0.0 otherwise."""
+    value = np.asarray(_num(data, inputs, "value", 0.0), dtype=np.float32)
+    threshold = np.asarray(_num(data, inputs, "threshold", 0.5), dtype=np.float32)
+    return np.where(value < threshold, 1.0, 0.0).astype(np.float32)
+
+
+def _and_or(data: dict[str, Any], inputs: dict[str, Value], context: EvalContext) -> Value:
+    """Combines two 0/1 signals with AND or OR, clamped back to 0.0/1.0.
+
+    Inputs count as "true" at >= 0.5, so this chains directly off
+    Greater Than / Less Than (or any other 0/1-ish field)."""
+    a_true = np.asarray(_num(data, inputs, "a", 0.0), dtype=np.float32) >= 0.5
+    b_true = np.asarray(_num(data, inputs, "b", 0.0), dtype=np.float32) >= 0.5
+    combined = (a_true | b_true) if data.get("mode", "and") == "or" else (a_true & b_true)
+    return combined.astype(np.float32)
+
+
 def _clamp(data: dict[str, Any], inputs: dict[str, Value], context: EvalContext) -> Value:
     value = _num(data, inputs, "value", 0.0)
     lo = float(data.get("min", 0.0))
@@ -78,6 +108,31 @@ def _mix(data: dict[str, Any], inputs: dict[str, Value], context: EvalContext) -
 
 def _constant(data: dict[str, Any], inputs: dict[str, Value], context: EvalContext) -> Value:
     return float(data.get("value", 0.0))
+
+
+def _counter(data: dict[str, Any], inputs: dict[str, Value], context: EvalContext) -> Value:
+    """Counts rising edges of `trigger` (e.g. a Beat or Bass Hit pulse),
+    wrapping from `max` back to 1 -- for effects that need to step through a
+    longer pattern (colors, positions, a bar-count) one beat at a time
+    instead of just reacting to each one. `reset` forces the count back to 0
+    on its own next rising edge. State lives per node instance, keyed by
+    node_id like every other stateful node (see Invert, Square's phase)."""
+    max_count = max(int(float(_num(data, inputs, "max", 64.0))), 1)
+    trigger = float(_num(data, inputs, "trigger", 0.0))
+    reset = float(_num(data, inputs, "reset", 0.0))
+
+    bucket = context.state.setdefault(
+        context.node_id, {"count": 0, "prev_trigger": 0.0, "prev_reset": 0.0}
+    )
+    if reset >= 0.5 and bucket["prev_reset"] < 0.5:
+        bucket["count"] = 0
+    elif trigger >= 0.5 and bucket["prev_trigger"] < 0.5:
+        bucket["count"] = bucket["count"] % max_count + 1
+    bucket["prev_trigger"] = trigger
+    bucket["prev_reset"] = reset
+
+    count = bucket["count"]
+    return {"count": float(count), "phase": count / max_count}
 
 
 def _binary_node(
@@ -141,6 +196,69 @@ MATH_NODES: dict[str, NodeDefinition] = {
             params=[NodeParam(key="value", type="float", default=0.0)],
         ),
         compute=_invert,
+    ),
+    "abs": NodeDefinition(
+        descriptor=NodeTypeDescriptor(
+            type="abs",
+            category="math",
+            label="Abs",
+            inputs=[NodeSocket(key="value", type="field", label="Value")],
+            outputs=[NodeSocket(key="value", type="field", label="Value")],
+            params=[NodeParam(key="value", type="float", default=0.0)],
+        ),
+        compute=_abs,
+    ),
+    "greater_than": NodeDefinition(
+        descriptor=NodeTypeDescriptor(
+            type="greater_than",
+            category="math",
+            label="Greater Than",
+            inputs=[
+                NodeSocket(key="value", type="field", label="Value"),
+                NodeSocket(key="threshold", type="field", label="Threshold"),
+            ],
+            outputs=[NodeSocket(key="value", type="field", label="Value")],
+            params=[
+                NodeParam(key="value", type="float", default=0.0),
+                NodeParam(key="threshold", type="float", default=0.5),
+            ],
+        ),
+        compute=_greater_than,
+    ),
+    "less_than": NodeDefinition(
+        descriptor=NodeTypeDescriptor(
+            type="less_than",
+            category="math",
+            label="Less Than",
+            inputs=[
+                NodeSocket(key="value", type="field", label="Value"),
+                NodeSocket(key="threshold", type="field", label="Threshold"),
+            ],
+            outputs=[NodeSocket(key="value", type="field", label="Value")],
+            params=[
+                NodeParam(key="value", type="float", default=0.0),
+                NodeParam(key="threshold", type="float", default=0.5),
+            ],
+        ),
+        compute=_less_than,
+    ),
+    "and_or": NodeDefinition(
+        descriptor=NodeTypeDescriptor(
+            type="and_or",
+            category="math",
+            label="And / Or",
+            inputs=[
+                NodeSocket(key="a", type="field", label="A"),
+                NodeSocket(key="b", type="field", label="B"),
+            ],
+            outputs=[NodeSocket(key="value", type="field", label="Value")],
+            params=[
+                NodeParam(key="a", type="float", default=0.0),
+                NodeParam(key="b", type="float", default=0.0),
+                NodeParam(key="mode", type="select", default="and", options=["and", "or"]),
+            ],
+        ),
+        compute=_and_or,
     ),
     "clamp": NodeDefinition(
         descriptor=NodeTypeDescriptor(
@@ -219,5 +337,26 @@ MATH_NODES: dict[str, NodeDefinition] = {
             params=[NodeParam(key="value", type="float", default=0.0)],
         ),
         compute=_constant,
+    ),
+    "counter": NodeDefinition(
+        descriptor=NodeTypeDescriptor(
+            type="counter",
+            category="math",
+            label="Counter",
+            inputs=[
+                NodeSocket(key="trigger", type="scalar", label="Trigger"),
+                NodeSocket(key="reset", type="scalar", label="Reset"),
+            ],
+            outputs=[
+                NodeSocket(key="count", type="scalar", label="Count"),
+                NodeSocket(key="phase", type="scalar", label="Phase"),
+            ],
+            params=[
+                NodeParam(key="trigger", type="float", default=0.0),
+                NodeParam(key="reset", type="float", default=0.0),
+                NodeParam(key="max", type="int", default=64, min=1, max=1024),
+            ],
+        ),
+        compute=_counter,
     ),
 }

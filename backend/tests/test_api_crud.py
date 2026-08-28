@@ -4,6 +4,57 @@ def test_health(client):
     assert resp.json() == {"status": "ok"}
 
 
+def test_audio_sources_are_seeded_with_desktop_enabled_and_mic_disabled(client):
+    resp = client.get("/api/audio/sources")
+    assert resp.status_code == 200
+    by_name = {row["name"]: row for row in resp.json()}
+    assert by_name["desktop"]["enabled"] is True
+    assert by_name["desktop"]["mode"] == "loopback"
+    assert by_name["mic"]["enabled"] is False
+    assert by_name["mic"]["mode"] == "input"
+
+
+def test_audio_devices_lists_discovered_options(client, monkeypatch):
+    from lumen.api import routes_audio
+
+    async def fake_discover():
+        return [
+            {
+                "id": "loopback:default",
+                "label": "System audio",
+                "mode": "loopback",
+                "device": None,
+                "is_default": True,
+            },
+            {
+                "id": "input:0",
+                "label": "USB Mic",
+                "mode": "input",
+                "device": "USB Mic",
+                "is_default": False,
+            },
+        ]
+
+    monkeypatch.setattr(routes_audio, "discover_audio_devices", fake_discover)
+    resp = client.get("/api/audio/devices")
+    assert resp.status_code == 200
+    assert [d["id"] for d in resp.json()] == ["loopback:default", "input:0"]
+
+
+def test_put_audio_source_updates_device_and_rejects_unknown_name(client):
+    resp = client.put("/api/audio/sources/mic", json={"enabled": True, "device": "USB Mic"})
+    assert resp.status_code == 200
+    assert resp.json() == {"name": "mic", "enabled": True, "mode": "input", "device": "USB Mic"}
+
+    resp = client.get("/api/audio/sources")
+    by_name = {row["name"]: row for row in resp.json()}
+    assert by_name["mic"]["enabled"] is True
+    assert by_name["mic"]["device"] == "USB Mic"
+
+    resp = client.put("/api/audio/sources/nonexistent", json={"enabled": True})
+    assert resp.status_code == 404
+
+
 def test_device_crud(client):
     resp = client.post("/api/devices", json={"name": "Strip 1", "ip": "10.0.0.5", "led_count": 60})
     assert resp.status_code == 201
