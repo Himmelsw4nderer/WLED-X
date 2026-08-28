@@ -15,20 +15,27 @@ from lumen.db import engine, init_db
 from lumen.models.effect import Effect
 
 # Beats-to-N counter: an 8-beat bar that refills across the strip and wraps.
-# Demonstrates the Counter node (counts Beat pulses, wraps at `max`) driving
-# a spatial cutoff via Less Than, recolored per-LED with a rainbow HSV sweep.
+# Demonstrates the Counter node (counts once-per-beat pulses, wraps at `max`)
+# driving a spatial cutoff via Less Than, recolored per-LED with a rainbow HSV
+# sweep. The pulse itself is Beat Phase gated by a narrow Square wave.
 BEAT_BAR = Effect(
     name="Beat Bar (Counter Demo)",
     description=(
         "An 8-beat bar that fills across the strip one beat at a time, then wraps back to "
-        "empty and starts again -- built from Beat -> Counter -> Less Than -> HSV."
+        "empty and starts again -- built from Beat Phase -> Square -> Counter -> Less Than -> HSV."
     ),
     graph={
         "nodes": [
             {
-                "id": "beat1",
-                "type": "beat",
-                "data": {"decay": 0.4, "source": "desktop"},
+                "id": "phase1",
+                "type": "beat_phase",
+                "data": {},
+                "position": {"x": -220, "y": 0},
+            },
+            {
+                "id": "pulse1",
+                "type": "square",
+                "data": {"duty": 0.12},
                 "position": {"x": 0, "y": 0},
             },
             {
@@ -49,8 +56,15 @@ BEAT_BAR = Effect(
         ],
         "edges": [
             {
+                "id": "e0",
+                "source": "phase1",
+                "sourceHandle": "value",
+                "target": "pulse1",
+                "targetHandle": "x",
+            },
+            {
                 "id": "e1",
-                "source": "beat1",
+                "source": "pulse1",
                 "sourceHandle": "value",
                 "target": "counter1",
                 "targetHandle": "trigger",
@@ -94,14 +108,6 @@ BEAT_BAR = Effect(
     },
     exposed_params=[
         {
-            "node_id": "beat1",
-            "param_key": "decay",
-            "label": "Beat Decay",
-            "min": 0.05,
-            "max": 2.0,
-            "default": 0.4,
-        },
-        {
             "node_id": "counter1",
             "param_key": "max",
             "label": "Bar Length (beats)",
@@ -112,26 +118,32 @@ BEAT_BAR = Effect(
     ],
 )
 
-# A slow rainbow hue sweep, pulsed bright on every bass hit. Demonstrates
-# Bass Hit (the kick-focused onset track, as distinct from the general Beat
-# node) driving brightness while Time drives hue.
+# A slow rainbow hue sweep, pulsed bright whenever the low/bass band spikes.
+# Demonstrates Audio Band (low) gated by a Greater Than threshold driving
+# brightness while Time drives hue.
 BASS_PULSE_RAINBOW = Effect(
     name="Bass Pulse Rainbow",
     description=(
-        "A slowly rotating rainbow that flashes bright on every bass/kick hit and fades "
-        "between them -- Bass Hit -> HSV's V, Time -> HSV's H."
+        "A slowly rotating rainbow that flashes bright whenever the low/bass band spikes -- "
+        "Audio Band (low) -> Greater Than -> HSV's V, Time -> HSV's H."
     ),
     graph={
         "nodes": [
             {"id": "time1", "type": "time", "data": {"speed": 0.07}, "position": {"x": 0, "y": 0}},
             {
-                "id": "bass1",
-                "type": "bass_hit",
-                "data": {"decay": 0.5, "source": "desktop"},
+                "id": "band1",
+                "type": "audio_band",
+                "data": {"band": "low"},
                 "position": {"x": 0, "y": 140},
             },
-            {"id": "hsv1", "type": "hsv", "data": {"s": 1.0}, "position": {"x": 240, "y": 60}},
-            {"id": "out1", "type": "led_color", "data": {}, "position": {"x": 460, "y": 60}},
+            {
+                "id": "gate1",
+                "type": "greater_than",
+                "data": {"threshold": 0.25},
+                "position": {"x": 240, "y": 140},
+            },
+            {"id": "hsv1", "type": "hsv", "data": {"s": 1.0}, "position": {"x": 460, "y": 60}},
+            {"id": "out1", "type": "led_color", "data": {}, "position": {"x": 680, "y": 60}},
         ],
         "edges": [
             {
@@ -143,13 +155,20 @@ BASS_PULSE_RAINBOW = Effect(
             },
             {
                 "id": "e2",
-                "source": "bass1",
+                "source": "band1",
+                "sourceHandle": "value",
+                "target": "gate1",
+                "targetHandle": "value",
+            },
+            {
+                "id": "e3",
+                "source": "gate1",
                 "sourceHandle": "value",
                 "target": "hsv1",
                 "targetHandle": "v",
             },
             {
-                "id": "e3",
+                "id": "e4",
                 "source": "hsv1",
                 "sourceHandle": "value",
                 "target": "out1",
@@ -159,12 +178,12 @@ BASS_PULSE_RAINBOW = Effect(
     },
     exposed_params=[
         {
-            "node_id": "bass1",
-            "param_key": "decay",
-            "label": "Pulse Decay",
-            "min": 0.05,
-            "max": 2.0,
-            "default": 0.5,
+            "node_id": "gate1",
+            "param_key": "threshold",
+            "label": "Bass Sensitivity",
+            "min": 0.0,
+            "max": 1.0,
+            "default": 0.25,
         },
         {
             "node_id": "time1",
@@ -177,162 +196,8 @@ BASS_PULSE_RAINBOW = Effect(
     ],
 )
 
-# Splits the strip in half and drives each half's brightness from a
-# different audio source -- desktop mix on the left (blue), a microphone on
-# the right (orange) -- running fully in parallel every frame. Requires
-# LUMEN_AUDIO_MIC_ENABLED=true to actually see two different signals; with
-# it off, "mic" quietly falls back to reading the desktop source too (see
-# lumen.effects.nodes.audio_nodes._source_frame), so this still renders, it
-# just won't look different from a single-source effect.
-DESKTOP_MIC_SPLIT = Effect(
-    name="Desktop + Mic Split",
-    description=(
-        "Left half of the strip pulses blue with desktop audio, right half pulses orange "
-        "with a live mic -- two Audio Level nodes with different Source params, read in "
-        "parallel. Set LUMEN_AUDIO_MIC_ENABLED=true to hear the split."
-    ),
-    graph={
-        "nodes": [
-            {"id": "idx1", "type": "index_normalized", "data": {}, "position": {"x": 0, "y": 0}},
-            {
-                "id": "mask1",
-                "type": "less_than",
-                "data": {"threshold": 0.5},
-                "position": {"x": 220, "y": -80},
-            },
-            {"id": "invmask1", "type": "invert", "data": {}, "position": {"x": 440, "y": -80}},
-            {
-                "id": "lvl_desktop",
-                "type": "audio_level",
-                "data": {"source": "desktop"},
-                "position": {"x": 0, "y": 120},
-            },
-            {
-                "id": "lvl_mic",
-                "type": "audio_level",
-                "data": {"source": "mic"},
-                "position": {"x": 0, "y": 240},
-            },
-            {"id": "mul1", "type": "multiply", "data": {}, "position": {"x": 440, "y": 60}},
-            {"id": "mul2", "type": "multiply", "data": {}, "position": {"x": 440, "y": 200}},
-            {"id": "add1", "type": "add", "data": {}, "position": {"x": 660, "y": 130}},
-            {
-                "id": "ramp1",
-                "type": "color_ramp",
-                "data": {
-                    "stops": [
-                        {"pos": 0.0, "color": [0.15, 0.35, 1.0]},
-                        {"pos": 0.499, "color": [0.15, 0.35, 1.0]},
-                        {"pos": 0.5, "color": [1.0, 0.45, 0.05]},
-                        {"pos": 1.0, "color": [1.0, 0.45, 0.05]},
-                    ]
-                },
-                "position": {"x": 220, "y": 340},
-            },
-            {"id": "mix1", "type": "mix_color", "data": {}, "position": {"x": 880, "y": 200}},
-            {"id": "out1", "type": "led_color", "data": {}, "position": {"x": 1100, "y": 200}},
-        ],
-        "edges": [
-            {
-                "id": "e1",
-                "source": "idx1",
-                "sourceHandle": "value",
-                "target": "mask1",
-                "targetHandle": "value",
-            },
-            {
-                "id": "e2",
-                "source": "mask1",
-                "sourceHandle": "value",
-                "target": "invmask1",
-                "targetHandle": "value",
-            },
-            {
-                "id": "e3",
-                "source": "mask1",
-                "sourceHandle": "value",
-                "target": "mul1",
-                "targetHandle": "a",
-            },
-            {
-                "id": "e4",
-                "source": "lvl_desktop",
-                "sourceHandle": "value",
-                "target": "mul1",
-                "targetHandle": "b",
-            },
-            {
-                "id": "e5",
-                "source": "invmask1",
-                "sourceHandle": "value",
-                "target": "mul2",
-                "targetHandle": "a",
-            },
-            {
-                "id": "e6",
-                "source": "lvl_mic",
-                "sourceHandle": "value",
-                "target": "mul2",
-                "targetHandle": "b",
-            },
-            {
-                "id": "e7",
-                "source": "mul1",
-                "sourceHandle": "value",
-                "target": "add1",
-                "targetHandle": "a",
-            },
-            {
-                "id": "e8",
-                "source": "mul2",
-                "sourceHandle": "value",
-                "target": "add1",
-                "targetHandle": "b",
-            },
-            {
-                "id": "e9",
-                "source": "idx1",
-                "sourceHandle": "value",
-                "target": "ramp1",
-                "targetHandle": "position",
-            },
-            {
-                "id": "e10",
-                "source": "ramp1",
-                "sourceHandle": "value",
-                "target": "mix1",
-                "targetHandle": "b",
-            },
-            {
-                "id": "e11",
-                "source": "add1",
-                "sourceHandle": "value",
-                "target": "mix1",
-                "targetHandle": "t",
-            },
-            {
-                "id": "e12",
-                "source": "mix1",
-                "sourceHandle": "value",
-                "target": "out1",
-                "targetHandle": "color",
-            },
-        ],
-    },
-    exposed_params=[
-        {
-            "node_id": "mask1",
-            "param_key": "threshold",
-            "label": "Split Position",
-            "min": 0.0,
-            "max": 1.0,
-            "default": 0.5,
-        },
-    ],
-)
 
-
-EXAMPLE_EFFECTS: list[Effect] = [BEAT_BAR, BASS_PULSE_RAINBOW, DESKTOP_MIC_SPLIT]
+EXAMPLE_EFFECTS: list[Effect] = [BEAT_BAR, BASS_PULSE_RAINBOW]
 
 
 def seed_example_effects(session: Session) -> list[Effect]:
