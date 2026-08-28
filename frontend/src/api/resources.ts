@@ -12,6 +12,10 @@ import type {
   FixtureCreate,
   FixtureUpdate,
   NodeTypeDescriptor,
+  Playlist,
+  PlaylistCreate,
+  PlaylistStatus,
+  PlaylistUpdate,
   PreviewRequest,
   PreviewResponse,
   Scene,
@@ -61,6 +65,19 @@ export const scenesApi = {
   create: (payload: SceneCreate) => api.post<Scene>("/api/scenes", payload),
   update: (id: number, payload: SceneUpdate) => api.patch<Scene>(`/api/scenes/${id}`, payload),
   remove: (id: number) => api.delete<void>(`/api/scenes/${id}`),
+};
+
+export const playlistsApi = {
+  list: () => api.get<Playlist[]>("/api/playlists"),
+  create: (payload: PlaylistCreate) => api.post<Playlist>("/api/playlists", payload),
+  update: (id: number, payload: PlaylistUpdate) =>
+    api.patch<Playlist>(`/api/playlists/${id}`, payload),
+  remove: (id: number) => api.delete<void>(`/api/playlists/${id}`),
+  activate: (id: number) => api.post<Playlist>(`/api/playlists/${id}/activate`),
+  deactivate: () => api.post<void>("/api/playlists/deactivate"),
+  next: (id: number) => api.post<PlaylistStatus>(`/api/playlists/${id}/next`),
+  prev: (id: number) => api.post<PlaylistStatus>(`/api/playlists/${id}/prev`),
+  status: () => api.get<PlaylistStatus>("/api/playlists/status"),
 };
 
 export const nodesApi = {

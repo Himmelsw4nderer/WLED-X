@@ -11,6 +11,8 @@ import { HitButton } from "../components/console/HitButton";
 import { GlobalSourceSelect } from "../components/console/GlobalSourceSelect";
 import { AudioMeter } from "../components/console/AudioMeter";
 import { AudioSourcePicker } from "../components/console/AudioSourcePicker";
+import { PlaylistPanel } from "../components/console/PlaylistPanel";
+import { playlistsApi } from "../api/resources";
 import type { Effect, Scene, SceneCreate, SceneUpdate } from "../types";
 import "../components/console/console.css";
 
@@ -47,6 +49,22 @@ export function ConsolePage() {
     void refreshEffects();
     void refreshFixtures();
   }, [connect, refreshScenes, refreshEffects, refreshFixtures]);
+
+  // Manual playlist transport: "[" = prev entry, "]" = next entry on the
+  // active playlist (mirrors the Prev/Next buttons in PlaylistPanel).
+  useEffect(() => {
+    async function handle(e: KeyboardEvent) {
+      if (e.key !== "[" && e.key !== "]") return;
+      const el = e.target as HTMLElement | null;
+      if (el && /^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName)) return;
+      const active = (await playlistsApi.list()).find((p) => p.active);
+      if (!active) return;
+      await (e.key === "]" ? playlistsApi.next(active.id) : playlistsApi.prev(active.id));
+    }
+    const onKey = (e: KeyboardEvent) => void handle(e);
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
 
   // The render loop reads `Scene.active` from the DB each tick, not
   // console_state.active_scene_id (see effects/engine.py _tick_once) -- the
@@ -112,6 +130,8 @@ export function ConsolePage() {
         <AudioMeter />
         <AudioSourcePicker />
       </div>
+
+      <PlaylistPanel />
 
       <div className="console-page__faders">
         {!activeScene && <p className="console-page__hint">No scene is live. Pick one above to start riding faders.</p>}
