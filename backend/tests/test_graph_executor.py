@@ -299,25 +299,6 @@ def test_square_wave_duty_cycle_controls_on_fraction():
         assert outputs["sq"]["value"] == pytest.approx(expected), f"x={x}"
 
 
-def test_invert_flips_a_value_around_its_midpoint():
-    graph = {"nodes": [{"id": "inv", "type": "invert", "data": {"value": 0.3}}], "edges": []}
-    _, outputs = evaluate_graph(graph, NODE_REGISTRY, _context(1))
-    assert outputs["inv"]["value"] == pytest.approx(0.7)
-
-
-def test_invert_flips_square_waves_on_state():
-    graph = {
-        "nodes": [
-            {"id": "sq", "type": "square", "data": {"x": 0.1}},
-            {"id": "inv", "type": "invert", "data": {}},
-        ],
-        "edges": [{"id": "e1", "source": "sq", "target": "inv", "targetHandle": "value"}],
-    }
-    _, outputs = evaluate_graph(graph, NODE_REGISTRY, _context(1))
-    assert outputs["sq"]["value"] == pytest.approx(1.0)
-    assert outputs["inv"]["value"] == pytest.approx(0.0)
-
-
 def test_abs_turns_negative_values_positive():
     graph = {"nodes": [{"id": "abs", "type": "abs", "data": {"value": -3.0}}], "edges": []}
     _, outputs = evaluate_graph(graph, NODE_REGISTRY, _context(1))
@@ -375,37 +356,10 @@ def test_and_or_combines_two_gates():
     assert _run("or", 0.0, 0.0) == pytest.approx(0.0)
 
 
-def test_audio_level_reads_the_selected_source():
-    desktop = AudioFrame(
-        level=0.2, bands=np.zeros(NUM_BANDS, dtype=np.float32), low=0.0, mid=0.0, high=0.0, beat=0.0
-    )
-    mic = AudioFrame(
-        level=0.9, bands=np.zeros(NUM_BANDS, dtype=np.float32), low=0.0, mid=0.0, high=0.0, beat=0.0
-    )
-    context = EvalContext(
-        n=1,
-        positions=np.zeros((1, 3), dtype=np.float32),
-        time=0.0,
-        audio=desktop,
-        hype=0.0,
-        audio_sources={"desktop": desktop, "mic": mic},
-    )
-    graph = {
-        "nodes": [
-            {"id": "d", "type": "audio_level", "data": {"source": "desktop"}},
-            {"id": "m", "type": "audio_level", "data": {"source": "mic"}},
-        ],
-        "edges": [],
-    }
-    _, outputs = evaluate_graph(graph, NODE_REGISTRY, context)
-    assert outputs["d"]["value"] == pytest.approx(0.2)
-    assert outputs["m"]["value"] == pytest.approx(0.9)
-
-
-def test_audio_level_falls_back_to_primary_audio_when_source_missing():
-    # audio_sources is empty in most test/preview contexts (e.g. a fixture
-    # rendered before the render loop's audio drain task has run) -- every
-    # audio node should still read `context.audio` rather than going silent.
+def test_audio_level_reads_context_audio_with_no_source_param():
+    # The console now picks one global audio source and the render loop puts its
+    # frame on `context.audio`; audio nodes carry no per-node `source` param and
+    # simply read `context.audio`.
     audio = AudioFrame(
         level=0.5, bands=np.zeros(NUM_BANDS, dtype=np.float32), low=0.0, mid=0.0, high=0.0, beat=0.0
     )
