@@ -8,6 +8,7 @@ import { SceneEditor } from "../components/console/SceneEditor";
 import { MasterFader } from "../components/console/MasterFader";
 import { ParamFader } from "../components/console/ParamFader";
 import { HitButton } from "../components/console/HitButton";
+import { GlobalSourceSelect } from "../components/console/GlobalSourceSelect";
 import { AudioMeter } from "../components/console/AudioMeter";
 import { AudioSourcePicker } from "../components/console/AudioSourcePicker";
 import type { Effect, Scene, SceneCreate, SceneUpdate } from "../types";
@@ -103,6 +104,7 @@ export function ConsolePage() {
           onEdit={(scene) => setEditorState({ mode: "edit", scene })}
         />
         <MasterFader value={masterBrightness} onChange={setMasterBrightness} />
+        <GlobalSourceSelect />
         <HitButton />
       </div>
 

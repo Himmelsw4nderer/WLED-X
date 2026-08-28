@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useEffectStore } from "../store/useEffectStore";
+import { effectsApi } from "../api/resources";
 import type { Effect } from "../types";
 import "./EffectsListPage.css";
 
@@ -54,6 +55,15 @@ export function EffectsListPage() {
       await update(effect.id, { name: trimmed });
     } catch {
       setError(`Failed to rename "${effect.name}".`);
+    }
+  }
+
+  async function duplicateEffect(effect: Effect) {
+    try {
+      await effectsApi.duplicate(effect.id);
+      await refresh();
+    } catch {
+      setError(`Failed to duplicate "${effect.name}".`);
     }
   }
 
@@ -116,6 +126,15 @@ export function EffectsListPage() {
                   }}
                 >
                   Rename
+                </button>
+                <button
+                  className="btn btn--small"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    void duplicateEffect(effect);
+                  }}
+                >
+                  Duplicate
                 </button>
                 <button
                   className="btn btn--small btn--danger"
