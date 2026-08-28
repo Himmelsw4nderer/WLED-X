@@ -26,3 +26,6 @@ frontend/.vite/
 
 # Logs
 *.log
+
+# Claude Code agent worktrees
+.claude/worktrees/

@@ -65,7 +65,9 @@ def test_onset_track_refractory_period_blocks_immediate_retrigger():
     # A single physical hit can spike flux across two consecutive ~21ms
     # blocks; the refractory gate should only let the first one count as
     # an onset, since it's actually the same hit.
-    track = _OnsetTrack(history_len=43, threshold_factor=1.0, decay_per_block=0.12, refractory_seconds=0.1)
+    track = _OnsetTrack(
+        history_len=43, threshold_factor=1.0, decay_per_block=0.12, refractory_seconds=0.1
+    )
     for _ in range(4):
         track.update(0.0, now=0.0)  # seed enough history for a real threshold
 

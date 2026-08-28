@@ -105,12 +105,12 @@ def _constant(data: dict[str, Any], inputs: dict[str, Value], context: EvalConte
 
 
 def _counter(data: dict[str, Any], inputs: dict[str, Value], context: EvalContext) -> Value:
-    """Counts rising edges of `trigger` (e.g. a Beat or Bass Hit pulse),
-    wrapping from `max` back to 1 -- for effects that need to step through a
-    longer pattern (colors, positions, a bar-count) one beat at a time
-    instead of just reacting to each one. `reset` forces the count back to 0
-    on its own next rising edge. State lives per node instance, keyed by
-    node_id like every other stateful node (see Invert, Square's phase)."""
+    """Counts rising edges of `trigger` (e.g. a per-beat pulse from
+    Beat Phase -> Square), wrapping from `max` back to 1 -- for effects that
+    need to step through a longer pattern (colors, positions, a bar-count) one
+    beat at a time instead of just reacting to each one. `reset` forces the
+    count back to 0 on its own next rising edge. State lives per node instance,
+    keyed by node_id like every other stateful node (see Square's phase)."""
     max_count = max(int(float(_num(data, inputs, "max", 64.0))), 1)
     trigger = float(_num(data, inputs, "trigger", 0.0))
     reset = float(_num(data, inputs, "reset", 0.0))
