@@ -169,3 +169,63 @@ export interface AudioSourceUpdate {
   mode?: AudioSourceMode;
   device?: string | null;
 }
+
+export type PlaylistMode = "sequential" | "shuffle" | "pingpong";
+
+export type PlaylistAdvanceTrigger =
+  | "beats"
+  | "bars"
+  | "tempo_change"
+  | "time"
+  | "hype"
+  | "manual";
+
+export interface PlaylistEntry {
+  scene_id: number;
+}
+
+export interface Playlist {
+  id: number;
+  name: string;
+  entries: PlaylistEntry[];
+  mode: PlaylistMode;
+  advance_trigger: PlaylistAdvanceTrigger;
+  advance_beats: number;
+  advance_seconds: number;
+  hype_threshold: number;
+  active: boolean;
+}
+
+export type PlaylistCreate = { name: string } & Partial<
+  Omit<Playlist, "id" | "name" | "active">
+>;
+export type PlaylistUpdate = Partial<Omit<Playlist, "id">>;
+
+// Live position of the active playlist, pushed as {"type": "playlist", ...} on
+// the /ws/live socket and returned by GET /api/playlists/status.
+export interface PlaylistStatus {
+  playlist_id: number | null;
+  index: number;
+  scene_id: number | null;
+  next_scene_id: number | null;
+  beats_until_advance: number | null;
+  seconds_until_advance: number | null;
+}
+
+// Live snapshot of the show phrase-clock, pushed as {"type": "phrase", ...} on
+// the /ws/live socket and returned by GET /api/phrase.
+export interface PhraseClockState {
+  bpm: number;
+  total_beats: number;
+  phrase_beat: number;
+  phrase_index: number;
+  phrase_beats: number;
+  bar: number;
+  phrase_phase: number;
+}
+
+// The subset of /ws/live messages this feature adds. Consumers still subscribe
+// by `type` string via useLiveMessage; this union just documents the shapes.
+export type LiveMessage =
+  | ({ type: "playlist" } & PlaylistStatus)
+  | ({ type: "phrase" } & PhraseClockState);

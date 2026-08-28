@@ -497,6 +497,13 @@ def phrase_clock_state() -> Any:
     return _render_loop.phrase_clock_state()
 
 
+def playlist_runner() -> Any:
+    """The render loop's PlaylistRunner, or None when the loop hasn't attached
+    one (tests with render disabled) -- callers then fall back to inline DB
+    math. See lumen.effects.playlist_runner."""
+    return _render_loop._playlist_runner
+
+
 def render_loop_instance() -> "RenderLoop":
     """The process-wide render loop, for automation (e.g. the playlist runner)
     that needs to read the phrase-clock or nudge it."""
