@@ -1,3 +1,4 @@
+import copy
 from datetime import UTC, datetime
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -30,6 +31,29 @@ def create_effect(payload: EffectCreate, session: Session = Depends(get_session)
         description=payload.description,
         graph=payload.graph,
         exposed_params=[p.model_dump() for p in payload.exposed_params],
+    )
+    session.add(effect)
+    session.commit()
+    session.refresh(effect)
+    return effect
+
+
+@router.post("/{effect_id}/duplicate", response_model=EffectRead, status_code=201)
+def duplicate_effect(effect_id: int, session: Session = Depends(get_session)) -> Effect:
+    source = session.get(Effect, effect_id)
+    if source is None:
+        raise HTTPException(404, "effect not found")
+    existing_names = set(session.exec(select(Effect.name)).all())
+    name = f"{source.name} (copy)"
+    n = 2
+    while name in existing_names:
+        name = f"{source.name} (copy {n})"
+        n += 1
+    effect = Effect(
+        name=name,
+        description=source.description,
+        graph=copy.deepcopy(source.graph),
+        exposed_params=[dict(p) for p in source.exposed_params],
     )
     session.add(effect)
     session.commit()

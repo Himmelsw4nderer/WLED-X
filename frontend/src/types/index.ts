@@ -124,6 +124,7 @@ export interface ConsoleState {
   active_scene_id: number | null;
   param_overrides: Record<string, number>;
   hype: number;
+  audio_source: string;
 }
 
 export interface PreviewRequest {

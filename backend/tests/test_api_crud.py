@@ -171,3 +171,42 @@ def test_effect_and_scene_roundtrip(client):
 
     resp = client.patch(f"/api/scenes/{scene['id']}", json={"active": True})
     assert resp.json()["active"] is True
+
+
+def test_duplicate_effect(client):
+    graph = {
+        "nodes": [
+            {"id": "n1", "type": "time", "position": {"x": 0, "y": 0}, "data": {"speed": 1}},
+            {"id": "n2", "type": "sine", "position": {"x": 100, "y": 0}, "data": {}},
+        ],
+        "edges": [{"id": "e1", "source": "n1", "target": "n2"}],
+    }
+    exposed = [
+        {"node_id": "n1", "param_key": "speed", "label": "Speed", "min": 0, "max": 5, "default": 1}
+    ]
+    original = client.post(
+        "/api/effects",
+        json={"name": "Wave", "description": "a wave", "graph": graph, "exposed_params": exposed},
+    ).json()
+
+    resp = client.post(f"/api/effects/{original['id']}/duplicate")
+    assert resp.status_code == 201
+    copy1 = resp.json()
+    assert copy1["id"] != original["id"]
+    assert copy1["name"] == "Wave (copy)"
+    assert copy1["graph"] == original["graph"]
+    assert copy1["exposed_params"] == original["exposed_params"]
+
+    resp = client.post(f"/api/effects/{original['id']}/duplicate")
+    assert resp.status_code == 201
+    assert resp.json()["name"] == "Wave (copy 2)"
+
+    assert client.post("/api/effects/999999/duplicate").status_code == 404
+
+    # Mutating the copy must not touch the original.
+    mutated = dict(copy1["graph"])
+    mutated["nodes"] = mutated["nodes"] + [{"id": "n3", "type": "out"}]
+    resp = client.patch(f"/api/effects/{copy1['id']}", json={"graph": mutated})
+    assert resp.status_code == 200
+    assert len(resp.json()["graph"]["nodes"]) == 3
+    assert len(client.get(f"/api/effects/{original['id']}").json()["graph"]["nodes"]) == 2

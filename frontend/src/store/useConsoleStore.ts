@@ -12,6 +12,7 @@ interface ConsoleStore extends ConsoleState {
   setMasterBrightness: (value: number) => void;
   setParamOverride: (key: string, value: number) => void;
   setActiveScene: (sceneId: number | null) => void;
+  setAudioSource: (name: string) => void;
   hit: () => void;
 }
 
@@ -22,6 +23,7 @@ export const useConsoleStore = create<ConsoleStore>((set, get) => ({
   active_scene_id: null,
   param_overrides: {},
   hype: 0,
+  audio_source: "desktop",
 
   connect: () => {
     if (connected) return;
@@ -47,6 +49,11 @@ export const useConsoleStore = create<ConsoleStore>((set, get) => ({
   setActiveScene: (sceneId) => {
     set({ active_scene_id: sceneId });
     liveSocket.send({ type: "console_set", active_scene_id: sceneId });
+  },
+
+  setAudioSource: (name) => {
+    set({ audio_source: name });
+    liveSocket.send({ type: "console_set", audio_source: name });
   },
 
   hit: () => {

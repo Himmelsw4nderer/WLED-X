@@ -51,6 +51,7 @@ export const effectsApi = {
   list: () => api.get<Effect[]>("/api/effects"),
   create: (payload: EffectCreate) => api.post<Effect>("/api/effects", payload),
   update: (id: number, payload: EffectUpdate) => api.patch<Effect>(`/api/effects/${id}`, payload),
+  duplicate: (id: number) => api.post<Effect>(`/api/effects/${id}/duplicate`),
   remove: (id: number) => api.delete<void>(`/api/effects/${id}`),
   preview: (payload: PreviewRequest) => api.post<PreviewResponse>("/api/effects/preview", payload),
 };
