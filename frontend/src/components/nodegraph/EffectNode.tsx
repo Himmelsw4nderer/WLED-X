@@ -27,11 +27,8 @@ function EffectNodeComponent({ id, type, data, selected }: NodeProps<Record<stri
   const standaloneParams = descriptor.params.filter((p) => !inputParamKeys.has(p.key));
 
   return (
-    <div
-      className={`effect-node ${selected ? "effect-node--selected" : ""}`}
-      style={{ borderTopColor: categoryColor(descriptor.category) }}
-    >
-      <div className="effect-node__header">
+    <div className={`effect-node ${selected ? "effect-node--selected" : ""}`}>
+      <div className="effect-node__header" style={{ background: categoryColor(descriptor.category) }}>
         <span className="effect-node__label">{descriptor.label}</span>
         <span className="effect-node__category">{descriptor.category}</span>
       </div>
@@ -46,6 +43,7 @@ function EffectNodeComponent({ id, type, data, selected }: NodeProps<Record<stri
                 position={Position.Left}
                 id={socket.key}
                 className="effect-node__handle"
+                data-socket-type={socket.type}
                 style={{ background: SOCKET_COLORS[socket.type] }}
               />
               <span className="effect-node__socket-label" title={socket.type}>
@@ -89,6 +87,7 @@ function EffectNodeComponent({ id, type, data, selected }: NodeProps<Record<stri
               position={Position.Right}
               id={socket.key}
               className="effect-node__handle"
+              data-socket-type={socket.type}
               style={{ background: SOCKET_COLORS[socket.type] }}
             />
           </div>

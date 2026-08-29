@@ -12,7 +12,7 @@
 .builder-page__panel {
   width: 320px;
   flex: none;
-  border-left: 1px solid var(--border);
+  border-left: 3px solid var(--border);
   background: var(--bg-elevated);
   display: flex;
   flex-direction: column;
@@ -30,7 +30,9 @@
 
 .builder-panel__header h2 {
   margin: 0;
-  font-size: 1rem;
+  font-family: var(--font-display);
+  font-size: 1.05rem;
+  color: var(--text);
 }
 
 .fixture-list {
@@ -48,9 +50,9 @@
   align-items: center;
   justify-content: space-between;
   background: var(--bg);
-  border: 1px solid var(--border);
+  border: 2px solid var(--border);
   color: var(--text);
-  border-radius: 6px;
+  border-radius: 8px;
   padding: 0.5rem 0.7rem;
   font-size: 0.85rem;
   cursor: pointer;
@@ -58,16 +60,16 @@
 }
 
 .fixture-list__item:hover {
-  border-color: var(--accent);
+  border-color: var(--violet);
 }
 
 .fixture-list__item--active {
-  border-color: var(--accent);
-  background: var(--accent-soft);
+  border-color: var(--gold);
+  background: rgba(255, 201, 60, 0.1);
 }
 
 .fixture-list__item--conflict {
-  border-color: #ffcf6b;
+  border-color: var(--ember);
 }
 
 .fixture-list__meta {
@@ -126,7 +128,7 @@
 }
 
 .fixture-editor__channel-warning {
-  color: #ffcf6b;
+  color: var(--ember);
 }
 
 .fixture-editor__points-header {

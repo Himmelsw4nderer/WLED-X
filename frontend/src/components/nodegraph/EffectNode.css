@@ -1,47 +1,55 @@
 .effect-node {
   min-width: 210px;
   background: var(--bg-elevated);
-  border: 1px solid var(--border);
-  border-top: 3px solid var(--accent);
-  border-radius: 8px;
+  border: 3px solid var(--border);
+  border-radius: 10px;
   color: var(--text);
   font-size: 0.78rem;
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
+  overflow: hidden;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.5);
 }
 
 .effect-node--selected {
-  border-color: var(--accent);
-  box-shadow: 0 0 0 2px var(--accent-soft);
+  border-color: var(--gold);
+  box-shadow: 0 0 0 2px rgba(255, 201, 60, 0.35);
 }
 
 .effect-node--unknown {
   min-width: 160px;
   padding: 0.6rem;
   background: var(--bg-elevated);
-  border: 1px solid #ff6b6b;
-  border-radius: 8px;
-  color: #ff9c9c;
+  border: 3px solid var(--accent);
+  border-radius: 10px;
+  color: #ff7eb4;
   font-size: 0.78rem;
 }
 
+/* Header is a solid, category-colored bar (the "part number" plate), not
+   just an accent line -- matches the Patch Bay node mock. Background color
+   is set inline per-node from categoryColor(); text always reads dark
+   against it since categoryColor() produces mid-to-light hues. */
 .effect-node__header {
   display: flex;
   align-items: baseline;
   justify-content: space-between;
   gap: 0.5rem;
-  padding: 0.45rem 0.6rem;
-  border-bottom: 1px solid var(--border);
+  padding: 0.5rem 0.65rem;
+  color: #14101f;
 }
 
 .effect-node__label {
-  font-weight: 600;
+  font-family: var(--font-label);
+  font-size: 0.68rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  font-weight: 700;
 }
 
 .effect-node__category {
-  color: var(--text-dim);
-  font-size: 0.65rem;
+  font-size: 0.6rem;
   text-transform: uppercase;
   letter-spacing: 0.04em;
+  opacity: 0.75;
 }
 
 .effect-node__body {
@@ -79,8 +87,23 @@
   white-space: nowrap;
 }
 
+/* Socket shape carries type, so a cable reads at a glance even without
+   color: scalar=circle, field=square, color=diamond. Shape is set on the
+   handle itself via a data attribute keyed off the socket type. */
 .effect-node__handle {
-  width: 9px;
-  height: 9px;
-  border: 1px solid var(--bg);
+  width: 10px;
+  height: 10px;
+  border: 2px solid var(--bg-elevated);
+  border-radius: 0;
+}
+
+.effect-node__handle[data-socket-type="scalar"] {
+  border-radius: 50%;
+}
+
+/* Both .react-flow__handle-left and -right position via `translate(0, -50%)`
+   (see reactflow's base.css) -- reproduce that exactly and add the rotate,
+   since this selector outranks the base one and would otherwise clobber it. */
+.effect-node__handle[data-socket-type="color"] {
+  transform: translate(0, -50%) rotate(45deg);
 }

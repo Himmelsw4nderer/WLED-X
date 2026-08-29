@@ -228,7 +228,7 @@ export function EffectEditorPage() {
         <p className="effect-editor__hint">
           Toggle Debug below to see this graph running live against a synthetic strip — every node shows its
           current output. For the real thing, assign this effect to a fixture from the{" "}
-          <Link to="/console">Console</Link> and watch it on the <Link to="/builder">3D Builder</Link> page.
+          <Link to="/console">Show</Link> and watch it on the <Link to="/builder">Room</Link> page.
         </p>
       </header>
 

@@ -1,4 +1,4 @@
-from lumen.effects.phrase_clock import PhraseClock
+from wled_x.effects.phrase_clock import PhraseClock
 
 
 def _beats(clock: PhraseClock, count: int, bpm: float = 120.0) -> list:

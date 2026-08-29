@@ -39,7 +39,7 @@ export function HitButton() {
   return (
     <div className="hit-button">
       <button className="hit-button__btn" onClick={handleHit}>
-        HIT
+        HIT!
       </button>
       <div className="hit-button__meter">
         <div className="hit-button__meter-fill" style={{ width: `${displayHype * 100}%` }} />

@@ -2,7 +2,7 @@ import { create } from "zustand";
 import { liveSocket } from "../api/ws";
 import type { ConsoleState } from "../types";
 
-// Wire contract with the backend console module (lumen/console + api/ws.py):
+// Wire contract with the backend console module (wled_x/console + api/ws.py):
 //   server -> client: {"type": "console_state", ...ConsoleState}
 //   client -> server: {"type": "console_set", ...Partial<ConsoleState>}
 //   client -> server: {"type": "console_hit"}  -- pulses `hype` to 1.0, decays server-side

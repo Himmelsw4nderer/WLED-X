@@ -20,7 +20,7 @@
   flex-direction: column;
   gap: 0.4rem;
   padding: 0.85rem 1.5rem;
-  border-bottom: 1px solid var(--border);
+  border-bottom: 3px solid var(--border);
   background: var(--bg-elevated);
 }
 
@@ -44,8 +44,8 @@
 .effect-editor__name {
   flex: 1;
   min-width: 0;
+  font-family: var(--font-display);
   font-size: 1.1rem;
-  font-weight: 600;
   padding: 0.35rem 0.6rem;
 }
 
@@ -62,7 +62,7 @@
 }
 
 .effect-editor__save-error {
-  color: #ff9c9c;
+  color: #ff7eb4;
   font-size: 0.8rem;
 }
 

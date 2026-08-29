@@ -14,8 +14,9 @@ const DEFAULT_LED_COLOR = new THREE.Color(0xcfd4e0);
 // setColorAt only reads the value, it doesn't keep the instance.
 const SCRATCH_COLOR = new THREE.Color();
 const LED_RADIUS = 0.03;
-const SELECTED_LINE_COLOR = "#7c5cff";
-const IDLE_LINE_COLOR = "#4a4f5c";
+// Selection is always gold, per the WLED-X house rules.
+const SELECTED_LINE_COLOR = "#ffc93c";
+const IDLE_LINE_COLOR = "#4a3f6b";
 
 interface FixtureStripProps {
   fixture: Fixture;

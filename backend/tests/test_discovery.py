@@ -2,8 +2,8 @@ import ipaddress
 
 import httpx
 
-from lumen.discovery import mdns, scanner
-from lumen.discovery.schemas import DiscoveredDevice
+from wled_x.discovery import mdns, scanner
+from wled_x.discovery.schemas import DiscoveredDevice
 
 
 class _FakeServiceInfo:

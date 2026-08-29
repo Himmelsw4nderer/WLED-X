@@ -1,6 +1,6 @@
 import asyncio
 
-from lumen.api.ws import ConnectionManager
+from wled_x.api.ws import ConnectionManager
 
 
 class _FakeSocket:

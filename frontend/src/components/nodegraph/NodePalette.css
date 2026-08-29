@@ -2,16 +2,17 @@
   width: 190px;
   flex: none;
   overflow-y: auto;
-  border-right: 1px solid var(--border);
+  border-right: 3px solid var(--border);
   background: var(--bg-elevated);
   padding: 0.75rem;
 }
 
 .node-palette__title {
-  font-size: 0.75rem;
+  font-family: var(--font-label);
+  font-size: 0.68rem;
   text-transform: uppercase;
-  letter-spacing: 0.04em;
-  color: var(--text-dim);
+  letter-spacing: 0.1em;
+  color: var(--gold);
   margin-bottom: 0.6rem;
 }
 
@@ -25,8 +26,10 @@
 }
 
 .node-palette__group-title {
-  font-size: 0.68rem;
-  text-transform: capitalize;
+  font-family: var(--font-label);
+  font-size: 0.62rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
   color: var(--text-dim);
   margin-bottom: 0.35rem;
 }
@@ -34,15 +37,15 @@
 .node-palette__item {
   padding: 0.4rem 0.55rem;
   margin-bottom: 0.3rem;
-  border: 1px solid var(--border);
-  border-radius: 6px;
+  border: 2px solid var(--border);
+  border-radius: 7px;
   background: var(--bg);
   font-size: 0.78rem;
   cursor: grab;
 }
 
 .node-palette__item:hover {
-  border-color: var(--accent);
+  border-color: var(--violet);
   color: var(--text);
 }
 

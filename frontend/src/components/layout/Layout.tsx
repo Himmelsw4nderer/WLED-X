@@ -2,17 +2,19 @@ import { NavLink, Outlet } from "react-router-dom";
 import "./Layout.css";
 
 const navItems = [
-  { to: "/devices", label: "Devices" },
-  { to: "/builder", label: "Builder" },
-  { to: "/effects", label: "Effects" },
-  { to: "/console", label: "Console" },
+  { to: "/builder", label: "Room" },
+  { to: "/effects", label: "Patch" },
+  { to: "/console", label: "Show" },
+  { to: "/devices", label: "Gear" },
 ];
 
 export function Layout() {
   return (
     <div className="app-shell">
       <nav className="app-nav">
-        <span className="app-nav__brand">Lumen</span>
+        <span className="app-nav__brand">
+          WLED<span className="app-nav__brand-x">-X</span>
+        </span>
         <div className="app-nav__links">
           {navItems.map((item) => (
             <NavLink

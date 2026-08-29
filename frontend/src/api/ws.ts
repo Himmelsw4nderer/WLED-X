@@ -1,4 +1,4 @@
-// Typed client for the single /ws/live socket (see backend/src/lumen/api/ws.py).
+// Typed client for the single /ws/live socket (see backend/src/wled_x/api/ws.py).
 // Every message is a JSON object with a `type` discriminator. Consumers subscribe
 // to a type rather than opening their own connection, so the whole app shares
 // one socket with auto-reconnect.

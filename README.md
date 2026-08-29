@@ -1,4 +1,4 @@
-# Lumen
+# WLED-X
 
 A self-hosted lighting controller for [WLED](https://kno.wled.ge/) devices:
 discover devices on your LAN, lay LED strips out in a 3D scene, build
@@ -28,7 +28,7 @@ Backend (FastAPI on `:8000`):
 ```sh
 cd backend
 uv sync
-uv run lumen
+uv run wled-x
 ```
 
 Frontend (Vite dev server on `:5173`, proxies API/WS calls to the backend):

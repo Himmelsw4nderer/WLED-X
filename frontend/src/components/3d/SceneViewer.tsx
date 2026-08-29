@@ -18,15 +18,15 @@ export function SceneViewer({ fixtures, selectedId, onSelect }: SceneViewerProps
       camera={{ position: [3, 3, 5], fov: 50 }}
       onPointerMissed={() => onSelect(null)}
     >
-      <color attach="background" args={["#0b0d12"]} />
+      <color attach="background" args={["#0d0a16"]} />
       <ambientLight intensity={0.7} />
       <directionalLight position={[4, 6, 3]} intensity={1.1} />
       <directionalLight position={[-3, 2, -4]} intensity={0.3} />
       <axesHelper args={[1]} />
       <Grid
         args={[20, 20]}
-        cellColor="#262b36"
-        sectionColor="#3a3f4d"
+        cellColor="#2a2140"
+        sectionColor="#22e1ff"
         fadeDistance={25}
         infiniteGrid
       />

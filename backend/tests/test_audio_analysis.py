@@ -1,6 +1,6 @@
 import numpy as np
 
-from lumen.audio.analysis import NUM_BANDS, AudioAnalyzer, _OnsetTrack
+from wled_x.audio.analysis import NUM_BANDS, AudioAnalyzer, _OnsetTrack
 
 
 def _sine_block(

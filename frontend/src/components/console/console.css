@@ -17,8 +17,8 @@
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
-  border: 1px solid var(--border);
-  border-radius: 10px;
+  border: 3px solid var(--border);
+  border-radius: 14px;
   background: var(--bg-elevated);
   padding: 0.6rem 1rem;
 }
@@ -39,8 +39,8 @@
 }
 
 .fader-group {
-  border: 1px solid var(--border);
-  border-radius: 10px;
+  border: 3px solid var(--border);
+  border-radius: 14px;
   background: var(--bg-elevated);
   padding: 1rem 1.25rem;
 }
@@ -48,9 +48,10 @@
 .fader-group h3 {
   margin: 0 0 0.85rem;
   font-size: 0.85rem;
-  color: var(--text-dim);
+  font-family: var(--font-label);
+  color: var(--gold);
   text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.12em;
 }
 
 .fader-group__row {
@@ -85,8 +86,8 @@
 }
 
 .scene-transport {
-  border: 1px solid var(--border);
-  border-radius: 10px;
+  border: 3px solid var(--border);
+  border-radius: 14px;
   background: var(--bg-elevated);
   padding: 1rem;
   display: flex;
@@ -104,9 +105,10 @@
 .scene-transport__head h2 {
   margin: 0;
   font-size: 0.85rem;
-  color: var(--text-dim);
+  font-family: var(--font-label);
+  color: var(--gold);
   text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.12em;
 }
 
 .scene-transport__list {
@@ -161,8 +163,8 @@
 }
 
 .scene-row__dot--live {
-  background: #33e08a;
-  box-shadow: 0 0 6px #33e08a;
+  background: var(--accent);
+  box-shadow: 0 0 8px var(--accent);
 }
 
 .scene-row__name {
@@ -177,8 +179,8 @@
 }
 
 .master-fader {
-  border: 1px solid var(--border);
-  border-radius: 10px;
+  border: 3px solid var(--border);
+  border-radius: 14px;
   background: var(--bg-elevated);
   padding: 1rem;
   display: flex;
@@ -191,9 +193,10 @@
   display: flex;
   justify-content: space-between;
   font-size: 0.8rem;
-  color: var(--text-dim);
+  font-family: var(--font-label);
+  color: var(--gold);
   text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.12em;
 }
 
 .master-fader__value {
@@ -209,8 +212,8 @@
 }
 
 .global-source-select {
-  border: 1px solid var(--border);
-  border-radius: 10px;
+  border: 3px solid var(--border);
+  border-radius: 14px;
   background: var(--bg-elevated);
   padding: 1rem;
   display: flex;
@@ -221,9 +224,10 @@
 
 .global-source-select__head {
   font-size: 0.8rem;
-  color: var(--text-dim);
+  font-family: var(--font-label);
+  color: var(--gold);
   text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.12em;
 }
 
 .global-source-select__input {
@@ -236,8 +240,8 @@
 }
 
 .hit-button {
-  border: 1px solid var(--border);
-  border-radius: 10px;
+  border: 3px solid var(--border);
+  border-radius: 14px;
   background: var(--bg-elevated);
   padding: 1rem 1.5rem;
   display: flex;
@@ -252,12 +256,13 @@
   width: 92px;
   height: 92px;
   border-radius: 50%;
-  border: 2px solid var(--accent);
-  background: radial-gradient(circle at 30% 30%, var(--accent), #4b32b0);
-  color: #fff;
-  font-weight: 800;
+  border: 3px solid #b01059;
+  background: var(--accent);
+  box-shadow: 0 0 28px rgba(255, 46, 136, 0.45);
+  color: #40001c;
+  font-family: var(--font-display);
   font-size: 1rem;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.02em;
   cursor: pointer;
   transition:
     transform 0.06s ease,
@@ -265,7 +270,7 @@
 }
 
 .hit-button__btn:hover {
-  box-shadow: 0 0 18px var(--accent-soft);
+  box-shadow: 0 0 38px rgba(255, 46, 136, 0.6);
 }
 
 .hit-button__btn:active {
@@ -274,16 +279,17 @@
 
 .hit-button__meter {
   width: 100%;
-  height: 6px;
-  border-radius: 3px;
+  height: 8px;
+  border-radius: 4px;
   background: var(--bg);
-  border: 1px solid var(--border);
+  border: 2px solid var(--border);
   overflow: hidden;
 }
 
 .hit-button__meter-fill {
   height: 100%;
-  background: linear-gradient(90deg, #ff6b6b, var(--accent));
+  background: var(--ember);
+  box-shadow: 0 0 10px var(--ember);
   transition: width 80ms linear;
 }
 
@@ -298,6 +304,7 @@
   height: 12px;
   border-radius: 50%;
   background: var(--accent);
+  box-shadow: 0 0 10px var(--accent);
   flex-shrink: 0;
   transition:
     opacity 60ms linear,
@@ -306,18 +313,23 @@
 
 .audio-meter__level {
   width: 140px;
-  height: 10px;
+  height: 14px;
   background: var(--bg);
-  border: 1px solid var(--border);
+  border: 2px solid var(--border);
   border-radius: 5px;
   overflow: hidden;
   flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 0 2px;
 }
 
-.audio-meter__level-fill {
-  height: 100%;
-  background: linear-gradient(90deg, #33e08a, var(--accent));
-  transition: width 60ms linear;
+.audio-meter__level-segment {
+  flex: 1;
+  height: 70%;
+  border-radius: 1px;
+  background: var(--border);
 }
 
 .audio-meter__bands {
@@ -331,7 +343,7 @@
 .audio-meter__band {
   flex: 1;
   min-width: 2px;
-  background: var(--accent);
+  background: var(--cyan);
   border-radius: 2px 2px 0 0;
   transition: height 60ms linear;
 }
@@ -357,7 +369,7 @@
 }
 
 .audio-source-picker__error {
-  color: #ff6b6b;
+  color: #ff7eb4;
   font-size: 0.75rem;
   width: 100%;
 }
@@ -408,8 +420,8 @@
 
 .scene-editor {
   background: var(--bg-elevated);
-  border: 1px solid var(--border);
-  border-radius: 10px;
+  border: 3px solid var(--border);
+  border-radius: 14px;
   padding: 1.25rem;
   width: min(640px, 100%);
   max-height: 85vh;
@@ -427,12 +439,13 @@
 
 .scene-editor__head h2 {
   margin: 0;
-  font-size: 1rem;
+  font-family: var(--font-display);
+  font-size: 1.1rem;
 }
 
 .scene-editor__assignment {
-  border: 1px solid var(--border);
-  border-radius: 8px;
+  border: 2px solid var(--border);
+  border-radius: 10px;
   padding: 0.75rem;
   display: flex;
   flex-direction: column;

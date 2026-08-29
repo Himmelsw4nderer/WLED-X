@@ -1,5 +1,5 @@
 [project]
-name = "lumen"
+name = "wled-x"
 version = "0.1.0"
 description = "WLED-based lighting controller: device discovery, audio-reactive node-graph effects, 3D fixture layout, live console"
 readme = "README.md"
@@ -17,7 +17,7 @@ dependencies = [
 ]
 
 [project.scripts]
-lumen = "lumen.main:run"
+wled-x = "wled_x.main:run"
 
 [dependency-groups]
 dev = [

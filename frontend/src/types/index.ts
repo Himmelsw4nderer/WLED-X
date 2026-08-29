@@ -1,4 +1,4 @@
-// TS mirrors of backend/src/lumen/api/schemas.py — keep in sync by hand, these
+// TS mirrors of backend/src/wled_x/api/schemas.py — keep in sync by hand, these
 // are intentionally plain data shapes with no client-side business logic.
 
 export type Point3 = [number, number, number];

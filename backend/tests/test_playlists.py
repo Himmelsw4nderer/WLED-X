@@ -2,12 +2,12 @@ import pytest
 from sqlmodel import Session, SQLModel, create_engine, select
 from sqlmodel.pool import StaticPool
 
-from lumen import db
-from lumen.api.schemas import ConsoleState
-from lumen.effects.phrase_clock import PhraseTick
-from lumen.effects.playlist_runner import PlaylistRunner, compute_next_index
-from lumen.models.playlist import Playlist
-from lumen.models.scene import Scene
+from wled_x import db
+from wled_x.api.schemas import ConsoleState
+from wled_x.effects.phrase_clock import PhraseTick
+from wled_x.effects.playlist_runner import PlaylistRunner, compute_next_index
+from wled_x.models.playlist import Playlist
+from wled_x.models.scene import Scene
 
 # --------------------------------------------------------------------------
 # API tests -- use the shared `client` fixture (render loop disabled), so the

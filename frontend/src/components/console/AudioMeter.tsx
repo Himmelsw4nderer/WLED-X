@@ -1,6 +1,17 @@
 import { useCallback, useState } from "react";
 import { useLiveMessage } from "../../api/useLiveSocket";
 
+// Meters are stacked segments, never a smooth bar, per the WLED-X house
+// rules -- lime under 60%, gold to 85%, ember above.
+const LEVEL_SEGMENTS = 12;
+
+function segmentColor(index: number, total: number): string {
+  const threshold = (index + 1) / total;
+  if (threshold > 0.85) return "var(--ember)";
+  if (threshold > 0.6) return "var(--gold)";
+  return "var(--lime)";
+}
+
 export function AudioMeter() {
   const [level, setLevel] = useState(0);
   const [bands, setBands] = useState<number[]>([]);
@@ -23,7 +34,16 @@ export function AudioMeter() {
         style={{ opacity: 0.25 + beat * 0.75, transform: `scale(${1 + beat * 0.6})` }}
       />
       <div className="audio-meter__level">
-        <div className="audio-meter__level-fill" style={{ width: `${Math.min(level, 1) * 100}%` }} />
+        {Array.from({ length: LEVEL_SEGMENTS }, (_, i) => {
+          const lit = Math.min(level, 1) * LEVEL_SEGMENTS > i;
+          return (
+            <div
+              key={i}
+              className="audio-meter__level-segment"
+              style={{ background: lit ? segmentColor(i, LEVEL_SEGMENTS) : undefined }}
+            />
+          );
+        })}
       </div>
       <div className="audio-meter__bands">
         {bands.map((b, i) => (

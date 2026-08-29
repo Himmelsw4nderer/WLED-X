@@ -2,7 +2,7 @@ import struct
 
 import numpy as np
 
-from lumen.output import ddp
+from wled_x.output import ddp
 
 
 class FakeSocket:

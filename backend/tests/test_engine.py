@@ -4,12 +4,12 @@ import pytest
 from sqlmodel import Session, SQLModel, create_engine
 from sqlmodel.pool import StaticPool
 
-from lumen import db
-from lumen.api.schemas import ConsoleState
-from lumen.effects import engine as engine_module
-from lumen.effects.engine import RenderLoop
-from lumen.models.audio_source import AudioSourceConfig
-from lumen.models.effect import Effect
+from wled_x import db
+from wled_x.api.schemas import ConsoleState
+from wled_x.effects import engine as engine_module
+from wled_x.effects.engine import RenderLoop
+from wled_x.models.audio_source import AudioSourceConfig
+from wled_x.models.effect import Effect
 
 
 class _FakeCapture:

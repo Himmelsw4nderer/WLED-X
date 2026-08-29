@@ -112,7 +112,7 @@ export function DevicesPage() {
   return (
     <div className="page devices-page">
       <header className="devices-page__header">
-        <h1>Devices</h1>
+        <h1>Gear</h1>
         <button className="btn btn--accent" onClick={() => void scan()} disabled={scanning}>
           {scanning ? "Scanning…" : "Scan network"}
         </button>
@@ -126,7 +126,7 @@ export function DevicesPage() {
           <ul className="device-list">
             {newlyDiscovered.map((d) => (
               <li key={d.ip} className="device-row">
-                <span className="device-row__dot device-row__dot--unknown" />
+                <span className="badge badge--warn">New</span>
                 <span className="device-row__name">{d.name || d.ip}</span>
                 <span className="device-row__ip">{d.ip}</span>
                 <span className="device-row__leds">{d.led_count} LEDs</span>
@@ -153,10 +153,9 @@ export function DevicesPage() {
           <ul className="device-list">
             {devices.map((d) => (
               <li key={d.id} className="device-row">
-                <span
-                  className={`device-row__dot ${d.online ? "device-row__dot--online" : "device-row__dot--offline"}`}
-                  title={d.online ? "Online" : "Offline"}
-                />
+                <span className={`badge ${d.online ? "badge--ok" : "badge--off"}`}>
+                  {d.online ? "Online" : "Offline"}
+                </span>
                 {renamingId === d.id ? (
                   <input
                     className="device-row__rename-input"

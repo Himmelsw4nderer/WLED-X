@@ -1,9 +1,9 @@
 import numpy as np
 import pytest
 
-from lumen.audio.analysis import NUM_BANDS, AudioFrame
-from lumen.effects.graph import EvalContext, GraphError, evaluate_graph
-from lumen.effects.nodes import NODE_REGISTRY
+from wled_x.audio.analysis import NUM_BANDS, AudioFrame
+from wled_x.effects.graph import EvalContext, GraphError, evaluate_graph
+from wled_x.effects.nodes import NODE_REGISTRY
 
 
 def _context(n: int = 4, positions: np.ndarray | None = None, scene_bounds=None) -> EvalContext:

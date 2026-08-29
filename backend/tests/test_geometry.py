@@ -1,6 +1,6 @@
 import numpy as np
 
-from lumen.effects.geometry import led_positions, scene_bounds
+from wled_x.effects.geometry import led_positions, scene_bounds
 
 
 def test_led_positions_distributes_evenly_along_a_straight_strip():

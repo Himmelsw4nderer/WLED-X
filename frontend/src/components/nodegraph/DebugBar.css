@@ -38,12 +38,12 @@
 
 .debug-bar__error {
   font-size: 0.78rem;
-  color: #ff9c9c;
+  color: #ff7eb4;
 }
 
 .debug-bar__warning {
   font-size: 0.78rem;
-  color: #ffcf6b;
+  color: var(--ember);
 }
 
 .debug-bar__strip {

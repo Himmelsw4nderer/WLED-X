@@ -1,14 +1,14 @@
-# Lumen architecture
+# WLED-X architecture
 
-Lumen is a WLED lighting controller: discover WLED devices, lay LED fixtures
+WLED-X is a WLED lighting controller: discover WLED devices, lay LED fixtures
 out in a 3D scene, build audio-reactive effects from small function nodes,
 and drive shows from a live console.
 
 ## Components
 
 ```
-backend/   Python (FastAPI + SQLModel), package `lumen`
-  src/lumen/
+backend/   Python (FastAPI + SQLModel), package `wled_x`
+  src/wled_x/
     config.py      Settings (env-driven): db path, host/port, DDP port, audio device
     db.py          SQLModel engine + session dependency
     models/         DB tables: Device, Fixture, Effect, Scene

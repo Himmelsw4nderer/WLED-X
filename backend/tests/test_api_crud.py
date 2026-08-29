@@ -15,7 +15,7 @@ def test_audio_sources_are_seeded_with_desktop_enabled_and_mic_disabled(client):
 
 
 def test_audio_devices_lists_discovered_options(client, monkeypatch):
-    from lumen.api import routes_audio
+    from wled_x.api import routes_audio
 
     async def fake_discover():
         return [

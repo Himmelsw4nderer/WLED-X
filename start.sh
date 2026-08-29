@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Starts the Lumen backend (FastAPI, :8000) and frontend (Vite, :5173) together.
+# Starts the WLED-X backend (FastAPI, :8000) and frontend (Vite, :5173) together.
 set -euo pipefail
 
 root="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -14,7 +14,7 @@ cleanup() {
 }
 trap cleanup INT TERM EXIT
 
-(cd "$root/backend" && uv run lumen) &
+(cd "$root/backend" && uv run wled-x) &
 pids+=("$!")
 
 (cd "$root/frontend" && npm run dev) &

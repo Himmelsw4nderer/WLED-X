@@ -4,7 +4,7 @@
 import type { Connection, Edge, Node } from "reactflow";
 import type { NodeSocketType, NodeTypeDescriptor } from "../../types";
 
-export const PALETTE_MIME = "application/x-lumen-node-type";
+export const PALETTE_MIME = "application/x-wled-x-node-type";
 
 let nodeIdCounter = 0;
 

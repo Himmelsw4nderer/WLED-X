@@ -43,7 +43,7 @@
 }
 
 .param-control__json--invalid {
-  border-color: #ff6b6b;
+  border-color: var(--accent);
 }
 
 .param-control__pin {
@@ -71,5 +71,5 @@
 .param-control__pin--active {
   background: var(--accent);
   border-color: var(--accent);
-  color: #fff;
+  color: #40001c;
 }

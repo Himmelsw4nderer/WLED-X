@@ -3,9 +3,9 @@ import pytest
 from sqlmodel import Session, SQLModel, create_engine
 from sqlmodel.pool import StaticPool
 
-from lumen import db
-from lumen.models.device import Device
-from lumen.output import device_manager
+from wled_x import db
+from wled_x.models.device import Device
+from wled_x.output import device_manager
 
 
 @pytest.fixture

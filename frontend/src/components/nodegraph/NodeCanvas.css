@@ -5,7 +5,9 @@
 }
 
 .node-canvas .react-flow {
-  background: var(--bg);
+  background-color: #100c1c;
+  background-image: radial-gradient(rgba(139, 92, 246, 0.24) 1.5px, transparent 1.5px);
+  background-size: 26px 26px;
 }
 
 .node-canvas .react-flow__attribution {
@@ -43,7 +45,7 @@
 }
 
 .node-canvas .react-flow__edge.selected .react-flow__edge-path {
-  stroke: var(--accent);
+  stroke: var(--gold);
 }
 
 .node-canvas .react-flow__handle {

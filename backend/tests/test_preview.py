@@ -1,4 +1,4 @@
-from lumen.api import routes_preview
+from wled_x.api import routes_preview
 
 
 def _edge(edge_id: str, source: str, target: str, target_handle: str) -> dict:

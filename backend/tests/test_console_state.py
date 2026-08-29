@@ -1,6 +1,6 @@
 import asyncio
 
-import lumen.console.state as state_module
+import wled_x.console.state as state_module
 
 
 class _NullManager:

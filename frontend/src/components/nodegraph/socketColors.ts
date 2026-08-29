@@ -1,9 +1,13 @@
 import type { NodeSocketType } from "../../types";
 
+// Colors match the WLED-X socket legend (scalar=gold, field=cyan, color=magenta);
+// each socket type also gets a distinct handle shape in EffectNode.css, since
+// "socket shape carries type" is a house rule -- shape should read even
+// without color.
 export const SOCKET_COLORS: Record<NodeSocketType, string> = {
-  scalar: "#f2b84b",
-  field: "#4dd6b0",
-  color: "#ff6ec7",
+  scalar: "#ffc93c",
+  field: "#22e1ff",
+  color: "#ff2e88",
 };
 
 // Categories are whatever the backend node registry reports, so pick a deterministic

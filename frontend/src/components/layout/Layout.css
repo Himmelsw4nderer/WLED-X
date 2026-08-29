@@ -1,11 +1,23 @@
 :root {
-  --bg: #0b0d12;
-  --bg-elevated: #14171f;
-  --border: #262b36;
-  --text: #e7e9ee;
-  --text-dim: #8b90a0;
-  --accent: #7c5cff;
-  --accent-soft: rgba(124, 92, 255, 0.15);
+  /* WLED-X visual language -- void/panel/bezel dark ramp, three semantic
+     color pairs, glow-only brightness. See WLED-X Visual Language.dc.html. */
+  --bg: #0d0a16;
+  --bg-elevated: #14101f;
+  --bg-raised: #241b3d;
+  --border: #2a2140;
+  --text: #f2ecdf;
+  --text-dim: #6b6382;
+  --accent: #ff2e88;
+  --accent-soft: rgba(255, 46, 136, 0.15);
+  --lime: #b4ff39;
+  --cyan: #22e1ff;
+  --ember: #ff7a1a;
+  --violet: #8b5cf6;
+  --gold: #ffc93c;
+
+  --font-display: "Bungee", sans-serif;
+  --font-label: "Silkscreen", monospace;
+  --font-mono: "Space Mono", monospace;
 }
 
 * {
@@ -22,11 +34,7 @@ body {
   margin: 0;
   background: var(--bg);
   color: var(--text);
-  font-family:
-    system-ui,
-    -apple-system,
-    "Segoe UI",
-    sans-serif;
+  font-family: var(--font-mono);
 }
 
 .app-shell {
@@ -39,27 +47,37 @@ body {
   display: flex;
   align-items: center;
   gap: 2rem;
-  padding: 0.75rem 1.5rem;
-  border-bottom: 1px solid var(--border);
+  padding: 0.65rem 1.5rem;
+  border-bottom: 3px solid var(--border);
   background: var(--bg-elevated);
 }
 
 .app-nav__brand {
-  font-weight: 700;
-  letter-spacing: 0.02em;
+  font-family: var(--font-display);
+  font-size: 1.15rem;
+  color: var(--text);
+  letter-spacing: -0.01em;
+}
+
+.app-nav__brand-x {
+  color: var(--accent);
+  text-shadow: 2px 2px 0 #7a0e3c;
 }
 
 .app-nav__links {
   display: flex;
-  gap: 0.25rem;
+  gap: 0.4rem;
 }
 
 .app-nav__link {
-  padding: 0.4rem 0.75rem;
-  border-radius: 6px;
+  padding: 0.5rem 0.9rem;
+  border-radius: 7px;
   color: var(--text-dim);
   text-decoration: none;
-  font-size: 0.9rem;
+  font-family: var(--font-label);
+  font-size: 0.7rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
 }
 
 .app-nav__link:hover {
@@ -67,8 +85,8 @@ body {
 }
 
 .app-nav__link--active {
-  color: var(--text);
-  background: var(--accent-soft);
+  color: #00323c;
+  background: var(--cyan);
 }
 
 .app-content {

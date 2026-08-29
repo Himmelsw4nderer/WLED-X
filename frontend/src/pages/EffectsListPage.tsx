@@ -78,7 +78,7 @@ export function EffectsListPage() {
   return (
     <div className="page effects-page">
       <header className="effects-page__header">
-        <h1>Effects</h1>
+        <h1>Patch Bay</h1>
         <button className="btn btn--accent" onClick={() => void createEffect()} disabled={creating}>
           {creating ? "Creating…" : "New effect"}
         </button>
