@@ -148,12 +148,10 @@ class PlaylistRunner:
         return scene_ids[nxt]
 
     def _broadcast(self) -> None:
-        try:
-            manager.broadcast_latest({"type": "playlist", **self.status().model_dump()})
-        except RuntimeError:
-            # No running event loop (called from a sync API worker thread with
-            # no WS clients). Nothing to broadcast to in that case anyway.
-            pass
+        # Safe to call from any thread -- see broadcast_latest's docstring.
+        # This can run from a sync API route's worker thread (manual
+        # next/prev/activate) as well as the render loop's own tick().
+        manager.broadcast_latest({"type": "playlist", **self.status().model_dump()})
 
     # -- render-loop entry point ---------------------------------------------
 
