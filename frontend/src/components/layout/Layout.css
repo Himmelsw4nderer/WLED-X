@@ -18,6 +18,50 @@
   --font-display: "Bungee", sans-serif;
   --font-label: "Silkscreen", monospace;
   --font-mono: "Space Mono", monospace;
+
+  /* Deeper-than-void black for recessed wells (viewport, fader tracks, meters). */
+  --void: #08060d;
+
+  /* House radii -- parts get one of three corner sizes, never arbitrary. */
+  --r-sm: 6px;
+  --r-md: 10px;
+  --r-lg: 14px;
+
+  /* Physical-key bottom lip (see .btn in shared.css). */
+  --lip: 6px;
+
+  /* Recessed inset -- anything a control sinks into. */
+  --well: inset 0 2px 8px rgba(0, 0, 0, 0.7);
+
+  /* Brightness is always glow, never a gradient -- one halo per semantic color. */
+  --glow-accent: 0 0 22px rgba(255, 46, 136, 0.45);
+  --glow-cyan: 0 0 18px rgba(34, 225, 255, 0.42);
+  --glow-lime: 0 0 18px rgba(180, 255, 57, 0.42);
+  --glow-gold: 0 0 18px rgba(255, 201, 60, 0.45);
+  --glow-violet: 0 0 18px rgba(139, 92, 246, 0.45);
+  --glow-ember: 0 0 18px rgba(255, 122, 26, 0.45);
+}
+
+/* Silkscreen caps plate -- the one section-header treatment, reused on every
+   panel instead of each component re-declaring the same rule. */
+.section-label {
+  font-family: var(--font-label);
+  font-size: 0.68rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--gold);
+}
+
+.section-label--dim {
+  color: var(--text-dim);
+}
+
+/* Recessed housing a control sits down into. */
+.well {
+  background: var(--void);
+  border: 2px solid var(--border);
+  border-radius: var(--r-sm);
+  box-shadow: var(--well);
 }
 
 * {
@@ -49,7 +93,8 @@ body {
   gap: 2rem;
   padding: 0.65rem 1.5rem;
   border-bottom: 3px solid var(--border);
-  background: var(--bg-elevated);
+  background: linear-gradient(var(--bg-elevated), var(--bg-elevated)) padding-box;
+  box-shadow: 0 3px 0 var(--void);
 }
 
 .app-nav__brand {
@@ -87,6 +132,7 @@ body {
 .app-nav__link--active {
   color: #00323c;
   background: var(--cyan);
+  box-shadow: var(--glow-cyan);
 }
 
 .app-content {

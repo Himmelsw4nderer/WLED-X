@@ -110,58 +110,80 @@ export function ConsolePage() {
     return result;
   }, [activeScene, effectsById]);
 
+  const totalParams = liveEffects.reduce((n, e) => n + e.exposed_params.length, 0);
+
   return (
     <div className="page console-page">
-      <div className="console-page__top">
-        <SceneTransport
-          scenes={scenes}
-          loading={scenesLoading}
-          activeSceneId={activeSceneId}
-          onSelect={(scene) => void selectScene(scene)}
-          onCreateNew={() => setEditorState({ mode: "create" })}
-          onEdit={(scene) => setEditorState({ mode: "edit", scene })}
-        />
-        <MasterFader value={masterBrightness} onChange={setMasterBrightness} />
-        <GlobalSourceSelect />
-        <HitButton />
-      </div>
+      <div className="console-deck">
+        <section className="console-deck__master panel">
+          <MasterFader value={masterBrightness} onChange={setMasterBrightness} />
+          <HitButton />
+        </section>
 
-      <div className="console-page__meter">
-        <AudioMeter />
-        <AudioSourcePicker />
+        <section className="console-deck__cues panel">
+          <SceneTransport
+            scenes={scenes}
+            loading={scenesLoading}
+            activeSceneId={activeSceneId}
+            onSelect={(scene) => void selectScene(scene)}
+            onCreateNew={() => setEditorState({ mode: "create" })}
+            onEdit={(scene) => setEditorState({ mode: "edit", scene })}
+          />
+        </section>
+
+        <section className="console-deck__audio panel">
+          <span className="section-label">Audio</span>
+          <AudioMeter />
+          <div className="console-deck__audio-io">
+            <GlobalSourceSelect />
+            <AudioSourcePicker />
+          </div>
+        </section>
       </div>
 
       <PlaylistPanel />
 
-      <div className="console-page__faders">
-        {!activeScene && <p className="console-page__hint">No scene is live. Pick one above to start riding faders.</p>}
-        {activeScene && liveEffects.length === 0 && (
-          <p className="console-page__hint">This scene has no effect assignments yet — edit it to add some.</p>
-        )}
-        {liveEffects.map((effect) => (
-          <section key={effect.id} className="fader-group">
-            <h3>{effect.name}</h3>
-            <div className="fader-group__row">
-              {effect.exposed_params.map((param) => {
-                const key = `${effect.id}:${param.node_id}:${param.param_key}`;
-                const value = paramOverrides[key] ?? param.default;
-                return (
-                  <ParamFader
-                    key={key}
-                    label={param.label}
-                    min={param.min}
-                    max={param.max}
-                    value={value}
-                    onChange={(v) => setParamOverride(key, v)}
-                  />
-                );
-              })}
-              {effect.exposed_params.length === 0 && (
-                <p className="console-page__hint">No exposed params on this effect.</p>
-              )}
-            </div>
-          </section>
-        ))}
+      <div className="console-page__rack panel">
+        <div className="console-page__rack-head">
+          <span className="section-label">Fader Bank</span>
+          <span className="console-page__rack-meta">
+            {activeScene ? activeScene.name : "no scene live"}
+            {totalParams > 0 && ` · ${totalParams} channel${totalParams === 1 ? "" : "s"}`}
+          </span>
+        </div>
+
+        <div className="console-page__faders">
+          {!activeScene && (
+            <p className="console-page__hint">No scene is live. Pick one on the left to start riding faders.</p>
+          )}
+          {activeScene && liveEffects.length === 0 && (
+            <p className="console-page__hint">This scene has no effect assignments yet — edit it to add some.</p>
+          )}
+          {liveEffects.map((effect) => (
+            <section key={effect.id} className="fader-group">
+              <h3>{effect.name}</h3>
+              <div className="fader-group__row">
+                {effect.exposed_params.map((param) => {
+                  const key = `${effect.id}:${param.node_id}:${param.param_key}`;
+                  const value = paramOverrides[key] ?? param.default;
+                  return (
+                    <ParamFader
+                      key={key}
+                      label={param.label}
+                      min={param.min}
+                      max={param.max}
+                      value={value}
+                      onChange={(v) => setParamOverride(key, v)}
+                    />
+                  );
+                })}
+                {effect.exposed_params.length === 0 && (
+                  <p className="console-page__hint">No exposed params on this effect.</p>
+                )}
+              </div>
+            </section>
+          ))}
+        </div>
       </div>
 
       {editorState && (

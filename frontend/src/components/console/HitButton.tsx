@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from "react";
+import type { CSSProperties } from "react";
 import { useConsoleStore } from "../../store/useConsoleStore";
+import { SegMeter } from "../controls/SegMeter";
 
 // The backend only broadcasts console_state on change (hit/set), not every
 // tick, so we animate the decay locally instead of waiting on broadcasts.
@@ -38,11 +40,16 @@ export function HitButton() {
 
   return (
     <div className="hit-button">
-      <button className="hit-button__btn" onClick={handleHit}>
-        HIT!
-      </button>
-      <div className="hit-button__meter">
-        <div className="hit-button__meter-fill" style={{ width: `${displayHype * 100}%` }} />
+      <span className="section-label">Hype</span>
+      <div className="hit-button__stage">
+        <SegMeter value={displayHype} orientation="vertical" segments={14} />
+        <button
+          className="hit-button__btn"
+          onClick={handleHit}
+          style={{ "--hype": displayHype } as CSSProperties}
+        >
+          HIT!
+        </button>
       </div>
     </div>
   );
