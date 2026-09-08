@@ -28,6 +28,23 @@ export function NodePreviewBadge({ preview }: NodePreviewBadgeProps) {
     );
   }
 
+  if (preview.socket_type === "vec3") {
+    const rows = preview.values as [number, number, number][];
+    const axes = ["X", "Y", "Z"].map((key, axis) => ({ key, vals: rows.map((r) => r[axis] ?? 0) }));
+    return (
+      <span className="node-preview-badge node-preview-badge--vec3">
+        {axes.map((a) => (
+          <span
+            key={a.key}
+            className="node-preview-badge node-preview-badge--bar node-preview-badge--vec3-axis"
+            style={{ background: gradientFromField(a.vals) }}
+            title={`${a.key}: ${a.vals[0]?.toFixed(2)} … ${a.vals[a.vals.length - 1]?.toFixed(2)}`}
+          />
+        ))}
+      </span>
+    );
+  }
+
   const values = preview.values as number[];
   const min = values.length ? Math.min(...values) : 0;
   const max = values.length ? Math.max(...values) : 0;

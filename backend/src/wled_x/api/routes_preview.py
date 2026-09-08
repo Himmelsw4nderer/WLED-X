@@ -103,9 +103,17 @@ def _summarize(node_type: str | None, sockets: dict[str, object]) -> NodePreview
     definition = NODE_REGISTRY.get(node_type or "")
     outputs = definition.descriptor.outputs if definition else []
     out_key = outputs[0].key if outputs else None
+    out_type = outputs[0].type if outputs else None
     value = sockets.get(out_key) if out_key else next(iter(sockets.values()), 0.0)
 
     arr = np.asarray(value, dtype=np.float32)
+    if out_type == "vec3":
+        # (3,) constant or (N, 3) per-LED -- normalise the shape to rows of [x,y,z].
+        rows = np.atleast_2d(arr)
+        return NodePreview(
+            socket_type="vec3",
+            values=[[round(float(c), 4) for c in row] for row in rows],
+        )
     if arr.ndim == 0:
         return NodePreview(socket_type="scalar", values=[float(arr)])
     if arr.ndim == 1:

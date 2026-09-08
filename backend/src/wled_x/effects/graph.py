@@ -175,7 +175,10 @@ def _default_for_socket(socket_type: str, n: int) -> Value:
         return 0.0
     if socket_type == "field":
         return np.zeros(n, dtype=np.float32)
-    if socket_type == "color":
+    # "vec3" is a per-LED spatial vector -- same (N, 3) shape as "color", but
+    # kept as its own type so the editor won't let you wire a position into a
+    # color slot (or vice versa).
+    if socket_type in ("color", "vec3"):
         return np.zeros((n, 3), dtype=np.float32)
     raise GraphError(f"unknown socket type {socket_type!r}")
 

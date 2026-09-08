@@ -48,13 +48,19 @@
 
 .debug-bar__strip {
   display: flex;
-  height: 1.4rem;
-  border-radius: 4px;
+  gap: 1px;
+  height: 1.9rem;
+  border-radius: var(--r-sm);
   overflow: hidden;
-  border: 1px solid var(--border);
+  padding: 3px;
+  background: var(--void);
+  border: 2px solid var(--border);
+  box-shadow: var(--well);
 }
 
 .debug-bar__led {
   flex: 1;
   min-width: 1px;
+  border-radius: 1px;
+  box-shadow: 0 0 5px currentColor;
 }

@@ -122,7 +122,7 @@ class SceneUpdate(BaseModel):
 
 class NodeSocket(BaseModel):
     key: str
-    type: str  # "scalar" | "field" | "color"
+    type: str  # "scalar" | "field" | "color" | "vec3"
     label: str = ""
 
 
@@ -248,8 +248,9 @@ class PreviewRequest(BaseModel):
 
 
 class NodePreview(BaseModel):
-    socket_type: str  # "scalar" | "field" | "color"
-    # scalar: length-1 list; field: one float per LED; color: one [r,g,b] (0-255) per LED.
+    socket_type: str  # "scalar" | "field" | "color" | "vec3"
+    # scalar: length-1 list; field: one float per LED; color: one [r,g,b] (0-255)
+    # per LED; vec3: one [x,y,z] (raw units) per LED.
     values: list[Any]
 
 

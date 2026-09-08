@@ -5,22 +5,23 @@
 }
 
 .node-canvas .react-flow {
-  background-color: #100c1c;
-  background-image: radial-gradient(rgba(139, 92, 246, 0.24) 1.5px, transparent 1.5px);
-  background-size: 26px 26px;
+  background-color: var(--void);
+}
+
+.node-canvas .react-flow__background {
+  color: rgba(139, 92, 246, 0.28);
 }
 
 .node-canvas .react-flow__attribution {
-  background: transparent;
-  color: var(--text-dim);
+  display: none;
 }
 
 .node-canvas .react-flow__controls {
   background: var(--bg-elevated);
-  border: 1px solid var(--border);
-  border-radius: 6px;
+  border: 2px solid var(--border);
+  border-radius: var(--r-sm);
   overflow: hidden;
-  box-shadow: none;
+  box-shadow: var(--well);
 }
 
 .node-canvas .react-flow__controls-button {
@@ -30,22 +31,49 @@
 }
 
 .node-canvas .react-flow__controls-button:hover {
-  background: var(--bg);
+  background: var(--bg-raised);
 }
 
 .node-canvas .react-flow__minimap {
   background: var(--bg-elevated);
-  border: 1px solid var(--border);
-  border-radius: 6px;
+  border: 2px solid var(--border);
+  border-radius: var(--r-sm);
 }
 
+/* Cables carry a colour from their source socket type (set inline in
+   NodeCanvas.tsx); the glow is added here off that same colour. */
 .node-canvas .react-flow__edge-path {
-  stroke: var(--text-dim);
-  stroke-width: 1.5;
+  stroke-width: 2.5;
+  transition: filter 120ms ease;
 }
 
-.node-canvas .react-flow__edge.selected .react-flow__edge-path {
+.node-canvas .effect-edge--scalar .react-flow__edge-path {
+  filter: drop-shadow(0 0 3px #ffc93c);
+}
+
+.node-canvas .effect-edge--field .react-flow__edge-path {
+  filter: drop-shadow(0 0 3px #22e1ff);
+}
+
+.node-canvas .effect-edge--color .react-flow__edge-path {
+  filter: drop-shadow(0 0 3px #ff2e88);
+}
+
+.node-canvas .effect-edge--vec3 .react-flow__edge-path {
+  filter: drop-shadow(0 0 3px #8b5cf6);
+}
+
+.node-canvas .react-flow__edge.selected .react-flow__edge-path,
+.node-canvas .react-flow__edge:focus .react-flow__edge-path {
+  stroke: var(--gold) !important;
+  filter: drop-shadow(0 0 6px var(--gold));
+}
+
+.node-canvas .react-flow__connectionline path,
+.node-canvas .react-flow__connection-path {
   stroke: var(--gold);
+  stroke-width: 2.5;
+  filter: drop-shadow(0 0 5px var(--gold));
 }
 
 .node-canvas .react-flow__handle {

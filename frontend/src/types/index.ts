@@ -93,7 +93,7 @@ export interface Scene {
 export type SceneCreate = Omit<Scene, "id" | "active">;
 export type SceneUpdate = Partial<Omit<Scene, "id">>;
 
-export type NodeSocketType = "scalar" | "field" | "color";
+export type NodeSocketType = "scalar" | "field" | "color" | "vec3";
 
 export interface NodeSocket {
   key: string;
@@ -136,7 +136,8 @@ export interface PreviewRequest {
 
 export interface NodePreviewValue {
   socket_type: NodeSocketType;
-  // scalar: length-1; field: one float per LED; color: one [r,g,b] (0-255) per LED.
+  // scalar: length-1; field: one float per LED; color: one [r,g,b] (0-255) per
+  // LED; vec3: one [x,y,z] (raw units) per LED.
   values: number[] | [number, number, number][];
 }
 

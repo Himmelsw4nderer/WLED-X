@@ -45,6 +45,22 @@ export function NodePalette({ descriptors }: NodePaletteProps) {
           ))}
         </div>
       ))}
+
+      <div className="node-palette__legend">
+        <div className="node-palette__group-title">Sockets</div>
+        <span className="node-palette__legend-row">
+          <i className="node-palette__socket node-palette__socket--scalar" /> scalar
+        </span>
+        <span className="node-palette__legend-row">
+          <i className="node-palette__socket node-palette__socket--field" /> field
+        </span>
+        <span className="node-palette__legend-row">
+          <i className="node-palette__socket node-palette__socket--color" /> color
+        </span>
+        <span className="node-palette__legend-row">
+          <i className="node-palette__socket node-palette__socket--vec3" /> vec3
+        </span>
+      </div>
     </aside>
   );
 }

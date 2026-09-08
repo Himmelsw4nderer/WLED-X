@@ -427,6 +427,147 @@ def test_counter_reset_forces_count_back_to_zero():
     assert _tick(1.0, 1.0) == 0.0  # reset wins over a simultaneous trigger
 
 
+_DIST_POINTS = np.array(
+    [[0.0, 0.0, 0.0], [3.0, 4.0, 0.0], [1.0, 0.0, 0.0]], dtype=np.float32
+)
+
+
+def _distance_field(metric_data: dict, positions: np.ndarray = _DIST_POINTS) -> np.ndarray:
+    """LED Position -> Distance (b unconnected == the origin), returning the field."""
+    graph = {
+        "nodes": [
+            {"id": "p", "type": "led_position", "data": {}},
+            {"id": "d", "type": "distance", "data": metric_data},
+        ],
+        "edges": [
+            {
+                "id": "e1",
+                "source": "p",
+                "sourceHandle": "position",
+                "target": "d",
+                "targetHandle": "a",
+            }
+        ],
+    }
+    _, outputs = evaluate_graph(
+        graph, NODE_REGISTRY, _context(positions.shape[0], positions=positions)
+    )
+    return outputs["d"]["value"]
+
+
+def test_led_position_emits_raw_xyz_on_one_wire():
+    graph = {"nodes": [{"id": "p", "type": "led_position", "data": {}}], "edges": []}
+    _, outputs = evaluate_graph(
+        graph, NODE_REGISTRY, _context(3, positions=_DIST_POINTS)
+    )
+    assert np.asarray(outputs["p"]["position"]).shape == (3, 3)
+    assert np.allclose(outputs["p"]["position"], _DIST_POINTS)
+
+
+def test_led_position_scene_space_normalizes_each_axis_against_scene_bounds():
+    positions = np.array([[4.0, 0.0, 0.0], [6.0, 0.0, 0.0]], dtype=np.float32)
+    scene_bounds = (np.array([0.0, 0.0, 0.0]), np.array([10.0, 0.0, 0.0]))
+    graph = {
+        "nodes": [{"id": "p", "type": "led_position", "data": {"space": "scene"}}],
+        "edges": [],
+    }
+    _, outputs = evaluate_graph(
+        graph, NODE_REGISTRY, _context(2, positions=positions, scene_bounds=scene_bounds)
+    )
+    assert np.allclose(np.asarray(outputs["p"]["position"])[:, 0], [0.4, 0.6])
+
+
+def test_const_position_is_a_single_fixed_point():
+    graph = {
+        "nodes": [
+            {"id": "c", "type": "const_position", "data": {"x": 1.0, "y": 2.0, "z": 3.0}}
+        ],
+        "edges": [],
+    }
+    _, outputs = evaluate_graph(graph, NODE_REGISTRY, _context(4))
+    assert np.allclose(outputs["c"]["position"], [1.0, 2.0, 3.0])
+
+
+def test_distance_metric_family_matches_hand_computed_norms():
+    # LED at (3, 4, 0) vs the origin: L2=5, L1=7, Linf=4, L2^2=25, planar(xy)=5.
+    def field(metric: str) -> np.ndarray:
+        return _distance_field({"metric": metric, "normalize": "none"})
+
+    assert np.allclose(field("euclidean"), [0.0, 5.0, 1.0])
+    assert np.allclose(field("manhattan"), [0.0, 7.0, 1.0])
+    assert np.allclose(field("chebyshev"), [0.0, 4.0, 1.0])
+    assert np.allclose(field("squared"), [0.0, 25.0, 1.0])
+    assert np.allclose(field("planar_xy"), [0.0, 5.0, 1.0])
+
+
+def test_distance_minkowski_p1_equals_manhattan_p2_equals_euclidean():
+    l1 = _distance_field({"metric": "minkowski", "p": 1.0, "normalize": "none"})
+    l2 = _distance_field({"metric": "minkowski", "p": 2.0, "normalize": "none"})
+    assert np.allclose(l1, [0.0, 7.0, 1.0])
+    assert np.allclose(l2, [0.0, 5.0, 1.0])
+
+
+def test_distance_normalize_modes_scale_into_0_1():
+    # raw euclidean field is [0, 5, 1].
+    assert np.allclose(
+        _distance_field({"metric": "euclidean", "normalize": "radius", "radius": 5.0}),
+        [0.0, 1.0, 0.2],
+    )
+    assert np.allclose(
+        _distance_field({"metric": "euclidean", "normalize": "radius_inv", "radius": 5.0}),
+        [1.0, 0.0, 0.8],
+    )
+    # auto rescales the frame's own min..max onto 0..1.
+    assert np.allclose(
+        _distance_field({"metric": "euclidean", "normalize": "auto"}), [0.0, 1.0, 0.2]
+    )
+    # radius mode clips anything past the radius to 1.
+    assert np.allclose(
+        _distance_field({"metric": "euclidean", "normalize": "radius", "radius": 2.0}),
+        [0.0, 1.0, 0.5],
+    )
+
+
+def test_distance_measures_led_to_a_wired_const_position():
+    positions = np.array(
+        [[0.0, 0.0, 0.0], [2.0, 0.0, 0.0], [10.0, 0.0, 0.0]], dtype=np.float32
+    )
+    graph = {
+        "nodes": [
+            {"id": "p", "type": "led_position", "data": {}},
+            {"id": "c", "type": "const_position", "data": {"x": 2.0, "y": 0.0, "z": 0.0}},
+            {"id": "d", "type": "distance", "data": {"normalize": "none"}},
+        ],
+        "edges": [
+            {
+                "id": "e1",
+                "source": "p",
+                "sourceHandle": "position",
+                "target": "d",
+                "targetHandle": "a",
+            },
+            {
+                "id": "e2",
+                "source": "c",
+                "sourceHandle": "position",
+                "target": "d",
+                "targetHandle": "b",
+            },
+        ],
+    }
+    _, outputs = evaluate_graph(graph, NODE_REGISTRY, _context(3, positions=positions))
+    assert np.allclose(outputs["d"]["value"], [2.0, 0.0, 8.0])
+
+
+def test_distance_with_nothing_wired_is_zero_everywhere():
+    graph = {
+        "nodes": [{"id": "d", "type": "distance", "data": {"normalize": "none"}}],
+        "edges": [],
+    }
+    _, outputs = evaluate_graph(graph, NODE_REGISTRY, _context(4))
+    assert np.allclose(outputs["d"]["value"], 0.0)
+
+
 def test_and_or_chains_off_threshold_gates():
     graph = {
         "nodes": [

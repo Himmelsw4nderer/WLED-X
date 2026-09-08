@@ -1,3 +1,5 @@
+import pytest
+
 from wled_x.api import routes_preview
 
 
@@ -128,6 +130,40 @@ def test_preview_stateful_node_persists_across_polls(client):
         "edges": [],
     }
     assert _preview_count(client, graph_plus, 1.0) == 1  # fresh run
+
+
+def test_preview_reports_vec3_socket_for_led_position(client):
+    graph = {
+        "nodes": [
+            {"id": "p", "type": "led_position", "data": {}},
+            {"id": "d", "type": "distance", "data": {"normalize": "radius_inv", "radius": 5.0}},
+            {"id": "hsv", "type": "hsv", "data": {"s": 1.0}},
+            {"id": "out", "type": "led_color", "data": {}},
+        ],
+        "edges": [
+            {
+                "id": "e1",
+                "source": "p",
+                "sourceHandle": "position",
+                "target": "d",
+                "targetHandle": "a",
+            },
+            _edge("e2", "d", "hsv", "v"),
+            _edge("e3", "hsv", "out", "color"),
+        ],
+    }
+    resp = client.post(
+        "/api/effects/preview", json={"graph": graph, "led_count": 4, "length_meters": 5.0}
+    )
+    assert resp.status_code == 200
+    body = resp.json()
+
+    assert body["nodes"]["p"]["socket_type"] == "vec3"
+    assert len(body["nodes"]["p"]["values"]) == 4
+    assert body["nodes"]["p"]["values"][0] == [0.0, 0.0, 0.0]
+    # Distance still resolves to an ordinary 0..1 field the rest of the graph reads.
+    assert body["nodes"]["d"]["socket_type"] == "field"
+    assert body["nodes"]["d"]["values"][0] == pytest.approx(1.0)  # LED at the origin, radius_inv
 
 
 def test_preview_length_meters_controls_global_x_but_not_position_x(client):
