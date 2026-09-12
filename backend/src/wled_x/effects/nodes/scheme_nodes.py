@@ -4,7 +4,6 @@ see wled_x.effects.color_schemes) instead of a hardcoded hue -- so a batch of
 fixed (or field-driven) slot; Scheme Random Color redraws on each rising
 trigger edge, using the same per-node state bucket pattern as Counter."""
 
-import time
 from typing import Any
 
 import numpy as np
@@ -28,11 +27,16 @@ def _scheme_random_color(
     and, since a bucket only exists from the moment this node first runs, on
     every "effect start" too (the render loop wipes all per-node state on a
     scene change, and the debug preview's own bucket starts empty). Each draw
-    is seeded from the real wall-clock nanosecond it happens on, not a fixed
-    `seed` param -- seeding from just `seed` made every activation redraw to
-    the exact same index, which read as "not random at all". `seed` still
-    salts the draw so two nodes triggered in the same tick don't necessarily
-    land on the same color."""
+    is seeded from `context.time` (the render loop's shared clock -- the same
+    value every fixture sees on a given tick) rather than a fixed `seed`
+    param, so an activation is genuinely random from one to the next instead
+    of always redrawing the same index -- and rather than real wall-clock
+    time, which would drift by microseconds between one fixture's turn and
+    the next within the *same* tick and make every fixture fed by this same
+    node pick a different color, when the whole point of one shared node is
+    that they match. `seed` still salts the draw so two different
+    Scheme Random Color nodes triggered on the same tick don't land on the
+    same color as each other."""
     scheme = context.color_scheme
     count = max(scheme.shape[0], 1)
     trigger = float(np.asarray(inputs.get("trigger", data.get("trigger", 0.0))).reshape(-1)[0])
@@ -42,7 +46,8 @@ def _scheme_random_color(
     rising_edge = trigger >= 0.5 and bucket["prev_trigger"] < 0.5
     if bucket["index"] < 0 or rising_edge:
         node_salt = hash(context.node_id) & 0xFFFFFFFF
-        rng = np.random.default_rng([time.time_ns() & 0xFFFFFFFF, seed, node_salt])
+        time_seed = int(context.time * 1_000_000) & 0xFFFFFFFF
+        rng = np.random.default_rng([time_seed, seed, node_salt])
         bucket["index"] = int(rng.integers(0, count))
     bucket["prev_trigger"] = trigger
 

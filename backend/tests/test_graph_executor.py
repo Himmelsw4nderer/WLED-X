@@ -799,10 +799,11 @@ _SCHEME = np.array([[1.0, 0.0, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, 1.0]], dtype=np
 
 
 def _scheme_context(
-    n: int = 1, scheme: np.ndarray = _SCHEME, state: dict | None = None
+    n: int = 1, scheme: np.ndarray = _SCHEME, state: dict | None = None, time: float = 0.0
 ) -> EvalContext:
     ctx = _context(n)
     ctx.color_scheme = scheme
+    ctx.time = time
     if state is not None:
         ctx.state = state
     return ctx
@@ -871,17 +872,36 @@ def test_scheme_random_color_varies_across_fresh_activations():
     # Regression test: seeding purely off the fixed `seed` param made every
     # "effect start" (a fresh, empty state bucket) redraw to the exact same
     # index -- real-looking on the first run, but never actually random.
-    # Seeding off the wall-clock nanosecond instead should scatter the draw
-    # across a handful of independent fresh starts.
+    # Each activation lands on a different tick, i.e. a different
+    # `context.time` -- simulate 20 of those and expect them to scatter
+    # across more than one color.
     graph = {
         "nodes": [{"id": "r", "type": "scheme_random_color", "data": {"seed": 7}}],
         "edges": [],
     }
     draws = set()
-    for _ in range(20):
-        _, outputs = evaluate_graph(graph, NODE_REGISTRY, _scheme_context(state={}))
+    for tick in range(20):
+        context = _scheme_context(state={}, time=tick * 0.5)
+        _, outputs = evaluate_graph(graph, NODE_REGISTRY, context)
         draws.add(tuple(np.asarray(outputs["r"]["value"]).tolist()))
     assert len(draws) > 1
+
+
+def test_scheme_random_color_is_the_same_across_fixtures_on_the_same_tick():
+    # Every fixture keeps its own independent state bucket (see
+    # RenderLoop._node_state, keyed by fixture id), but two fixtures running
+    # the *same* Scheme Random Color node on the *same* tick must still draw
+    # the same color -- otherwise a single node feeding several fixtures
+    # renders each one a different color, which defeats the point of sharing
+    # one node across them.
+    graph = {
+        "nodes": [{"id": "r", "type": "scheme_random_color", "data": {"seed": 3}}],
+        "edges": [],
+    }
+    now = 42.0
+    _, fixture_a = evaluate_graph(graph, NODE_REGISTRY, _scheme_context(state={}, time=now))
+    _, fixture_b = evaluate_graph(graph, NODE_REGISTRY, _scheme_context(state={}, time=now))
+    assert np.allclose(fixture_a["r"]["value"], fixture_b["r"]["value"])
 
 
 def test_brightness_scales_color_by_a_uniform_amount():
