@@ -7,7 +7,7 @@
 .color-scheme-select__head {
   font-size: 0.62rem;
   font-family: var(--font-label);
-  color: var(--text-dim);
+  color: var(--violet);
   text-transform: uppercase;
   letter-spacing: 0.12em;
 }

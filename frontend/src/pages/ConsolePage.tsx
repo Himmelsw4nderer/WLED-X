@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import type { CSSProperties } from "react";
 import { useConsoleStore } from "../store/useConsoleStore";
 import { useSceneStore } from "../store/useSceneStore";
 import { useEffectStore } from "../store/useEffectStore";
@@ -15,10 +16,17 @@ import { AudioMeter } from "../components/console/AudioMeter";
 import { AudioSourcePicker } from "../components/console/AudioSourcePicker";
 import { PlaylistPanel } from "../components/console/PlaylistPanel";
 import { playlistsApi } from "../api/resources";
+import type { ControlAccent } from "../components/controls/Fader";
 import type { Effect, Scene, SceneCreate, SceneUpdate } from "../types";
 import "../components/console/console.css";
 
 type EditorState = { mode: "create" } | { mode: "edit"; scene: Scene };
+
+// One fader-group card per effect gets its own accent from the house palette
+// instead of every channel reading the same cyan -- cycling by position keeps
+// it deterministic (the same effect always lands on the same color) without
+// needing to track per-effect state.
+const FADER_GROUP_ACCENTS: ControlAccent[] = ["cyan", "lime", "gold", "violet", "ember", "accent"];
 
 export function ConsolePage() {
   const connect = useConsoleStore((s) => s.connect);
@@ -216,62 +224,88 @@ export function ConsolePage() {
           {activeScene && liveEffects.length === 0 && (
             <p className="console-page__hint">This scene has no effect assignments yet — edit it to add some.</p>
           )}
-          {liveEffects.map((effect) => (
-            <section key={effect.id} className="fader-group">
-              <h3>{effect.name}</h3>
-              <div className="fader-group__row">
-                {effect.exposed_params.map((param) => {
-                  const key = `${effect.id}:${param.node_id}:${param.param_key}`;
-                  const override = paramOverrides[key];
-                  const sceneVal = sceneParamValue(effect.id, param.node_id, param.param_key);
-                  const ride = (v: number | string) => {
-                    setParamOverride(key, v);
-                    persistSceneParam(effect.id, param.node_id, param.param_key, v);
-                  };
-                  if (param.options && param.options.length > 0) {
+          {liveEffects.map((effect, effectIndex) => {
+            const accent = FADER_GROUP_ACCENTS[effectIndex % FADER_GROUP_ACCENTS.length];
+            const selectParams = effect.exposed_params.filter((p) => p.options && p.options.length > 0);
+            const faderParams = effect.exposed_params.filter((p) => !p.options || p.options.length === 0);
+
+            return (
+              <section
+                key={effect.id}
+                className="fader-group"
+                style={{ "--fader-group-accent": `var(--${accent})` } as CSSProperties}
+              >
+                <div className="fader-group__head">
+                  <h3>{effect.name}</h3>
+                </div>
+
+                {selectParams.length > 0 && (
+                  <div className="fader-group__selects">
+                    {selectParams.map((param) => {
+                      const key = `${effect.id}:${param.node_id}:${param.param_key}`;
+                      const override = paramOverrides[key];
+                      const sceneVal = sceneParamValue(effect.id, param.node_id, param.param_key);
+                      const ride = (v: number | string) => {
+                        setParamOverride(key, v);
+                        persistSceneParam(effect.id, param.node_id, param.param_key, v);
+                      };
+                      const value =
+                        typeof override === "string"
+                          ? override
+                          : typeof sceneVal === "string"
+                            ? sceneVal
+                            : typeof param.default === "string"
+                              ? param.default
+                              : (param.options?.[0] ?? "");
+                      return (
+                        <ParamSelect
+                          key={key}
+                          label={param.label}
+                          options={param.options ?? []}
+                          value={value}
+                          onChange={ride}
+                        />
+                      );
+                    })}
+                  </div>
+                )}
+
+                <div className="fader-group__row">
+                  {faderParams.map((param) => {
+                    const key = `${effect.id}:${param.node_id}:${param.param_key}`;
+                    const override = paramOverrides[key];
+                    const sceneVal = sceneParamValue(effect.id, param.node_id, param.param_key);
+                    const ride = (v: number | string) => {
+                      setParamOverride(key, v);
+                      persistSceneParam(effect.id, param.node_id, param.param_key, v);
+                    };
                     const value =
-                      typeof override === "string"
+                      typeof override === "number"
                         ? override
-                        : typeof sceneVal === "string"
+                        : typeof sceneVal === "number"
                           ? sceneVal
-                          : typeof param.default === "string"
+                          : typeof param.default === "number"
                             ? param.default
-                            : param.options[0];
+                            : 0;
                     return (
-                      <ParamSelect
+                      <ParamFader
                         key={key}
                         label={param.label}
-                        options={param.options}
+                        min={param.min}
+                        max={param.max}
                         value={value}
                         onChange={ride}
+                        accent={accent}
                       />
                     );
-                  }
-                  const value =
-                    typeof override === "number"
-                      ? override
-                      : typeof sceneVal === "number"
-                        ? sceneVal
-                        : typeof param.default === "number"
-                          ? param.default
-                          : 0;
-                  return (
-                    <ParamFader
-                      key={key}
-                      label={param.label}
-                      min={param.min}
-                      max={param.max}
-                      value={value}
-                      onChange={ride}
-                    />
-                  );
-                })}
-                {effect.exposed_params.length === 0 && (
-                  <p className="console-page__hint">No exposed params on this effect.</p>
-                )}
-              </div>
-            </section>
-          ))}
+                  })}
+                  {effect.exposed_params.length === 0 && (
+                    <p className="console-page__hint">No exposed params on this effect.</p>
+                  )}
+                </div>
+              </section>
+            );
+          })}
         </div>
       </div>
 
