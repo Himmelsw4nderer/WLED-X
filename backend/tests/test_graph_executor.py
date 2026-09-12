@@ -829,6 +829,23 @@ def test_scheme_random_color_holds_until_a_rising_trigger_edge():
     assert any(np.allclose(redrawn, row) for row in _SCHEME)
 
 
+def test_scheme_random_color_varies_across_fresh_activations():
+    # Regression test: seeding purely off the fixed `seed` param made every
+    # "effect start" (a fresh, empty state bucket) redraw to the exact same
+    # index -- real-looking on the first run, but never actually random.
+    # Seeding off the wall-clock nanosecond instead should scatter the draw
+    # across a handful of independent fresh starts.
+    graph = {
+        "nodes": [{"id": "r", "type": "scheme_random_color", "data": {"seed": 7}}],
+        "edges": [],
+    }
+    draws = set()
+    for _ in range(20):
+        _, outputs = evaluate_graph(graph, NODE_REGISTRY, _scheme_context(state={}))
+        draws.add(tuple(np.asarray(outputs["r"]["value"]).tolist()))
+    assert len(draws) > 1
+
+
 def test_brightness_scales_color_by_a_uniform_amount():
     graph = {
         "nodes": [

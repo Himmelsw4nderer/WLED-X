@@ -4,6 +4,7 @@ see wled_x.effects.color_schemes) instead of a hardcoded hue -- so a batch of
 fixed (or field-driven) slot; Scheme Random Color redraws on each rising
 trigger edge, using the same per-node state bucket pattern as Counter."""
 
+import time
 from typing import Any
 
 import numpy as np
@@ -23,19 +24,26 @@ def _scheme_color(data: dict[str, Any], inputs: dict[str, Value], context: EvalC
 def _scheme_random_color(
     data: dict[str, Any], inputs: dict[str, Value], context: EvalContext
 ) -> Value:
+    """Picks a color from the scheme, redrawing on each rising trigger edge --
+    and, since a bucket only exists from the moment this node first runs, on
+    every "effect start" too (the render loop wipes all per-node state on a
+    scene change, and the debug preview's own bucket starts empty). Each draw
+    is seeded from the real wall-clock nanosecond it happens on, not a fixed
+    `seed` param -- seeding from just `seed` made every activation redraw to
+    the exact same index, which read as "not random at all". `seed` still
+    salts the draw so two nodes triggered in the same tick don't necessarily
+    land on the same color."""
     scheme = context.color_scheme
     count = max(scheme.shape[0], 1)
     trigger = float(np.asarray(inputs.get("trigger", data.get("trigger", 0.0))).reshape(-1)[0])
     seed = int(data.get("seed", 0))
 
-    bucket = context.state.setdefault(
-        context.node_id, {"index": -1, "draw": 0, "prev_trigger": 0.0}
-    )
+    bucket = context.state.setdefault(context.node_id, {"index": -1, "prev_trigger": 0.0})
     rising_edge = trigger >= 0.5 and bucket["prev_trigger"] < 0.5
     if bucket["index"] < 0 or rising_edge:
-        rng = np.random.default_rng((seed, bucket["draw"]))
+        node_salt = hash(context.node_id) & 0xFFFFFFFF
+        rng = np.random.default_rng([time.time_ns() & 0xFFFFFFFF, seed, node_salt])
         bucket["index"] = int(rng.integers(0, count))
-        bucket["draw"] += 1
     bucket["prev_trigger"] = trigger
 
     return scheme[bucket["index"] % count].astype(np.float32)
