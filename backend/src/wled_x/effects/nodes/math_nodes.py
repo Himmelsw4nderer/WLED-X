@@ -22,6 +22,30 @@ def _subtract(data: dict[str, Any], inputs: dict[str, Value], context: EvalConte
     return _num(data, inputs, "a", 0.0) - _num(data, inputs, "b", 0.0)
 
 
+def _divide(data: dict[str, Any], inputs: dict[str, Value], context: EvalContext) -> Value:
+    a = np.asarray(_num(data, inputs, "a", 1.0), dtype=np.float32)
+    b = np.asarray(_num(data, inputs, "b", 1.0), dtype=np.float32)
+    safe_b = np.where(b == 0, 1e-6, b)
+    return (a / safe_b).astype(np.float32)
+
+
+def _root(data: dict[str, Any], inputs: dict[str, Value], context: EvalContext) -> Value:
+    """The nth root of `value`: n=2 is square root, n=3 cube root, n=4 the
+    next one up, and so on. An odd root preserves the sign of a negative
+    input (the cube root of -8 is -2) instead of producing NaN; an even root
+    of a negative input has no real result, so it clamps to 0 instead."""
+    value = np.asarray(_num(data, inputs, "value", 0.0), dtype=np.float32)
+    n = np.asarray(_num(data, inputs, "n", 2.0), dtype=np.float32)
+    # A degree near zero would blow the exponent 1/n up to +-inf -- fall back
+    # to n=1 (identity) rather than let a bad param value produce inf/NaN.
+    safe_n = np.where(np.abs(n) < 1e-3, 1.0, n)
+    magnitude = np.power(np.abs(value), 1.0 / safe_n)
+    is_odd_degree = np.mod(np.round(safe_n), 2.0) == 1.0
+    negative_input = value < 0
+    result = np.where(negative_input, np.where(is_odd_degree, -magnitude, 0.0), magnitude)
+    return np.nan_to_num(result, nan=0.0, posinf=0.0, neginf=0.0).astype(np.float32)
+
+
 def _sine(data: dict[str, Any], inputs: dict[str, Value], context: EvalContext) -> Value:
     return np.sin(_num(data, inputs, "x", 0.0))
 
@@ -163,6 +187,24 @@ MATH_NODES: dict[str, NodeDefinition] = {
     "add": _binary_node("add", "Add", _add, 0.0, 0.0),
     "multiply": _binary_node("multiply", "Multiply", _multiply, 1.0, 1.0),
     "subtract": _binary_node("subtract", "Subtract", _subtract, 0.0, 0.0),
+    "divide": _binary_node("divide", "Divide", _divide, 1.0, 1.0),
+    "root": NodeDefinition(
+        descriptor=NodeTypeDescriptor(
+            type="root",
+            category="math",
+            label="Root",
+            inputs=[
+                NodeSocket(key="value", type="field", label="Value"),
+                NodeSocket(key="n", type="field", label="N"),
+            ],
+            outputs=[NodeSocket(key="value", type="field", label="Value")],
+            params=[
+                NodeParam(key="value", type="float", default=0.0),
+                NodeParam(key="n", type="int", default=2, min=1, max=8),
+            ],
+        ),
+        compute=_root,
+    ),
     "sine": NodeDefinition(
         descriptor=NodeTypeDescriptor(
             type="sine",

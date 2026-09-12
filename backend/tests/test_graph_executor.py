@@ -281,6 +281,51 @@ def test_modulo_with_zero_divisor_does_not_raise_or_produce_nan():
     assert np.all(np.isfinite(outputs["mod"]["value"]))
 
 
+def test_divide_computes_a_over_b():
+    graph = {"nodes": [{"id": "d", "type": "divide", "data": {"a": 9.0, "b": 2.0}}], "edges": []}
+    _, outputs = evaluate_graph(graph, NODE_REGISTRY, _context(1))
+    assert outputs["d"]["value"] == pytest.approx(4.5)
+
+
+def test_divide_by_zero_does_not_raise_or_produce_nan():
+    graph = {"nodes": [{"id": "d", "type": "divide", "data": {"a": 5.0, "b": 0.0}}], "edges": []}
+    _, outputs = evaluate_graph(graph, NODE_REGISTRY, _context(1))
+    assert np.all(np.isfinite(outputs["d"]["value"]))
+
+
+def test_root_matches_hand_computed_values():
+    def root(value: float, n: float) -> float:
+        graph = {
+            "nodes": [{"id": "r", "type": "root", "data": {"value": value, "n": n}}],
+            "edges": [],
+        }
+        _, outputs = evaluate_graph(graph, NODE_REGISTRY, _context(1))
+        return float(outputs["r"]["value"])
+
+    assert root(9.0, 2) == pytest.approx(3.0)
+    assert root(27.0, 3) == pytest.approx(3.0)
+    assert root(16.0, 4) == pytest.approx(2.0)
+    assert root(4.0, 1) == pytest.approx(4.0)
+
+
+def test_root_of_a_negative_value_preserves_sign_for_odd_degrees():
+    graph = {"nodes": [{"id": "r", "type": "root", "data": {"value": -8.0, "n": 3}}], "edges": []}
+    _, outputs = evaluate_graph(graph, NODE_REGISTRY, _context(1))
+    assert outputs["r"]["value"] == pytest.approx(-2.0)
+
+
+def test_root_of_a_negative_value_clamps_to_zero_for_even_degrees():
+    graph = {"nodes": [{"id": "r", "type": "root", "data": {"value": -9.0, "n": 2}}], "edges": []}
+    _, outputs = evaluate_graph(graph, NODE_REGISTRY, _context(1))
+    assert outputs["r"]["value"] == pytest.approx(0.0)
+
+
+def test_root_with_a_zero_degree_does_not_raise_or_produce_nan():
+    graph = {"nodes": [{"id": "r", "type": "root", "data": {"value": 4.0, "n": 0}}], "edges": []}
+    _, outputs = evaluate_graph(graph, NODE_REGISTRY, _context(1))
+    assert np.all(np.isfinite(outputs["r"]["value"]))
+
+
 def test_square_wave_is_hard_on_off_at_default_duty():
     graph = {"nodes": [{"id": "sq", "type": "square", "data": {"x": 0.0}}], "edges": []}
     cases = [(0.0, 1.0), (0.49, 1.0), (0.5, 0.0), (0.9, 0.0), (1.0, 1.0), (1.49, 1.0), (1.5, 0.0)]
