@@ -326,6 +326,44 @@ def test_root_with_a_zero_degree_does_not_raise_or_produce_nan():
     assert np.all(np.isfinite(outputs["r"]["value"]))
 
 
+def test_power_defaults_to_squaring():
+    graph = {"nodes": [{"id": "p", "type": "power", "data": {"value": 3.0}}], "edges": []}
+    _, outputs = evaluate_graph(graph, NODE_REGISTRY, _context(1))
+    assert outputs["p"]["value"] == pytest.approx(9.0)
+
+
+def test_power_supports_negative_and_fractional_exponents():
+    def power(value: float, exponent: float) -> float:
+        graph = {
+            "nodes": [{"id": "p", "type": "power", "data": {"value": value, "exponent": exponent}}],
+            "edges": [],
+        }
+        _, outputs = evaluate_graph(graph, NODE_REGISTRY, _context(1))
+        return float(outputs["p"]["value"])
+
+    assert power(2.0, -1.0) == pytest.approx(0.5)
+    assert power(9.0, 0.5) == pytest.approx(3.0)
+    assert power(5.0, 0.0) == pytest.approx(1.0)
+
+
+def test_power_of_a_negative_base_with_fractional_exponent_does_not_raise_or_produce_nan():
+    graph = {
+        "nodes": [{"id": "p", "type": "power", "data": {"value": -4.0, "exponent": 0.5}}],
+        "edges": [],
+    }
+    _, outputs = evaluate_graph(graph, NODE_REGISTRY, _context(1))
+    assert np.all(np.isfinite(outputs["p"]["value"]))
+
+
+def test_power_overflow_does_not_raise_or_produce_inf():
+    graph = {
+        "nodes": [{"id": "p", "type": "power", "data": {"value": 1e30, "exponent": 8.0}}],
+        "edges": [],
+    }
+    _, outputs = evaluate_graph(graph, NODE_REGISTRY, _context(1))
+    assert np.all(np.isfinite(outputs["p"]["value"]))
+
+
 def test_square_wave_is_hard_on_off_at_default_duty():
     graph = {"nodes": [{"id": "sq", "type": "square", "data": {"x": 0.0}}], "edges": []}
     cases = [(0.0, 1.0), (0.49, 1.0), (0.5, 0.0), (0.9, 0.0), (1.0, 1.0), (1.49, 1.0), (1.5, 0.0)]

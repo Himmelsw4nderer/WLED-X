@@ -29,6 +29,19 @@ def _divide(data: dict[str, Any], inputs: dict[str, Value], context: EvalContext
     return (a / safe_b).astype(np.float32)
 
 
+def _power(data: dict[str, Any], inputs: dict[str, Value], context: EvalContext) -> Value:
+    """`value` raised to `exponent` -- the default exponent of 2 makes this
+    the square block; any other exponent (including negative or fractional)
+    works too. A negative base with a non-integer exponent has no real
+    result, and a large enough base/exponent can overflow -- both fall back
+    to 0 instead of NaN/inf, same convention as Root."""
+    value = np.asarray(_num(data, inputs, "value", 0.0), dtype=np.float64)
+    exponent = np.asarray(_num(data, inputs, "exponent", 2.0), dtype=np.float64)
+    with np.errstate(invalid="ignore", over="ignore"):
+        result = np.power(value, exponent).astype(np.float32)
+    return np.nan_to_num(result, nan=0.0, posinf=0.0, neginf=0.0)
+
+
 def _root(data: dict[str, Any], inputs: dict[str, Value], context: EvalContext) -> Value:
     """The nth root of `value`: n=2 is square root, n=3 cube root, n=4 the
     next one up, and so on. An odd root preserves the sign of a negative
@@ -188,6 +201,23 @@ MATH_NODES: dict[str, NodeDefinition] = {
     "multiply": _binary_node("multiply", "Multiply", _multiply, 1.0, 1.0),
     "subtract": _binary_node("subtract", "Subtract", _subtract, 0.0, 0.0),
     "divide": _binary_node("divide", "Divide", _divide, 1.0, 1.0),
+    "power": NodeDefinition(
+        descriptor=NodeTypeDescriptor(
+            type="power",
+            category="math",
+            label="Power",
+            inputs=[
+                NodeSocket(key="value", type="field", label="Value"),
+                NodeSocket(key="exponent", type="field", label="Exponent"),
+            ],
+            outputs=[NodeSocket(key="value", type="field", label="Value")],
+            params=[
+                NodeParam(key="value", type="float", default=0.0),
+                NodeParam(key="exponent", type="float", default=2.0, min=-8.0, max=8.0),
+            ],
+        ),
+        compute=_power,
+    ),
     "root": NodeDefinition(
         descriptor=NodeTypeDescriptor(
             type="root",
