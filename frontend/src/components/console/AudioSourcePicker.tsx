@@ -63,7 +63,7 @@ export function AudioSourcePicker() {
 
         return (
           <div key={name} className="audio-source-picker__row">
-            <label className="audio-source-picker__enabled">
+            <label className="audio-source-picker__enabled console-card__row-label">
               <input
                 type="checkbox"
                 checked={source.enabled}

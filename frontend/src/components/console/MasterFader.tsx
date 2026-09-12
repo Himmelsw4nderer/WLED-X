@@ -8,7 +8,6 @@ interface MasterFaderProps {
 export function MasterFader({ value, onChange }: MasterFaderProps) {
   return (
     <div className="master-fader">
-      <span className="section-label">Master</span>
       <Fader
         label="Grand"
         value={value}

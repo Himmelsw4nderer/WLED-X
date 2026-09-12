@@ -1,27 +1,7 @@
-.playlist-panel {
-  border: 3px solid var(--border);
-  border-radius: 14px;
-  background: var(--bg-elevated);
-  padding: 1rem;
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
+.playlist-panel .console-card__body {
   min-height: 0;
-}
-
-.playlist-panel__head {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.playlist-panel__head h2 {
-  margin: 0;
-  font-family: var(--font-label);
-  font-size: 0.75rem;
-  color: var(--gold);
-  text-transform: uppercase;
-  letter-spacing: 0.12em;
+  max-height: 420px;
+  overflow-y: auto;
 }
 
 .playlist-panel__status {

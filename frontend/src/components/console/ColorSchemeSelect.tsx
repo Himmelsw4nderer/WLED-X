@@ -24,7 +24,7 @@ export function ColorSchemeSelect() {
 
   return (
     <div className="color-scheme-select">
-      <div className="color-scheme-select__head">Color scheme</div>
+      <div className="console-card__sublabel">Color scheme</div>
       <div className="color-scheme-select__row">
         {active && active.colors.length > 0 ? (
           <div className="color-scheme-select__swatches">

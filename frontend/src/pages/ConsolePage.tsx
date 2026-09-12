@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import type { CSSProperties } from "react";
 import { useConsoleStore } from "../store/useConsoleStore";
 import { useSceneStore } from "../store/useSceneStore";
 import { useEffectStore } from "../store/useEffectStore";
@@ -7,6 +6,7 @@ import { useFixtureStore } from "../store/useFixtureStore";
 import { SceneTransport } from "../components/console/SceneTransport";
 import { SceneEditor } from "../components/console/SceneEditor";
 import { ColorSchemeSelect } from "../components/console/ColorSchemeSelect";
+import { ConsoleCard } from "../components/console/ConsoleCard";
 import { MasterFader } from "../components/console/MasterFader";
 import { ParamFader } from "../components/console/ParamFader";
 import { ParamSelect } from "../components/console/ParamSelect";
@@ -179,69 +179,99 @@ export function ConsolePage() {
   return (
     <div className="page console-page">
       <div className="console-deck">
-        <section className="console-deck__master panel">
+        <ConsoleCard title="Master" accent="accent" className="console-deck__master">
           <MasterFader value={masterBrightness} onChange={setMasterBrightness} />
           <HitButton />
           <ColorSchemeSelect />
-        </section>
+        </ConsoleCard>
 
-        <section className="console-deck__cues panel">
+        <ConsoleCard
+          title="Scenes"
+          accent="gold"
+          className="console-deck__cues"
+          actions={
+            <button className="btn btn--small" onClick={() => setEditorState({ mode: "create" })}>
+              + New scene
+            </button>
+          }
+        >
           <SceneTransport
             scenes={scenes}
             loading={scenesLoading}
             activeSceneId={activeSceneId}
             onSelect={(scene) => void selectScene(scene)}
-            onCreateNew={() => setEditorState({ mode: "create" })}
             onEdit={(scene) => setEditorState({ mode: "edit", scene })}
           />
-        </section>
+        </ConsoleCard>
 
-        <section className="console-deck__audio panel">
-          <span className="section-label">Audio</span>
+        <ConsoleCard title="Audio" accent="cyan" className="console-deck__audio">
           <AudioMeter />
           <div className="console-deck__audio-io">
             <GlobalSourceSelect />
             <AudioSourcePicker />
           </div>
-        </section>
+        </ConsoleCard>
       </div>
 
-      <PlaylistPanel />
+      <div className="console-lower">
+        <ConsoleCard
+          title="Fader Bank"
+          accent="gold"
+          className="console-page__rack"
+          actions={
+            <span>
+              {activeScene ? activeScene.name : "no scene live"}
+              {totalParams > 0 && ` · ${totalParams} channel${totalParams === 1 ? "" : "s"}`}
+            </span>
+          }
+        >
+          <div className="console-page__faders">
+            {!activeScene && (
+              <p className="console-page__hint">No scene is live. Pick one on the left to start riding faders.</p>
+            )}
+            {activeScene && liveEffects.length === 0 && (
+              <p className="console-page__hint">This scene has no effect assignments yet — edit it to add some.</p>
+            )}
+            {liveEffects.map((effect, effectIndex) => {
+              const accent = FADER_GROUP_ACCENTS[effectIndex % FADER_GROUP_ACCENTS.length];
+              const selectParams = effect.exposed_params.filter((p) => p.options && p.options.length > 0);
+              const faderParams = effect.exposed_params.filter((p) => !p.options || p.options.length === 0);
 
-      <div className="console-page__rack panel">
-        <div className="console-page__rack-head">
-          <span className="section-label">Fader Bank</span>
-          <span className="console-page__rack-meta">
-            {activeScene ? activeScene.name : "no scene live"}
-            {totalParams > 0 && ` · ${totalParams} channel${totalParams === 1 ? "" : "s"}`}
-          </span>
-        </div>
+              return (
+                <ConsoleCard key={effect.id} title={effect.name} accent={accent} className="fader-group">
+                  {selectParams.length > 0 && (
+                    <div className="fader-group__selects">
+                      {selectParams.map((param) => {
+                        const key = `${effect.id}:${param.node_id}:${param.param_key}`;
+                        const override = paramOverrides[key];
+                        const sceneVal = sceneParamValue(effect.id, param.node_id, param.param_key);
+                        const ride = (v: number | string) => {
+                          setParamOverride(key, v);
+                          persistSceneParam(effect.id, param.node_id, param.param_key, v);
+                        };
+                        const value =
+                          typeof override === "string"
+                            ? override
+                            : typeof sceneVal === "string"
+                              ? sceneVal
+                              : typeof param.default === "string"
+                                ? param.default
+                                : (param.options?.[0] ?? "");
+                        return (
+                          <ParamSelect
+                            key={key}
+                            label={param.label}
+                            options={param.options ?? []}
+                            value={value}
+                            onChange={ride}
+                          />
+                        );
+                      })}
+                    </div>
+                  )}
 
-        <div className="console-page__faders">
-          {!activeScene && (
-            <p className="console-page__hint">No scene is live. Pick one on the left to start riding faders.</p>
-          )}
-          {activeScene && liveEffects.length === 0 && (
-            <p className="console-page__hint">This scene has no effect assignments yet — edit it to add some.</p>
-          )}
-          {liveEffects.map((effect, effectIndex) => {
-            const accent = FADER_GROUP_ACCENTS[effectIndex % FADER_GROUP_ACCENTS.length];
-            const selectParams = effect.exposed_params.filter((p) => p.options && p.options.length > 0);
-            const faderParams = effect.exposed_params.filter((p) => !p.options || p.options.length === 0);
-
-            return (
-              <section
-                key={effect.id}
-                className="fader-group"
-                style={{ "--fader-group-accent": `var(--${accent})` } as CSSProperties}
-              >
-                <div className="fader-group__head">
-                  <h3>{effect.name}</h3>
-                </div>
-
-                {selectParams.length > 0 && (
-                  <div className="fader-group__selects">
-                    {selectParams.map((param) => {
+                  <div className="fader-group__row">
+                    {faderParams.map((param) => {
                       const key = `${effect.id}:${param.node_id}:${param.param_key}`;
                       const override = paramOverrides[key];
                       const sceneVal = sceneParamValue(effect.id, param.node_id, param.param_key);
@@ -250,63 +280,36 @@ export function ConsolePage() {
                         persistSceneParam(effect.id, param.node_id, param.param_key, v);
                       };
                       const value =
-                        typeof override === "string"
+                        typeof override === "number"
                           ? override
-                          : typeof sceneVal === "string"
+                          : typeof sceneVal === "number"
                             ? sceneVal
-                            : typeof param.default === "string"
+                            : typeof param.default === "number"
                               ? param.default
-                              : (param.options?.[0] ?? "");
+                              : 0;
                       return (
-                        <ParamSelect
+                        <ParamFader
                           key={key}
                           label={param.label}
-                          options={param.options ?? []}
+                          min={param.min}
+                          max={param.max}
                           value={value}
                           onChange={ride}
+                          accent={accent}
                         />
                       );
                     })}
+                    {effect.exposed_params.length === 0 && (
+                      <p className="console-page__hint">No exposed params on this effect.</p>
+                    )}
                   </div>
-                )}
+                </ConsoleCard>
+              );
+            })}
+          </div>
+        </ConsoleCard>
 
-                <div className="fader-group__row">
-                  {faderParams.map((param) => {
-                    const key = `${effect.id}:${param.node_id}:${param.param_key}`;
-                    const override = paramOverrides[key];
-                    const sceneVal = sceneParamValue(effect.id, param.node_id, param.param_key);
-                    const ride = (v: number | string) => {
-                      setParamOverride(key, v);
-                      persistSceneParam(effect.id, param.node_id, param.param_key, v);
-                    };
-                    const value =
-                      typeof override === "number"
-                        ? override
-                        : typeof sceneVal === "number"
-                          ? sceneVal
-                          : typeof param.default === "number"
-                            ? param.default
-                            : 0;
-                    return (
-                      <ParamFader
-                        key={key}
-                        label={param.label}
-                        min={param.min}
-                        max={param.max}
-                        value={value}
-                        onChange={ride}
-                        accent={accent}
-                      />
-                    );
-                  })}
-                  {effect.exposed_params.length === 0 && (
-                    <p className="console-page__hint">No exposed params on this effect.</p>
-                  )}
-                </div>
-              </section>
-            );
-          })}
-        </div>
+        <PlaylistPanel />
       </div>
 
       {editorState && (

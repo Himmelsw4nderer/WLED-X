@@ -4,12 +4,10 @@
   gap: 0.4rem;
 }
 
-.color-scheme-select__head {
-  font-size: 0.62rem;
-  font-family: var(--font-label);
+/* Same size/spacing as every other card sublabel (see ConsoleCard.css) --
+   just its own accent color to tie it to the Colors tab. */
+.color-scheme-select .console-card__sublabel {
   color: var(--violet);
-  text-transform: uppercase;
-  letter-spacing: 0.12em;
 }
 
 .color-scheme-select__row {

@@ -40,7 +40,7 @@ export function HitButton() {
 
   return (
     <div className="hit-button">
-      <span className="section-label">Hype</span>
+      <span className="console-card__sublabel">Hype</span>
       <div className="hit-button__stage">
         <SegMeter value={displayHype} orientation="vertical" segments={14} />
         <button

@@ -7,20 +7,11 @@
   overflow-y: auto;
 }
 
-/* Shared header row for every card on this page (top-deck panels, the fader
-   rack, each fader-group) -- one alignment rule instead of each card
-   re-deciding baseline vs. center, gap size, etc. on its own. */
-.console-card-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.75rem;
-  flex-wrap: wrap;
-}
-
 /* ---- Top deck: master module | cue stack | audio ---- */
-/* Bootstrap-ish auto-fit grid: as many ~280px columns as fit, reflowing down
-   to a single column on a phone without a hand-picked breakpoint. */
+/* Bootstrap-ish auto-fit grid: as many ~260px columns as fit, reflowing down
+   to a single column on a phone without a hand-picked breakpoint. Every card
+   here is a <ConsoleCard> (see ConsoleCard.tsx/.css) -- this file only adds
+   the page-specific sizing/layout each one needs on top of that shared shell. */
 .console-deck {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
@@ -28,27 +19,11 @@
   align-items: stretch;
 }
 
-.console-deck > .panel {
-  padding: 1rem 1.1rem;
-  display: flex;
-  flex-direction: column;
-  gap: 0.85rem;
-  min-width: 0;
-}
-
-/* Each top-deck module gets its own accent instead of every label reading
-   the same gold -- Master stays the hero pink, Audio picks up the meter's
-   own cyan; Cues keeps gold via SceneTransport's own heading. */
-.console-deck__master .section-label {
-  color: var(--accent);
-}
-
-.console-deck__audio .section-label {
-  color: var(--cyan);
-}
-
-.console-deck__master {
-  flex-direction: row !important;
+/* The Master card's body is the one place on this page that reads
+   left-to-right instead of stacking -- brightness, hype, and color scheme
+   as three side-by-side modules. */
+.console-deck__master .console-card__body {
+  flex-direction: row;
   flex-wrap: wrap;
   gap: 1.5rem;
   align-items: flex-start;
@@ -59,6 +34,21 @@
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
+}
+
+/* ---- Lower deck: fader bank (wide) | playlists (narrow) ---- */
+
+.console-lower {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+  gap: 1rem;
+  align-items: start;
+}
+
+@media (max-width: 900px) {
+  .console-lower {
+    grid-template-columns: 1fr;
+  }
 }
 
 /* ---- Master module ---- */
@@ -118,26 +108,15 @@
   min-height: 0;
 }
 
+.console-deck__cues .console-card__body {
+  min-height: 0;
+}
+
 .scene-transport {
   display: flex;
   flex-direction: column;
   min-height: 0;
   gap: 0.6rem;
-}
-
-.scene-transport__head {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.scene-transport__head h2 {
-  margin: 0;
-  font-size: 0.68rem;
-  font-family: var(--font-label);
-  color: var(--gold);
-  text-transform: uppercase;
-  letter-spacing: 0.12em;
 }
 
 .scene-transport__list {
@@ -220,23 +199,6 @@
   gap: 0.4rem;
 }
 
-.global-source-select__head {
-  font-size: 0.62rem;
-  font-family: var(--font-label);
-  color: var(--text-dim);
-  text-transform: uppercase;
-  letter-spacing: 0.12em;
-}
-
-.global-source-select__input {
-  background: var(--bg);
-  color: inherit;
-  border: 2px solid var(--border);
-  border-radius: var(--r-sm);
-  padding: 0.4rem 0.55rem;
-  font-size: 0.85rem;
-}
-
 .audio-meter {
   display: flex;
   flex-wrap: wrap;
@@ -315,8 +277,6 @@
   display: flex;
   align-items: center;
   gap: 0.4rem;
-  font-size: 0.78rem;
-  color: var(--text-dim);
   white-space: nowrap;
 }
 
@@ -325,12 +285,6 @@
 }
 
 .audio-source-picker__select {
-  background: var(--bg);
-  color: inherit;
-  border: 2px solid var(--border);
-  border-radius: var(--r-sm);
-  padding: 0.3rem 0.5rem;
-  font-size: 0.8rem;
   max-width: 220px;
 }
 
@@ -343,24 +297,10 @@
 .console-page__rack {
   flex: 1;
   min-height: 260px;
-  display: flex;
-  flex-direction: column;
-  padding: 1rem 1.1rem;
-  gap: 0.75rem;
 }
 
-.console-page__rack-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.75rem;
-  flex-wrap: wrap;
-}
-
-.console-page__rack-meta {
-  font-size: 0.75rem;
-  color: var(--text-dim);
-  font-variant-numeric: tabular-nums;
+.console-page__rack .console-card__body {
+  min-height: 0;
 }
 
 .console-page__faders {
@@ -378,28 +318,13 @@
   margin: 0;
 }
 
-/* Each effect is a rack module; its params are a grid of channel strips that
-   reflows by width instead of only ever scrolling sideways. */
+/* Each effect is a rack module (a <ConsoleCard>, like every other card on
+   this page) with an accent stripe down the side; its params are a grid of
+   channel strips that reflows by width instead of only ever scrolling
+   sideways. */
 .fader-group {
-  --fader-group-accent: var(--gold);
-  border: 3px solid var(--border);
-  border-left: 5px solid var(--fader-group-accent);
-  border-radius: var(--r-md);
   background: var(--bg);
-  padding: 0.85rem 1rem 1rem;
-}
-
-.fader-group__head {
-  margin-bottom: 0.7rem;
-}
-
-.fader-group h3 {
-  margin: 0;
-  font-size: 0.72rem;
-  font-family: var(--font-label);
-  color: var(--fader-group-accent);
-  text-transform: uppercase;
-  letter-spacing: 0.12em;
+  border-left: 5px solid var(--console-card-accent);
 }
 
 /* Select-type params (e.g. Position's axis) get their own row above the
@@ -415,9 +340,9 @@
 }
 
 .fader-group__row {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(84px, 1fr));
-  justify-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
   gap: 1.25rem 1.5rem;
 }
 
