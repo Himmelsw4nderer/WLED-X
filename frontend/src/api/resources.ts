@@ -21,6 +21,8 @@ import type {
   PlaylistUpdate,
   PreviewRequest,
   PreviewResponse,
+  RoomPreviewRequest,
+  RoomPreviewResponse,
   Scene,
   SceneCreate,
   SceneUpdate,
@@ -61,6 +63,8 @@ export const effectsApi = {
   duplicate: (id: number) => api.post<Effect>(`/api/effects/${id}/duplicate`),
   remove: (id: number) => api.delete<void>(`/api/effects/${id}`),
   preview: (payload: PreviewRequest) => api.post<PreviewResponse>("/api/effects/preview", payload),
+  previewRoom: (payload: RoomPreviewRequest) =>
+    api.post<RoomPreviewResponse>("/api/effects/preview_room", payload),
 };
 
 export const scenesApi = {

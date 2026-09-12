@@ -9,16 +9,23 @@ from typing import Any
 
 import numpy as np
 from fastapi import APIRouter, HTTPException
-from sqlmodel import Session
+from sqlmodel import Session, select
 
 from wled_x import db
-from wled_x.api.schemas import NodePreview, PreviewRequest, PreviewResponse
+from wled_x.api.schemas import (
+    NodePreview,
+    PreviewRequest,
+    PreviewResponse,
+    RoomPreviewRequest,
+    RoomPreviewResponse,
+)
 from wled_x.console.state import console
 from wled_x.effects import engine
 from wled_x.effects.color_schemes import resolve_scheme_colors
-from wled_x.effects.geometry import led_positions
+from wled_x.effects.geometry import led_positions, scene_bounds
 from wled_x.effects.graph import EvalContext, GraphError, evaluate_graph
 from wled_x.effects.nodes import NODE_REGISTRY
+from wled_x.models.fixture import Fixture
 
 router = APIRouter(prefix="/api/effects", tags=["effects"])
 
@@ -105,6 +112,83 @@ def preview_effect(payload: PreviewRequest) -> PreviewResponse:
         warning = "Every LED is black -- check what's feeding the LED Color node's input."
 
     return PreviewResponse(colors=colors_list, nodes=nodes_preview, warning=warning)
+
+
+# Same node-set-signature-keyed reset trick as `_preview_state` above, but
+# keyed per fixture id too since the room preview evaluates the graph once
+# per real fixture (each with its own Counter/Square/etc. working state),
+# not just one synthetic strip.
+_room_preview_lock = threading.Lock()
+_room_preview_state: dict[int, dict[str, Any]] = {}
+_room_preview_signature: frozenset[tuple[Any, Any]] | None = None
+
+
+@router.post("/preview_room", response_model=RoomPreviewResponse)
+def preview_room(payload: RoomPreviewRequest) -> RoomPreviewResponse:
+    """The debug preview's 3D room view: evaluates the in-editor graph (saved
+    or not) against every *real* fixture's actual geometry, so you can see how
+    the effect being worked on will actually look in the room -- not just on
+    one synthetic straight strip. Returns the same shape as the live WS
+    "frame" message so the room view can reuse FixtureStrip unchanged."""
+    overrides: dict[tuple[str, str], float | str] = {}
+    for key, value in payload.param_overrides.items():
+        node_id, _, param_key = key.rpartition(":")
+        if node_id:
+            overrides[(node_id, param_key)] = value
+
+    signature = frozenset(
+        (node.get("id"), node.get("type")) for node in payload.graph.get("nodes", [])
+    )
+
+    with Session(db.engine) as session:
+        fixtures = list(session.exec(select(Fixture)).all())
+        console_state = console.snapshot()
+        color_scheme_colors = resolve_scheme_colors(session, console_state.active_color_scheme_id)
+
+    bounds = scene_bounds([f.points for f in fixtures])
+    fixture_centers = {
+        f.id: (
+            np.mean(np.asarray(f.points, dtype=np.float32), axis=0)
+            if f.points
+            else np.zeros(3, dtype=np.float32)
+        )
+        for f in fixtures
+    }
+
+    with _room_preview_lock:
+        global _room_preview_signature
+        if signature != _room_preview_signature:
+            _room_preview_state.clear()
+            _room_preview_signature = signature
+
+        result: dict[str, list[list[int]]] = {}
+        for fixture in fixtures:
+            positions = led_positions(fixture.points, fixture.led_count, reverse=fixture.reverse)
+            node_state = _room_preview_state.setdefault(fixture.id, {})
+            context = EvalContext(
+                n=fixture.led_count,
+                positions=positions,
+                time=engine.elapsed_time(),
+                audio=engine.live_audio(),
+                hype=console_state.hype,
+                audio_sources=engine.live_audio_sources(),
+                state=node_state,
+                scene_bounds=bounds,
+                color_scheme=color_scheme_colors,
+                fixture_id=fixture.id,
+                fixture_centers=fixture_centers,
+            )
+            try:
+                colors, _node_outputs = evaluate_graph(
+                    payload.graph, NODE_REGISTRY, context, overrides
+                )
+            except GraphError as exc:
+                raise HTTPException(422, str(exc)) from exc
+            colors_u8 = np.clip(colors, 0.0, 1.0) * 255.0
+            result[str(fixture.id)] = colors_u8.astype(np.uint8).tolist()
+
+    warning = None if fixtures else "No fixtures yet -- add one on the Room page to preview here."
+    return RoomPreviewResponse(fixtures=result, warning=warning)
 
 
 def _summarize(node_type: str | None, sockets: dict[str, object]) -> NodePreview:

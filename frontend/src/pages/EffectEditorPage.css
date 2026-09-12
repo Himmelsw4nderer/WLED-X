@@ -85,3 +85,19 @@
   min-height: 0;
   display: flex;
 }
+
+.effect-editor__room-bar {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.5rem 1.5rem;
+  border-bottom: 3px solid var(--border);
+  background: var(--bg-elevated);
+}
+
+.effect-editor__room-view {
+  flex: none;
+  height: 320px;
+  border-bottom: 3px solid var(--border);
+}

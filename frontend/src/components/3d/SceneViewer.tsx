@@ -10,9 +10,10 @@ interface SceneViewerProps {
   fixtures: Fixture[];
   selectedId: number | null;
   onSelect: (id: number | null) => void;
+  colorsOverride?: Record<string, [number, number, number][]> | null;
 }
 
-export function SceneViewer({ fixtures, selectedId, onSelect }: SceneViewerProps) {
+export function SceneViewer({ fixtures, selectedId, onSelect, colorsOverride }: SceneViewerProps) {
   const controlsRef = useRef<OrbitControlsImpl>(null);
   const ledTotal = fixtures.reduce((n, f) => n + f.led_count, 0);
 
@@ -45,7 +46,13 @@ export function SceneViewer({ fixtures, selectedId, onSelect }: SceneViewerProps
 
         <Suspense fallback={null}>
           {fixtures.map((f) => (
-            <FixtureStrip key={f.id} fixture={f} selected={f.id === selectedId} onSelect={onSelect} />
+            <FixtureStrip
+              key={f.id}
+              fixture={f}
+              selected={f.id === selectedId}
+              onSelect={onSelect}
+              colorsOverride={colorsOverride}
+            />
           ))}
           <ContactShadows position={[0, -0.02, 0]} opacity={0.35} scale={32} blur={2.6} far={6} color="#000000" />
         </Suspense>

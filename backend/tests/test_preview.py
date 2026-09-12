@@ -185,3 +185,69 @@ def test_preview_length_meters_controls_global_x_but_not_position_x(client):
     body = resp.json()
     assert body["nodes"]["px"]["values"] == [0.0, 0.5, 1.0]
     assert body["nodes"]["gx"]["values"] == [0.0, 2.5, 5.0]
+
+
+def test_preview_room_with_no_fixtures_returns_empty_map_and_a_warning(client):
+    graph = {
+        "nodes": [
+            {"id": "c1", "type": "constant", "data": {"value": 0.5}},
+            {"id": "out", "type": "led_color", "data": {}},
+        ],
+        "edges": [_edge("e1", "c1", "out", "color")],
+    }
+    resp = client.post("/api/effects/preview_room", json={"graph": graph})
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["fixtures"] == {}
+    assert body["warning"] is not None
+
+
+def test_preview_room_evaluates_against_every_real_fixture(client):
+    device = client.post("/api/devices", json={"name": "d", "ip": "10.0.0.20"}).json()
+    fixture = client.post(
+        "/api/fixtures",
+        json={
+            "name": "strip",
+            "device_id": device["id"],
+            "led_count": 3,
+            "points": [[0, 0, 0], [1, 0, 0]],
+        },
+    ).json()
+
+    graph = {
+        "nodes": [
+            {"id": "c1", "type": "constant", "data": {"value": 0.5}},
+            {"id": "out", "type": "led_color", "data": {}},
+        ],
+        "edges": [_edge("e1", "c1", "out", "color")],
+    }
+    resp = client.post("/api/effects/preview_room", json={"graph": graph})
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["warning"] is None
+    assert set(body["fixtures"].keys()) == {str(fixture["id"])}
+    assert len(body["fixtures"][str(fixture["id"])]) == 3
+    assert all(c == [127, 127, 127] for c in body["fixtures"][str(fixture["id"])])
+
+
+def test_preview_room_rejects_an_invalid_graph(client):
+    graph = {
+        "nodes": [{"id": "a", "type": "add", "data": {}}, {"id": "b", "type": "add", "data": {}}],
+        "edges": [
+            {"id": "e1", "source": "a", "target": "b", "targetHandle": "a"},
+            {"id": "e2", "source": "b", "target": "a", "targetHandle": "a"},
+        ],
+    }
+    client.post("/api/devices", json={"name": "d2", "ip": "10.0.0.21"})
+    device = client.get("/api/devices").json()[0]
+    client.post(
+        "/api/fixtures",
+        json={
+            "name": "s",
+            "device_id": device["id"],
+            "led_count": 2,
+            "points": [[0, 0, 0], [1, 0, 0]],
+        },
+    )
+    resp = client.post("/api/effects/preview_room", json={"graph": graph})
+    assert resp.status_code == 422

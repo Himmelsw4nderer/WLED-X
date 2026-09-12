@@ -169,6 +169,18 @@ export interface PreviewResponse {
   warning: string | null;
 }
 
+export interface RoomPreviewRequest {
+  graph: EffectGraph;
+  param_overrides?: Record<string, number | string>;
+}
+
+// Keyed by fixture id (as a string) -- same shape as the live WS "frame"
+// message's `fixtures` field.
+export interface RoomPreviewResponse {
+  fixtures: Record<string, [number, number, number][]>;
+  warning: string | null;
+}
+
 export type AudioSourceMode = "loopback" | "input";
 
 // One selectable entry in the audio device picker -- `id` is a UI-only key,

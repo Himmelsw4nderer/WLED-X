@@ -288,6 +288,19 @@ class NodePreview(BaseModel):
     values: list[Any]
 
 
+class RoomPreviewRequest(BaseModel):
+    graph: dict[str, Any]
+    param_overrides: dict[str, float | str] = {}
+
+
+class RoomPreviewResponse(BaseModel):
+    # Same shape as the live WS "frame" message's `fixtures` field -- one
+    # [r,g,b] (0-255) per LED, keyed by fixture id as a string -- so the room
+    # view's FixtureStrip can render either source with the same code path.
+    fixtures: dict[str, list[list[int]]]
+    warning: str | None = None
+
+
 class PreviewResponse(BaseModel):
     colors: list[list[int]]
     nodes: dict[str, NodePreview]

@@ -3,14 +3,19 @@ import { Link, useNavigate, useParams } from "react-router-dom";
 import { useEdgesState, useNodesState } from "reactflow";
 import type { Edge, Node } from "reactflow";
 import { nodesApi } from "../api/resources";
+import { SceneViewer } from "../components/3d/SceneViewer";
 import { DebugBar } from "../components/nodegraph/DebugBar";
+import { debugChannelName } from "../components/nodegraph/debugChannel";
+import type { DebugChannelMessage } from "../components/nodegraph/debugChannel";
 import { ExposedParamsPanel } from "../components/nodegraph/ExposedParamsPanel";
 import { NodeCanvas } from "../components/nodegraph/NodeCanvas";
 import { NodeGraphContext } from "../components/nodegraph/NodeGraphContext";
 import type { NodeGraphContextValue } from "../components/nodegraph/NodeGraphContext";
 import { NodePalette } from "../components/nodegraph/NodePalette";
 import { useDebugPreview } from "../components/nodegraph/useDebugPreview";
+import { useDebugRoomPreview } from "../components/nodegraph/useDebugRoomPreview";
 import { useEffectStore } from "../store/useEffectStore";
+import { useFixtureStore } from "../store/useFixtureStore";
 import type { EffectGraph, ExposedParam, NodeParam, NodeTypeDescriptor } from "../types";
 import "./EffectEditorPage.css";
 
@@ -39,6 +44,13 @@ export function EffectEditorPage() {
   const [debugOn, setDebugOn] = useState(false);
   const [debugLedCount, setDebugLedCount] = useState(24);
   const [debugLengthMeters, setDebugLengthMeters] = useState(2);
+  const [roomViewOn, setRoomViewOn] = useState(false);
+
+  const fixtures = useFixtureStore((s) => s.fixtures);
+  const refreshFixtures = useFixtureStore((s) => s.refresh);
+  useEffect(() => {
+    void refreshFixtures();
+  }, [refreshFixtures]);
 
   const initializedForId = useRef<number | null>(null);
   const effect = effects.find((e) => e.id === numericId);
@@ -158,6 +170,44 @@ export function EffectEditorPage() {
     debugLedCount,
     debugLengthMeters,
   );
+  const { result: roomResult, error: roomError } = useDebugRoomPreview(roomViewOn, currentGraph);
+
+  // Mirrors the in-progress graph out to any popped-out debug window (see
+  // DebugPopoutPage) over a BroadcastChannel -- a real separate browser
+  // window can't reach this component's state any other way. Also answers a
+  // popout's "hello" (sent on open/reload) so it gets the current graph
+  // immediately instead of waiting for the next edit.
+  const channelRef = useRef<BroadcastChannel | null>(null);
+  useEffect(() => {
+    if (!effect) return;
+    const channel = new BroadcastChannel(debugChannelName(effect.id));
+    channelRef.current = channel;
+    channel.onmessage = (event: MessageEvent<DebugChannelMessage>) => {
+      if (event.data.type === "hello") {
+        channel.postMessage({ type: "graph", graph: currentGraph } satisfies DebugChannelMessage);
+      }
+    };
+    return () => {
+      channel.close();
+      channelRef.current = null;
+    };
+    // currentGraph deliberately excluded -- re-subscribing per keystroke would
+    // drop messages mid-flight; the broadcast effect below sends every change.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [effect?.id]);
+
+  useEffect(() => {
+    channelRef.current?.postMessage({ type: "graph", graph: currentGraph } satisfies DebugChannelMessage);
+  }, [currentGraph]);
+
+  function openDebugPopout() {
+    if (!effect) return;
+    window.open(
+      `${window.location.origin}/effects/${effect.id}/debug-popout`,
+      `wledx-debug-${effect.id}`,
+      "width=980,height=720",
+    );
+  }
 
   const graphContextValue = useMemo<NodeGraphContextValue>(
     () => ({
@@ -255,6 +305,38 @@ export function EffectEditorPage() {
         result={debugResult}
         error={debugError}
       />
+
+      {debugOn && (
+        <div className="effect-editor__room-bar">
+          <button
+            type="button"
+            className={`btn btn--small ${roomViewOn ? "btn--accent" : ""}`}
+            onClick={() => setRoomViewOn((v) => !v)}
+          >
+            {roomViewOn ? "3D Room View: on" : "3D Room View: off"}
+          </button>
+          <button type="button" className="btn btn--small" onClick={openDebugPopout}>
+            Pop out ↗
+          </button>
+          {roomViewOn && roomError && <span className="debug-bar__error">{roomError}</span>}
+          {roomViewOn && fixtures.length === 0 && (
+            <span className="debug-bar__hint">
+              No fixtures yet — add one on the <Link to="/builder">Room</Link> page to see it here.
+            </span>
+          )}
+        </div>
+      )}
+
+      {roomViewOn && (
+        <div className="effect-editor__room-view">
+          <SceneViewer
+            fixtures={fixtures}
+            selectedId={null}
+            onSelect={() => {}}
+            colorsOverride={roomResult?.fixtures ?? {}}
+          />
+        </div>
+      )}
 
       <div className="effect-editor__body">
         <NodeGraphContext.Provider value={graphContextValue}>

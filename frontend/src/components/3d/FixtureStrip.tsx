@@ -27,14 +27,24 @@ interface FixtureStripProps {
   fixture: Fixture;
   selected: boolean;
   onSelect: (id: number) => void;
+  // When provided (even as null, e.g. "still loading"), pixels come from this
+  // map instead of the live WS "frame" broadcast -- the effect editor's debug
+  // room view feeds its own /preview_room poll through here so it can show
+  // the effect under development without touching the real live show.
+  colorsOverride?: Record<string, [number, number, number][]> | null;
 }
 
-export function FixtureStrip({ fixture, selected, onSelect }: FixtureStripProps) {
+export function FixtureStrip({ fixture, selected, onSelect, colorsOverride }: FixtureStripProps) {
   const meshRef = useRef<THREE.InstancedMesh>(null);
   const haloRef = useRef<THREE.InstancedMesh>(null);
   const dummy = useMemo(() => new THREE.Object3D(), []);
   const framePixels = useRef<Array<[number, number, number]> | null>(null);
+  const overridePixels = useRef<Array<[number, number, number]> | null>(null);
   const instanceCount = Math.max(fixture.led_count, 1);
+
+  useEffect(() => {
+    overridePixels.current = colorsOverride ? (colorsOverride[String(fixture.id)] ?? null) : null;
+  }, [colorsOverride, fixture.id]);
 
   const ledPositions = useMemo(() => {
     const positions = distributeAlongPolyline(fixture.points, fixture.led_count);
@@ -65,10 +75,11 @@ export function FixtureStrip({ fixture, selected, onSelect }: FixtureStripProps)
 
   const handleFrame = useCallback(
     (message: Record<string, unknown>) => {
+      if (colorsOverride !== undefined) return; // room-view mode: ignore the live show
       const fixtures = message.fixtures as Record<string, Array<[number, number, number]>> | undefined;
       framePixels.current = fixtures?.[fixture.id] ?? null;
     },
-    [fixture.id],
+    [fixture.id, colorsOverride],
   );
   useLiveMessage("frame", handleFrame);
 
@@ -76,7 +87,7 @@ export function FixtureStrip({ fixture, selected, onSelect }: FixtureStripProps)
     const mesh = meshRef.current;
     if (!mesh) return;
     const halo = haloRef.current;
-    const pixels = framePixels.current;
+    const pixels = colorsOverride !== undefined ? overridePixels.current : framePixels.current;
     for (let i = 0; i < ledPositions.length; i++) {
       const pixel = pixels?.[i];
       if (pixel) {
