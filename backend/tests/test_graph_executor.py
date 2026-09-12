@@ -812,3 +812,49 @@ def test_brightness_applies_per_pixel_when_amount_is_a_field():
     assert np.allclose(outputs["b"]["value"][:, 0], [0.0, 0.5, 1.0])
 
 
+# --- Fixture Index node ------------------------------------------------------
+
+
+def _fixture_context(fixture_id: int, centers: dict[int, np.ndarray]) -> EvalContext:
+    ctx = _context(1)
+    ctx.fixture_id = fixture_id
+    ctx.fixture_centers = centers
+    return ctx
+
+
+_CENTERS = {
+    1: np.array([5.0, 0.0, 0.0]),
+    2: np.array([0.0, 0.0, 0.0]),
+    3: np.array([10.0, 0.0, 0.0]),
+}
+
+
+def test_fixture_index_ranks_by_centroid_along_the_chosen_axis():
+    graph = {"nodes": [{"id": "f", "type": "fixture_index", "data": {"axis": "x"}}], "edges": []}
+    _, outputs = evaluate_graph(graph, NODE_REGISTRY, _fixture_context(2, _CENTERS))
+    assert outputs["f"]["index"] == pytest.approx(0.0)
+    assert outputs["f"]["count"] == pytest.approx(3.0)
+
+    _, outputs = evaluate_graph(graph, NODE_REGISTRY, _fixture_context(1, _CENTERS))
+    assert outputs["f"]["index"] == pytest.approx(1.0)
+    assert outputs["f"]["normalized"] == pytest.approx(0.5)
+
+    _, outputs = evaluate_graph(graph, NODE_REGISTRY, _fixture_context(3, _CENTERS))
+    assert outputs["f"]["index"] == pytest.approx(2.0)
+    assert outputs["f"]["normalized"] == pytest.approx(1.0)
+
+
+def test_fixture_index_reverse_flips_the_ranking():
+    graph = {
+        "nodes": [{"id": "f", "type": "fixture_index", "data": {"axis": "x", "reverse": "true"}}],
+        "edges": [],
+    }
+    _, outputs = evaluate_graph(graph, NODE_REGISTRY, _fixture_context(2, _CENTERS))
+    assert outputs["f"]["index"] == pytest.approx(2.0)
+
+
+def test_fixture_index_alone_in_the_scene_is_index_zero_of_one():
+    graph = {"nodes": [{"id": "f", "type": "fixture_index", "data": {}}], "edges": []}
+    _, outputs = evaluate_graph(graph, NODE_REGISTRY, _context(1))
+    assert outputs["f"]["index"] == pytest.approx(0.0)
+    assert outputs["f"]["count"] == pytest.approx(1.0)

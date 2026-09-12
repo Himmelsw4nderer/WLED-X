@@ -212,6 +212,31 @@ def _distance(data: dict[str, Any], inputs: dict[str, Value], context: EvalConte
     return (1.0 - scaled).astype(np.float32) if mode == "radius_inv" else scaled
 
 
+def _fixture_index(
+    data: dict[str, Any], inputs: dict[str, Value], context: EvalContext
+) -> Value:
+    """Ranks this fixture among every other fixture in the scene by the
+    position of its centroid ("center of the strip") along one axis -- so a
+    chase/sequence effect can treat each panel/strip as one discrete step
+    instead of only ever seeing its own internal 0..1 position field.
+    `fixture_centers` is empty outside a real scene render (e.g. the debug
+    preview's single synthetic strip), in which case this fixture is simply
+    index 0 of 1."""
+    centers = context.fixture_centers
+    if not centers:
+        return {"index": 0.0, "normalized": 0.0, "count": 1.0}
+
+    axis = str(data.get("axis", "x")).lower()
+    axis_idx = _AXIS_INDEX.get(axis, 0)
+    ordered_ids = sorted(centers, key=lambda fid: (float(centers[fid][axis_idx]), fid))
+    count = len(ordered_ids)
+    rank = ordered_ids.index(context.fixture_id) if context.fixture_id in ordered_ids else 0
+    if str(data.get("reverse", "false")) == "true":
+        rank = count - 1 - rank
+    normalized = rank / (count - 1) if count > 1 else 0.0
+    return {"index": float(rank), "normalized": float(normalized), "count": float(count)}
+
+
 @lru_cache(maxsize=64)
 def _noise_octave_params(seed: int) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
     rng = np.random.default_rng(seed)
@@ -286,6 +311,23 @@ SPATIAL_NODES: dict[str, NodeDefinition] = {
         compute=_position,
     ),
     "index_normalized": _field_node("index_normalized", "Index Normalized", _index_normalized),
+    "fixture_index": NodeDefinition(
+        descriptor=NodeTypeDescriptor(
+            type="fixture_index",
+            category="spatial",
+            label="Fixture Index",
+            outputs=[
+                NodeSocket(key="index", type="scalar", label="Index"),
+                NodeSocket(key="normalized", type="scalar", label="Normalized"),
+                NodeSocket(key="count", type="scalar", label="Count"),
+            ],
+            params=[
+                NodeParam(key="axis", type="select", default="x", options=["x", "y", "z"]),
+                NodeParam(key="reverse", type="select", default="false", options=["false", "true"]),
+            ],
+        ),
+        compute=_fixture_index,
+    ),
     # --- deprecated: folded into `position`, kept for back-compat only -------
     "position_x": _legacy_position_node("position_x", "Position X", "scene", "x"),
     "position_y": _legacy_position_node("position_y", "Position Y", "scene", "y"),

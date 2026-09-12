@@ -54,6 +54,12 @@ class EvalContext:
     # see wled_x.effects.color_schemes.resolve_scheme_colors. Always at least
     # one row.
     color_scheme: np.ndarray = field(default_factory=lambda: DEFAULT_COLOR_SCHEME)
+    # This fixture's id, and every fixture's (x, y, z) centroid keyed by id --
+    # for the Fixture Index node to rank this fixture among its scene-mates
+    # along a chosen axis. Empty outside a real scene render (e.g. the debug
+    # preview's single synthetic strip has no wider fixture set to rank against).
+    fixture_id: int = 0
+    fixture_centers: dict[int, np.ndarray] = field(default_factory=dict)
 
 
 ComputeFn = Callable[[dict[str, Any], dict[str, Value], EvalContext], "Value | dict[str, Value]"]

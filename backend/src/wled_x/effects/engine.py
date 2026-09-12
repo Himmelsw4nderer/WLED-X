@@ -330,6 +330,12 @@ class RenderLoop:
             self._node_state.clear()
 
         bounds = scene_bounds([f.points for f in fixtures_by_id.values()])
+        fixture_centers = {
+            fid: np.mean(np.asarray(f.points, dtype=np.float32), axis=0)
+            if f.points
+            else np.zeros(3, dtype=np.float32)
+            for fid, f in fixtures_by_id.items()
+        }
         device_buffers: dict[int, np.ndarray] = {}
         preview: dict[str, list[list[int]]] = {}
         preview_names: dict[str, str] = {}
@@ -353,7 +359,7 @@ class RenderLoop:
             for fixture in target_fixtures:
                 colors = self._render_fixture(
                     fixture, effect, param_overrides, now, console_state.hype, bounds,
-                    primary_frame, audio_frames, color_scheme_colors,
+                    primary_frame, audio_frames, color_scheme_colors, fixture_centers,
                 )
                 colors = np.clip(colors, 0.0, 1.0) * brightness
                 colors = np.clip(colors, 0.0, 1.0)
@@ -455,6 +461,7 @@ class RenderLoop:
         primary: AudioFrame,
         audio_frames: dict[str, AudioFrame],
         color_scheme: np.ndarray,
+        fixture_centers: dict[int, np.ndarray],
     ) -> np.ndarray:
         positions = led_positions(fixture.points, fixture.led_count, reverse=fixture.reverse)
         node_state = self._node_state.setdefault(fixture.id, {})
@@ -468,6 +475,8 @@ class RenderLoop:
             scene_bounds=bounds,
             audio_sources=audio_frames,
             color_scheme=color_scheme,
+            fixture_id=fixture.id,
+            fixture_centers=fixture_centers,
         )
         try:
             colors, _node_outputs = evaluate_graph(
