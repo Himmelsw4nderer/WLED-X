@@ -99,6 +99,15 @@ export interface Scene {
 export type SceneCreate = Omit<Scene, "id" | "active">;
 export type SceneUpdate = Partial<Omit<Scene, "id">>;
 
+export interface ColorScheme {
+  id: number;
+  name: string;
+  colors: [number, number, number][];
+}
+
+export type ColorSchemeCreate = Omit<ColorScheme, "id">;
+export type ColorSchemeUpdate = Partial<Omit<ColorScheme, "id">>;
+
 export type NodeSocketType = "scalar" | "field" | "color" | "vec3";
 
 export interface NodeSocket {
@@ -135,6 +144,9 @@ export interface ConsoleState {
   param_overrides: Record<string, number | string>;
   hype: number;
   audio_source: string;
+  // The ColorScheme every Scheme Color / Scheme Random Color node reads from --
+  // null falls back to a single white swatch (see ConsoleState in schemas.py).
+  active_color_scheme_id: number | null;
 }
 
 export interface PreviewRequest {

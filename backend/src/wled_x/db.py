@@ -4,6 +4,7 @@ from sqlmodel import Session, SQLModel, create_engine, select
 
 from wled_x.config import settings
 from wled_x.models.audio_source import AudioSourceConfig
+from wled_x.models.color_scheme import ColorScheme  # noqa: F401  -- register the table
 from wled_x.models.playlist import Playlist  # noqa: F401  -- register the table
 
 engine = create_engine(f"sqlite:///{settings.db_path}", connect_args={"check_same_thread": False})

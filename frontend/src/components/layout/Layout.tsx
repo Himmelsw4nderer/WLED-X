@@ -4,6 +4,7 @@ import "./Layout.css";
 const navItems = [
   { to: "/builder", label: "Room" },
   { to: "/effects", label: "Patch" },
+  { to: "/colors", label: "Colors" },
   { to: "/console", label: "Show" },
   { to: "/devices", label: "Gear" },
 ];

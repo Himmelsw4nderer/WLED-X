@@ -9,10 +9,13 @@ from typing import Any
 
 import numpy as np
 from fastapi import APIRouter, HTTPException
+from sqlmodel import Session
 
+from wled_x import db
 from wled_x.api.schemas import NodePreview, PreviewRequest, PreviewResponse
 from wled_x.console.state import console
 from wled_x.effects import engine
+from wled_x.effects.color_schemes import resolve_scheme_colors
 from wled_x.effects.geometry import led_positions
 from wled_x.effects.graph import EvalContext, GraphError, evaluate_graph
 from wled_x.effects.nodes import NODE_REGISTRY
@@ -51,6 +54,10 @@ def preview_effect(payload: PreviewRequest) -> PreviewResponse:
         (node.get("id"), node.get("type")) for node in payload.graph.get("nodes", [])
     )
 
+    console_state = console.snapshot()
+    with Session(db.engine) as session:
+        color_scheme_colors = resolve_scheme_colors(session, console_state.active_color_scheme_id)
+
     with _preview_lock:
         global _preview_signature
         if signature != _preview_signature:
@@ -62,9 +69,10 @@ def preview_effect(payload: PreviewRequest) -> PreviewResponse:
             positions=positions,
             time=engine.elapsed_time(),
             audio=engine.live_audio(),
-            hype=console.snapshot().hype,
+            hype=console_state.hype,
             audio_sources=engine.live_audio_sources(),
             state=_preview_state,
+            color_scheme=color_scheme_colors,
         )
 
         try:

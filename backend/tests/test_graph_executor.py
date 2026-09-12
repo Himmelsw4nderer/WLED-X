@@ -708,3 +708,107 @@ def test_string_param_override_switches_the_position_axis_live():
 
     assert np.allclose(on_x["p"]["value"], [1.0, 4.0])
     assert np.allclose(on_z["p"]["value"], [3.0, 6.0])
+
+
+# --- Color scheme nodes -----------------------------------------------------
+
+_SCHEME = np.array([[1.0, 0.0, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, 1.0]], dtype=np.float32)
+
+
+def _scheme_context(
+    n: int = 1, scheme: np.ndarray = _SCHEME, state: dict | None = None
+) -> EvalContext:
+    ctx = _context(n)
+    ctx.color_scheme = scheme
+    if state is not None:
+        ctx.state = state
+    return ctx
+
+
+def test_scheme_color_defaults_to_white_with_no_scheme_active():
+    graph = {"nodes": [{"id": "s", "type": "scheme_color", "data": {}}], "edges": []}
+    _, outputs = evaluate_graph(graph, NODE_REGISTRY, _context(1))
+    assert np.allclose(outputs["s"]["value"], [1.0, 1.0, 1.0])
+
+
+def test_scheme_color_picks_the_indexed_swatch():
+    graph = {"nodes": [{"id": "s", "type": "scheme_color", "data": {"index": 1}}], "edges": []}
+    _, outputs = evaluate_graph(graph, NODE_REGISTRY, _scheme_context())
+    assert np.allclose(outputs["s"]["value"], [0.0, 1.0, 0.0])
+
+
+def test_scheme_color_wraps_out_of_range_indices():
+    graph = {"nodes": [{"id": "s", "type": "scheme_color", "data": {"index": 4}}], "edges": []}
+    _, outputs = evaluate_graph(graph, NODE_REGISTRY, _scheme_context())
+    assert np.allclose(outputs["s"]["value"], [0.0, 1.0, 0.0])  # 4 % 3 == 1
+
+
+def test_scheme_color_gathers_per_led_when_index_is_a_field():
+    # index_normalized*2 over 3 LEDs lands exactly on swatches 0, 1, 2 --
+    # each LED should pick its own color, not one shared scalar swatch.
+    graph = {
+        "nodes": [
+            {"id": "idx", "type": "index_normalized", "data": {}},
+            {"id": "mul", "type": "multiply", "data": {"b": 2.0}},
+            {"id": "s", "type": "scheme_color", "data": {}},
+        ],
+        "edges": [
+            {"source": "idx", "target": "mul", "targetHandle": "a"},
+            {"source": "mul", "target": "s", "targetHandle": "index"},
+        ],
+    }
+    _, outputs = evaluate_graph(graph, NODE_REGISTRY, _scheme_context(3))
+    assert np.allclose(outputs["s"]["value"], _SCHEME)
+
+
+def test_scheme_random_color_holds_until_a_rising_trigger_edge():
+    graph = {
+        "nodes": [{"id": "r", "type": "scheme_random_color", "data": {"seed": 1}}],
+        "edges": [],
+    }
+    state: dict = {}
+
+    def _tick(trigger: float) -> np.ndarray:
+        graph["nodes"][0]["data"]["trigger"] = trigger
+        _, outputs = evaluate_graph(graph, NODE_REGISTRY, _scheme_context(state=state))
+        return np.asarray(outputs["r"]["value"])
+
+    first = _tick(0.0)
+    assert any(np.allclose(first, row) for row in _SCHEME)
+    # No rising edge -- must hold the same color across ticks.
+    assert np.allclose(_tick(0.0), first)
+    assert np.allclose(_tick(0.0), first)
+    # A rising edge may (or may not, by chance) redraw a different color, but
+    # must still land on one of the scheme's swatches.
+    redrawn = _tick(1.0)
+    assert any(np.allclose(redrawn, row) for row in _SCHEME)
+
+
+def test_brightness_scales_color_by_a_uniform_amount():
+    graph = {
+        "nodes": [
+            {"id": "rgb", "type": "rgb", "data": {"r": 1.0, "g": 1.0, "b": 1.0}},
+            {"id": "b", "type": "brightness", "data": {"amount": 0.5}},
+        ],
+        "edges": [{"source": "rgb", "target": "b", "targetHandle": "color"}],
+    }
+    _, outputs = evaluate_graph(graph, NODE_REGISTRY, _context(2))
+    assert np.allclose(outputs["b"]["value"], 0.5)
+
+
+def test_brightness_applies_per_pixel_when_amount_is_a_field():
+    graph = {
+        "nodes": [
+            {"id": "rgb", "type": "rgb", "data": {"r": 1.0, "g": 1.0, "b": 1.0}},
+            {"id": "idx", "type": "index_normalized", "data": {}},
+            {"id": "b", "type": "brightness", "data": {}},
+        ],
+        "edges": [
+            {"source": "rgb", "target": "b", "targetHandle": "color"},
+            {"source": "idx", "target": "b", "targetHandle": "amount"},
+        ],
+    }
+    _, outputs = evaluate_graph(graph, NODE_REGISTRY, _context(3))
+    assert np.allclose(outputs["b"]["value"][:, 0], [0.0, 0.5, 1.0])
+
+

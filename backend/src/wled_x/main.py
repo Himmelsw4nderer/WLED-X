@@ -8,6 +8,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from wled_x.api import (
     nodes_registry,
     routes_audio,
+    routes_color_schemes,
     routes_devices,
     routes_discovery,
     routes_effects,
@@ -51,6 +52,7 @@ def create_app() -> FastAPI:
     app.include_router(routes_effects.router)
     app.include_router(routes_preview.router)
     app.include_router(routes_scenes.router)
+    app.include_router(routes_color_schemes.router)
     app.include_router(routes_playlists.router)
     app.include_router(routes_playlists.phrase_router)
     app.include_router(nodes_registry.router)

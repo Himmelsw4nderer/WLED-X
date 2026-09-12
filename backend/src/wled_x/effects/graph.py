@@ -19,6 +19,12 @@ from wled_x.audio.analysis import AudioFrame
 
 Value = float | np.ndarray
 
+# Fallback for EvalContext.color_scheme when the console has no active
+# ColorScheme (or it's empty) -- a single white swatch, so Scheme Color /
+# Scheme Random Color read as plain white until a scheme is actually picked,
+# matching how these effects looked before schemes existed.
+DEFAULT_COLOR_SCHEME = np.array([[1.0, 1.0, 1.0]], dtype=np.float32)
+
 
 class GraphError(ValueError):
     pass
@@ -44,6 +50,10 @@ class EvalContext:
     # this fixture's own position range (e.g. the debug preview's synthetic strip,
     # which has no wider "scene" to normalize against).
     scene_bounds: tuple[np.ndarray, np.ndarray] | None = None
+    # The console's active ColorScheme, as an (K, 3) float32 array in 0..1 --
+    # see wled_x.effects.color_schemes.resolve_scheme_colors. Always at least
+    # one row.
+    color_scheme: np.ndarray = field(default_factory=lambda: DEFAULT_COLOR_SCHEME)
 
 
 ComputeFn = Callable[[dict[str, Any], dict[str, Value], EvalContext], "Value | dict[str, Value]"]

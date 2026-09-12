@@ -13,6 +13,7 @@ interface ConsoleStore extends ConsoleState {
   setParamOverride: (key: string, value: number | string) => void;
   setActiveScene: (sceneId: number | null) => void;
   setAudioSource: (name: string) => void;
+  setColorScheme: (schemeId: number | null) => void;
   hit: () => void;
 }
 
@@ -24,6 +25,7 @@ export const useConsoleStore = create<ConsoleStore>((set, get) => ({
   param_overrides: {},
   hype: 0,
   audio_source: "desktop",
+  active_color_scheme_id: null,
 
   connect: () => {
     if (connected) return;
@@ -54,6 +56,11 @@ export const useConsoleStore = create<ConsoleStore>((set, get) => ({
   setAudioSource: (name) => {
     set({ audio_source: name });
     liveSocket.send({ type: "console_set", audio_source: name });
+  },
+
+  setColorScheme: (schemeId) => {
+    set({ active_color_scheme_id: schemeId });
+    liveSocket.send({ type: "console_set", active_color_scheme_id: schemeId });
   },
 
   hit: () => {

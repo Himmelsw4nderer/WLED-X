@@ -11,6 +11,9 @@ const EffectEditorPage = lazy(() =>
   import("./pages/EffectEditorPage").then((m) => ({ default: m.EffectEditorPage })),
 );
 const ConsolePage = lazy(() => import("./pages/ConsolePage").then((m) => ({ default: m.ConsolePage })));
+const ColorSchemesPage = lazy(() =>
+  import("./pages/ColorSchemesPage").then((m) => ({ default: m.ColorSchemesPage })),
+);
 
 export function App() {
   return (
@@ -27,6 +30,14 @@ export function App() {
           }
         />
         <Route path="/effects" element={<EffectsListPage />} />
+        <Route
+          path="/colors"
+          element={
+            <Suspense fallback={<div className="page">Loading…</div>}>
+              <ColorSchemesPage />
+            </Suspense>
+          }
+        />
         <Route
           path="/effects/:effectId"
           element={

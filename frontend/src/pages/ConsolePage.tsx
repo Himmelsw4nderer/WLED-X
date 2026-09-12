@@ -5,6 +5,7 @@ import { useEffectStore } from "../store/useEffectStore";
 import { useFixtureStore } from "../store/useFixtureStore";
 import { SceneTransport } from "../components/console/SceneTransport";
 import { SceneEditor } from "../components/console/SceneEditor";
+import { ColorSchemeSelect } from "../components/console/ColorSchemeSelect";
 import { MasterFader } from "../components/console/MasterFader";
 import { ParamFader } from "../components/console/ParamFader";
 import { ParamSelect } from "../components/console/ParamSelect";
@@ -173,6 +174,7 @@ export function ConsolePage() {
         <section className="console-deck__master panel">
           <MasterFader value={masterBrightness} onChange={setMasterBrightness} />
           <HitButton />
+          <ColorSchemeSelect />
         </section>
 
         <section className="console-deck__cues panel">

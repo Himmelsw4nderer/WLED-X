@@ -119,6 +119,34 @@ def test_fixture_reverse_defaults_false_and_can_be_toggled(client):
     assert resp.json()["reverse"] is True
 
 
+def test_color_scheme_crud(client):
+    resp = client.post(
+        "/api/color-schemes",
+        json={"name": "Sunset", "colors": [[1.0, 0.4, 0.0], [0.8, 0.0, 0.3]]},
+    )
+    assert resp.status_code == 201
+    scheme = resp.json()
+    assert scheme["name"] == "Sunset"
+    assert scheme["colors"] == [[1.0, 0.4, 0.0], [0.8, 0.0, 0.3]]
+
+    resp = client.get("/api/color-schemes")
+    assert len(resp.json()) == 1
+
+    resp = client.patch(
+        f"/api/color-schemes/{scheme['id']}",
+        json={"colors": [[0.0, 1.0, 0.0]]},
+    )
+    assert resp.status_code == 200
+    assert resp.json()["colors"] == [[0.0, 1.0, 0.0]]
+    assert resp.json()["name"] == "Sunset"  # untouched by a partial update
+
+    resp = client.delete(f"/api/color-schemes/{scheme['id']}")
+    assert resp.status_code == 204
+    assert client.get("/api/color-schemes").json() == []
+    assert client.patch(f"/api/color-schemes/{scheme['id']}", json={"name": "x"}).status_code == 404
+    assert client.delete(f"/api/color-schemes/{scheme['id']}").status_code == 404
+
+
 def test_fixture_device_id_can_be_reassigned(client):
     # Regression test: PATCH /api/fixtures/{id} used to silently drop device_id
     # since it was missing from FixtureUpdate, so reassigning a fixture to a

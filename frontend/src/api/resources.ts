@@ -3,6 +3,9 @@ import type {
   AudioDeviceOption,
   AudioSource,
   AudioSourceUpdate,
+  ColorScheme,
+  ColorSchemeCreate,
+  ColorSchemeUpdate,
   Device,
   DeviceCreate,
   Effect,
@@ -78,6 +81,14 @@ export const playlistsApi = {
   next: (id: number) => api.post<PlaylistStatus>(`/api/playlists/${id}/next`),
   prev: (id: number) => api.post<PlaylistStatus>(`/api/playlists/${id}/prev`),
   status: () => api.get<PlaylistStatus>("/api/playlists/status"),
+};
+
+export const colorSchemesApi = {
+  list: () => api.get<ColorScheme[]>("/api/color-schemes"),
+  create: (payload: ColorSchemeCreate) => api.post<ColorScheme>("/api/color-schemes", payload),
+  update: (id: number, payload: ColorSchemeUpdate) =>
+    api.patch<ColorScheme>(`/api/color-schemes/${id}`, payload),
+  remove: (id: number) => api.delete<void>(`/api/color-schemes/${id}`),
 };
 
 export const nodesApi = {

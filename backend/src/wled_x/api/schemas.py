@@ -129,6 +129,22 @@ class SceneUpdate(BaseModel):
     active: bool | None = None
 
 
+class ColorSchemeRead(BaseModel):
+    id: int
+    name: str
+    colors: list[list[float]]
+
+
+class ColorSchemeCreate(BaseModel):
+    name: str
+    colors: list[list[float]] = []
+
+
+class ColorSchemeUpdate(BaseModel):
+    name: str | None = None
+    colors: list[list[float]] | None = None
+
+
 class NodeSocket(BaseModel):
     key: str
     type: str  # "scalar" | "field" | "color" | "vec3"
@@ -166,6 +182,11 @@ class ConsoleState(BaseModel):
     # audio-reactive node and the phrase-clock. Chosen once here instead of
     # per node -- see wled_x.effects.nodes.audio_nodes.
     audio_source: str = "desktop"
+    # The ColorScheme every Scheme Color / Scheme Random Color node reads from
+    # -- None falls back to a single white swatch (see
+    # wled_x.effects.color_schemes.resolve_scheme_colors), so effects built
+    # around those nodes stay plain white until a scheme is actually picked.
+    active_color_scheme_id: int | None = None
 
 
 class PhraseClockState(BaseModel):
