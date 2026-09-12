@@ -912,6 +912,60 @@ def test_brightness_applies_per_pixel_when_amount_is_a_field():
     assert np.allclose(outputs["b"]["value"][:, 0], [0.0, 0.5, 1.0])
 
 
+# --- Noise scale as a wireable input ----------------------------------------
+
+
+def test_noise_scale_defaults_to_the_param_when_unwired():
+    graph = {
+        "nodes": [
+            {"id": "idx", "type": "index_normalized", "data": {}},
+            {"id": "n", "type": "noise", "data": {"seed": 3, "scale": 1.0}},
+        ],
+        "edges": [{"source": "idx", "target": "n", "targetHandle": "x"}],
+    }
+    _, outputs = evaluate_graph(graph, NODE_REGISTRY, _context(3))
+    assert outputs["n"]["value"].shape == (3,)
+    assert np.all(np.isfinite(outputs["n"]["value"]))
+
+
+def test_noise_scale_can_be_wired_from_another_node():
+    # Same seed and X, different wired-in scale -- a different zoom level
+    # must produce a different noise field, proving the wire actually reaches
+    # the compute function rather than the node falling back to its own param.
+    def sample(scale: float) -> np.ndarray:
+        graph = {
+            "nodes": [
+                {"id": "idx", "type": "index_normalized", "data": {}},
+                {"id": "s", "type": "constant", "data": {"value": scale}},
+                {"id": "n", "type": "noise", "data": {"seed": 3}},
+            ],
+            "edges": [
+                {"source": "idx", "target": "n", "targetHandle": "x"},
+                {"source": "s", "target": "n", "targetHandle": "scale"},
+            ],
+        }
+        _, outputs = evaluate_graph(graph, NODE_REGISTRY, _context(3))
+        return np.asarray(outputs["n"]["value"])
+
+    assert not np.allclose(sample(1.0), sample(5.0))
+
+
+def test_noise_scale_accepts_a_per_led_field():
+    graph = {
+        "nodes": [
+            {"id": "idx", "type": "index_normalized", "data": {}},
+            {"id": "n", "type": "noise", "data": {"seed": 1}},
+        ],
+        "edges": [
+            {"source": "idx", "target": "n", "targetHandle": "x"},
+            {"source": "idx", "target": "n", "targetHandle": "scale"},
+        ],
+    }
+    _, outputs = evaluate_graph(graph, NODE_REGISTRY, _context(3))
+    assert outputs["n"]["value"].shape == (3,)
+    assert np.all(np.isfinite(outputs["n"]["value"]))
+
+
 # --- Fixture Index node ------------------------------------------------------
 
 

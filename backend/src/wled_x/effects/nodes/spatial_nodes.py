@@ -247,9 +247,11 @@ def _noise_octave_params(seed: int) -> tuple[np.ndarray, np.ndarray, np.ndarray]
 
 
 def _noise(data: dict[str, Any], inputs: dict[str, Value], context: EvalContext) -> Value:
-    scale = float(data.get("scale", 1.0))
     seed = int(data.get("seed", 0))
     x = inputs.get("x", context.positions[:, 0])
+    # A field wired in here (Time, Audio Level, another Noise, ...) modulates
+    # the zoom level live instead of it only ever being a fixed param.
+    scale = np.asarray(inputs.get("scale", data.get("scale", 1.0)), dtype=np.float32)
     x_arr = np.atleast_1d(np.asarray(x, dtype=np.float32)) * scale
 
     freqs, phases, amps = _noise_octave_params(seed)
@@ -406,7 +408,10 @@ SPATIAL_NODES: dict[str, NodeDefinition] = {
             type="noise",
             category="spatial",
             label="Noise",
-            inputs=[NodeSocket(key="x", type="field", label="X")],
+            inputs=[
+                NodeSocket(key="x", type="field", label="X"),
+                NodeSocket(key="scale", type="field", label="Scale"),
+            ],
             outputs=[NodeSocket(key="value", type="field", label="Value")],
             params=[
                 NodeParam(key="scale", type="float", default=1.0, min=0.01, max=20.0),
