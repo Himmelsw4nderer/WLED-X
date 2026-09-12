@@ -33,7 +33,7 @@ class Settings(BaseSettings):
     render_enabled: bool = True
     """Set False in tests: skips starting the render loop (audio capture, background task)."""
 
-    preview_window: bool = True
+    preview_window: bool = False
     """Open a local Tk window fed straight from the render loop -- the real
     active scene, real audio, the exact colours going to the fixtures, with no
     browser or WebSocket in the path. For eyeballing real output and render

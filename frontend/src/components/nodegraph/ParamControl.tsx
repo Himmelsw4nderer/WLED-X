@@ -111,7 +111,7 @@ function ParamInput({
 }
 
 export function ParamControl({ param, value, compact, exposed, onChange, onToggleExposed }: ParamControlProps) {
-  const canExpose = param.type === "float" || param.type === "int";
+  const canExpose = param.type === "float" || param.type === "int" || param.type === "select";
 
   return (
     <div className={`param-control ${compact ? "param-control--compact" : ""}`}>

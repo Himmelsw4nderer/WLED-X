@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useConsoleStore } from "../store/useConsoleStore";
 import { useSceneStore } from "../store/useSceneStore";
 import { useEffectStore } from "../store/useEffectStore";
@@ -7,6 +7,7 @@ import { SceneTransport } from "../components/console/SceneTransport";
 import { SceneEditor } from "../components/console/SceneEditor";
 import { MasterFader } from "../components/console/MasterFader";
 import { ParamFader } from "../components/console/ParamFader";
+import { ParamSelect } from "../components/console/ParamSelect";
 import { HitButton } from "../components/console/HitButton";
 import { GlobalSourceSelect } from "../components/console/GlobalSourceSelect";
 import { AudioMeter } from "../components/console/AudioMeter";
@@ -112,6 +113,60 @@ export function ConsolePage() {
 
   const totalParams = liveEffects.reduce((n, e) => n + e.exposed_params.length, 0);
 
+  // --- Fader bank <-> scene persistence -----------------------------------
+  // Riding a fader pushes a live console override for instant feedback (see
+  // setParamOverride) AND, debounced, writes the value onto the active
+  // scene's assignments so it survives a scene switch or reload. The effect
+  // only defines which params are exposed; their live values live on the
+  // scene, keyed "{node_id}:{param_key}" per effect.
+  const pendingParamsRef = useRef(new Map<number, Record<string, number | string>>());
+  const flushSceneIdRef = useRef<number | null>(null);
+  const flushTimerRef = useRef<number | null>(null);
+
+  const flushSceneParams = useCallback(() => {
+    flushTimerRef.current = null;
+    const pending = pendingParamsRef.current;
+    pendingParamsRef.current = new Map();
+    const scene = scenes.find((s) => s.id === flushSceneIdRef.current);
+    if (!scene || pending.size === 0) return;
+    const assignments = scene.assignments.map((a) => {
+      const patch = pending.get(a.effect_id);
+      return patch ? { ...a, params: { ...a.params, ...patch } } : a;
+    });
+    void updateScene(scene.id, { assignments });
+  }, [scenes, updateScene]);
+
+  const persistSceneParam = useCallback(
+    (effectId: number, nodeId: string, paramKey: string, value: number | string) => {
+      if (activeSceneId == null) return;
+      flushSceneIdRef.current = activeSceneId;
+      const patch = pendingParamsRef.current.get(effectId) ?? {};
+      patch[`${nodeId}:${paramKey}`] = value;
+      pendingParamsRef.current.set(effectId, patch);
+      if (flushTimerRef.current !== null) window.clearTimeout(flushTimerRef.current);
+      flushTimerRef.current = window.setTimeout(flushSceneParams, 500);
+    },
+    [activeSceneId, flushSceneParams],
+  );
+
+  useEffect(
+    () => () => {
+      if (flushTimerRef.current !== null) window.clearTimeout(flushTimerRef.current);
+    },
+    [],
+  );
+
+  const sceneParamValue = useCallback(
+    (effectId: number, nodeId: string, paramKey: string): number | string | undefined => {
+      const key = `${nodeId}:${paramKey}`;
+      for (const a of activeScene?.assignments ?? []) {
+        if (a.effect_id === effectId && a.params?.[key] !== undefined) return a.params[key];
+      }
+      return undefined;
+    },
+    [activeScene],
+  );
+
   return (
     <div className="page console-page">
       <div className="console-deck">
@@ -165,7 +220,39 @@ export function ConsolePage() {
               <div className="fader-group__row">
                 {effect.exposed_params.map((param) => {
                   const key = `${effect.id}:${param.node_id}:${param.param_key}`;
-                  const value = paramOverrides[key] ?? param.default;
+                  const override = paramOverrides[key];
+                  const sceneVal = sceneParamValue(effect.id, param.node_id, param.param_key);
+                  const ride = (v: number | string) => {
+                    setParamOverride(key, v);
+                    persistSceneParam(effect.id, param.node_id, param.param_key, v);
+                  };
+                  if (param.options && param.options.length > 0) {
+                    const value =
+                      typeof override === "string"
+                        ? override
+                        : typeof sceneVal === "string"
+                          ? sceneVal
+                          : typeof param.default === "string"
+                            ? param.default
+                            : param.options[0];
+                    return (
+                      <ParamSelect
+                        key={key}
+                        label={param.label}
+                        options={param.options}
+                        value={value}
+                        onChange={ride}
+                      />
+                    );
+                  }
+                  const value =
+                    typeof override === "number"
+                      ? override
+                      : typeof sceneVal === "number"
+                        ? sceneVal
+                        : typeof param.default === "number"
+                          ? param.default
+                          : 0;
                   return (
                     <ParamFader
                       key={key}
@@ -173,7 +260,7 @@ export function ConsolePage() {
                       min={param.min}
                       max={param.max}
                       value={value}
-                      onChange={(v) => setParamOverride(key, v)}
+                      onChange={ride}
                     />
                   );
                 })}

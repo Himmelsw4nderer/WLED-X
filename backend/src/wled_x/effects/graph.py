@@ -59,7 +59,7 @@ def evaluate_graph(
     graph: dict[str, Any],
     registry: dict[str, NodeDefinition],
     context: EvalContext,
-    param_overrides: dict[tuple[str, str], float] | None = None,
+    param_overrides: dict[tuple[str, str], float | str] | None = None,
 ) -> tuple[np.ndarray, dict[str, dict[str, Value]]]:
     """Returns (led colors, per-node output values) -- the latter is the raw
     `outputs` map keyed by node id then output socket key, used both to drive

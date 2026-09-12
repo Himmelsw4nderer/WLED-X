@@ -10,7 +10,7 @@ import type { ConsoleState } from "../types";
 interface ConsoleStore extends ConsoleState {
   connect: () => void;
   setMasterBrightness: (value: number) => void;
-  setParamOverride: (key: string, value: number) => void;
+  setParamOverride: (key: string, value: number | string) => void;
   setActiveScene: (sceneId: number | null) => void;
   setAudioSource: (name: string) => void;
   hit: () => void;

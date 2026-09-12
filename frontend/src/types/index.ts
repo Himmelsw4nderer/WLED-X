@@ -41,7 +41,10 @@ export interface ExposedParam {
   label: string;
   min: number;
   max: number;
-  default: number;
+  // string when `options` is set (a select param, e.g. Position's axis) — the
+  // console then shows a dropdown instead of a fader.
+  default: number | string;
+  options?: string[] | null;
 }
 
 export interface GraphNode {
@@ -79,7 +82,10 @@ export type EffectUpdate = Partial<EffectCreate>;
 export interface SceneAssignment {
   fixture_ids: number[] | "all";
   effect_id: number;
-  params: Record<string, number>;
+  // Per-scene fader-bank values for this effect's console-exposed params,
+  // keyed "{node_id}:{param_key}" — where riding the console faders persists.
+  // number for faders, string for select params.
+  params: Record<string, number | string>;
   brightness: number;
 }
 
@@ -117,12 +123,16 @@ export interface NodeTypeDescriptor {
   inputs: NodeSocket[];
   outputs: NodeSocket[];
   params: NodeParam[];
+  // Still rendered/evaluated for graphs that use it, but hidden from the
+  // palette so nothing new can add one.
+  deprecated?: boolean;
 }
 
 export interface ConsoleState {
   master_brightness: number;
   active_scene_id: number | null;
-  param_overrides: Record<string, number>;
+  // number for fader params, string for select params (see ExposedParam)
+  param_overrides: Record<string, number | string>;
   hype: number;
   audio_source: string;
 }
@@ -131,7 +141,7 @@ export interface PreviewRequest {
   graph: EffectGraph;
   led_count: number;
   length_meters?: number;
-  param_overrides?: Record<string, number>;
+  param_overrides?: Record<string, number | string>;
 }
 
 export interface NodePreviewValue {

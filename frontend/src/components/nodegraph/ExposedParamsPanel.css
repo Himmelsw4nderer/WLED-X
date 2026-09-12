@@ -64,3 +64,11 @@
 .exposed-params-panel__minmax input {
   width: 4rem;
 }
+
+.exposed-params-panel__options {
+  font-size: 0.72rem;
+  color: var(--text-dim);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

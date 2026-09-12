@@ -341,6 +341,32 @@ def test_less_than_fires_below_threshold_only():
     assert below_out["lt"]["value"] == pytest.approx(1.0)
 
 
+def test_not_inverts_a_gate():
+    def _run(value: float) -> float:
+        graph = {
+            "nodes": [{"id": "n", "type": "not", "data": {"value": value}}],
+            "edges": [],
+        }
+        _, outputs = evaluate_graph(graph, NODE_REGISTRY, _context(1))
+        return outputs["n"]["value"]
+
+    assert _run(1.0) == pytest.approx(0.0)
+    assert _run(0.0) == pytest.approx(1.0)
+    assert _run(0.2) == pytest.approx(1.0)
+
+
+def test_not_chains_off_greater_than():
+    graph = {
+        "nodes": [
+            {"id": "gt", "type": "greater_than", "data": {"value": 0.9, "threshold": 0.5}},
+            {"id": "n", "type": "not", "data": {}},
+        ],
+        "edges": [{"source": "gt", "sourceHandle": "value", "target": "n", "targetHandle": "value"}],
+    }
+    _, outputs = evaluate_graph(graph, NODE_REGISTRY, _context(1))
+    assert outputs["n"]["value"] == pytest.approx(0.0)
+
+
 def test_and_or_combines_two_gates():
     def _run(mode: str, a: float, b: float) -> float:
         graph = {
@@ -584,3 +610,101 @@ def test_and_or_chains_off_threshold_gates():
     assert outputs["gt"]["value"] == pytest.approx(1.0)
     assert outputs["lt"]["value"] == pytest.approx(0.0)
     assert outputs["c"]["value"] == pytest.approx(1.0)
+
+
+# --- Unified Position node -------------------------------------------------
+
+_POS_TRIANGLE = np.array(
+    [[0.0, 0.0, 0.0], [3.0, 0.0, 4.0], [1.5, 2.0, 2.0]], dtype=np.float32
+)
+
+
+def _position_field(data: dict, positions=_POS_TRIANGLE, scene_bounds=None) -> np.ndarray:
+    graph = {"nodes": [{"id": "p", "type": "position", "data": data}], "edges": []}
+    _, outputs = evaluate_graph(
+        graph,
+        NODE_REGISTRY,
+        _context(positions.shape[0], positions=positions, scene_bounds=scene_bounds),
+    )
+    return outputs["p"]["value"]
+
+
+def test_position_single_axis_matches_the_legacy_nodes_it_replaced():
+    scene_bounds = (np.array([0.0, 0.0, 0.0]), np.array([10.0, 10.0, 10.0]))
+    space_to_prefix = {"scene": "position", "local": "local", "meters": "global"}
+    for space, prefix in space_to_prefix.items():
+        for axis in ("x", "y", "z"):
+            legacy_graph = {
+                "nodes": [{"id": "l", "type": f"{prefix}_{axis}", "data": {}}],
+                "edges": [],
+            }
+            _, legacy_out = evaluate_graph(
+                legacy_graph,
+                NODE_REGISTRY,
+                _context(3, positions=_POS_TRIANGLE, scene_bounds=scene_bounds),
+            )
+            new_out = _position_field({"space": space, "axis": axis}, scene_bounds=scene_bounds)
+            assert np.allclose(new_out, legacy_out["l"]["value"]), f"{space}/{axis}"
+
+
+def test_position_meters_xyz_equals_the_old_distance_from_origin():
+    new_out = _position_field({"space": "meters", "axis": "xyz"})
+    # points at 0, 5 (3-4-5), and sqrt(1.5^2+2^2+2^2)
+    assert np.allclose(new_out, [0.0, 5.0, np.sqrt(1.5**2 + 2**2 + 2**2)])
+
+
+def test_position_planar_xz_ignores_height():
+    # xz distance of (3,0,4) from origin is 5 regardless of the y component.
+    pts = np.array([[0.0, 9.0, 0.0], [3.0, 9.0, 4.0]], dtype=np.float32)
+    out = _position_field({"space": "meters", "axis": "xz"}, positions=pts)
+    assert np.allclose(out, [0.0, 5.0])
+
+
+def test_position_scene_multi_axis_stays_in_0_1():
+    scene_bounds = (np.array([0.0, 0.0, 0.0]), np.array([4.0, 4.0, 4.0]))
+    out = _position_field({"space": "scene", "axis": "xyz"}, scene_bounds=scene_bounds)
+    assert out.min() >= 0.0 and out.max() <= 1.0
+    # the far corner (relative to bounds) reads 1.0, the origin reads 0.0
+    corner = _position_field(
+        {"space": "scene", "axis": "xyz"},
+        positions=np.array([[0.0, 0.0, 0.0], [4.0, 4.0, 4.0]], dtype=np.float32),
+        scene_bounds=scene_bounds,
+    )
+    assert np.allclose(corner, [0.0, 1.0])
+
+
+def test_position_is_unbreakable_on_bad_params_and_degenerate_input():
+    # unknown space/axis fall back to scene/x rather than raising
+    fallback = _position_field({"space": "nonsense", "axis": "q"})
+    baseline = _position_field({"space": "scene", "axis": "x"})
+    assert np.allclose(fallback, baseline)
+    # a single-LED fixture (degenerate range) is finite and in-range, not NaN
+    single = _position_field(
+        {"space": "local", "axis": "xy"}, positions=np.array([[2.0, 2.0, 2.0]], dtype=np.float32)
+    )
+    assert single.shape == (1,)
+    assert np.all(np.isfinite(single)) and single[0] == pytest.approx(0.0)
+
+
+def test_legacy_position_nodes_are_marked_deprecated_and_position_is_not():
+    assert NODE_REGISTRY["position"].descriptor.deprecated is False
+    for legacy in ("position_x", "local_y", "global_z", "distance_from_origin"):
+        assert NODE_REGISTRY[legacy].descriptor.deprecated is True
+
+
+def test_string_param_override_switches_the_position_axis_live():
+    # A console-exposed select param arrives as a string in param_overrides and
+    # must reach the node as-is (this is how the console flips Position's axis
+    # while a scene is live).
+    graph = {
+        "nodes": [{"id": "p", "type": "position", "data": {"space": "meters", "axis": "x"}}],
+        "edges": [],
+    }
+    positions = np.array([[1.0, 2.0, 3.0], [4.0, 5.0, 6.0]], dtype=np.float32)
+    ctx = _context(2, positions=positions)
+
+    _, on_x = evaluate_graph(graph, NODE_REGISTRY, ctx, {("p", "axis"): "x"})
+    _, on_z = evaluate_graph(graph, NODE_REGISTRY, ctx, {("p", "axis"): "z"})
+
+    assert np.allclose(on_x["p"]["value"], [1.0, 4.0])
+    assert np.allclose(on_z["p"]["value"], [3.0, 6.0])

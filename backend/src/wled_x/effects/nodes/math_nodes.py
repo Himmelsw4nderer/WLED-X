@@ -66,6 +66,14 @@ def _and_or(data: dict[str, Any], inputs: dict[str, Value], context: EvalContext
     return combined.astype(np.float32)
 
 
+def _logic_not(data: dict[str, Any], inputs: dict[str, Value], context: EvalContext) -> Value:
+    """Boolean invert, clamped to 0.0/1.0: 1.0 where the input reads false
+    (< 0.5), 0.0 where it reads true. Chains off Greater Than / Less Than /
+    And / Or to flip a gate -- e.g. "not (distance > 0.5)"."""
+    is_true = np.asarray(_num(data, inputs, "value", 0.0), dtype=np.float32) >= 0.5
+    return (~is_true).astype(np.float32)
+
+
 def _clamp(data: dict[str, Any], inputs: dict[str, Value], context: EvalContext) -> Value:
     value = _num(data, inputs, "value", 0.0)
     lo = float(data.get("min", 0.0))
@@ -242,6 +250,17 @@ MATH_NODES: dict[str, NodeDefinition] = {
             ],
         ),
         compute=_and_or,
+    ),
+    "not": NodeDefinition(
+        descriptor=NodeTypeDescriptor(
+            type="not",
+            category="math",
+            label="Not",
+            inputs=[NodeSocket(key="value", type="field", label="Value")],
+            outputs=[NodeSocket(key="value", type="field", label="Value")],
+            params=[NodeParam(key="value", type="float", default=0.0)],
+        ),
+        compute=_logic_not,
     ),
     "clamp": NodeDefinition(
         descriptor=NodeTypeDescriptor(

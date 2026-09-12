@@ -99,6 +99,19 @@ export function EffectEditorPage() {
       setExposedParams((prev) => {
         const idx = prev.findIndex((p) => p.node_id === nodeId && p.param_key === key);
         if (idx >= 0) return prev.filter((_, i) => i !== idx);
+        if (param.type === "select") {
+          const options = param.options ?? [];
+          const current =
+            typeof currentValue === "string"
+              ? currentValue
+              : typeof param.default === "string"
+                ? param.default
+                : (options[0] ?? "");
+          return [
+            ...prev,
+            { node_id: nodeId, param_key: key, label: key, min: 0, max: 0, default: current, options },
+          ];
+        }
         const numeric = typeof currentValue === "number" ? currentValue : typeof param.default === "number" ? param.default : 0;
         const min = typeof param.min === "number" ? param.min : 0;
         const max = typeof param.max === "number" ? param.max : 1;

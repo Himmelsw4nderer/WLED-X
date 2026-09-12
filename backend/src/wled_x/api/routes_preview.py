@@ -41,7 +41,7 @@ def preview_effect(payload: PreviewRequest) -> PreviewResponse:
     length = max(0.01, min(payload.length_meters, MAX_PREVIEW_LENGTH_METERS))
     positions = led_positions([(0.0, 0.0, 0.0), (length, 0.0, 0.0)], led_count)
 
-    overrides: dict[tuple[str, str], float] = {}
+    overrides: dict[tuple[str, str], float | str] = {}
     for key, value in payload.param_overrides.items():
         node_id, _, param_key = key.rpartition(":")
         if node_id:

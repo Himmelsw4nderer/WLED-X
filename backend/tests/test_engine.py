@@ -121,3 +121,43 @@ def test_two_instances_of_the_same_node_type_are_overridden_independently():
 
     assert overrides[("c1", "value")] == 0.2
     assert overrides[("c2", "value")] == 0.8
+
+
+def test_scene_stored_params_feed_the_fader_bank_when_no_live_override():
+    # Fader-bank values persist on the scene (Scene.assignments[].params),
+    # keyed "{node_id}:{param_key}". With nothing being ridden live, the
+    # engine picks them up; a live console override still wins over them.
+    effect = Effect(
+        id=7,
+        name="wipe",
+        graph={"nodes": [], "edges": []},
+        exposed_params=[
+            {"node_id": "spd", "param_key": "value", "label": "Speed", "min": 0, "max": 1, "default": 0},
+            {"node_id": "ax", "param_key": "axis", "label": "Axis", "default": "x", "options": ["x", "y"]},
+        ],
+    )
+    assignment = {"params": {"spd:value": 0.4, "ax:axis": "y"}}
+    loop = RenderLoop()
+
+    resolved = loop._resolve_param_overrides(effect, assignment, ConsoleState())
+    assert resolved == {("spd", "value"): 0.4, ("ax", "axis"): "y"}
+
+    live = ConsoleState(param_overrides={"7:spd:value": 0.9})
+    resolved = loop._resolve_param_overrides(effect, assignment, live)
+    assert resolved[("spd", "value")] == 0.9
+    assert resolved[("ax", "axis")] == "y"
+
+
+def test_legacy_scene_params_keyed_by_bare_param_key_still_resolve():
+    effect = Effect(
+        id=1,
+        name="old",
+        graph={"nodes": [], "edges": []},
+        exposed_params=[
+            {"node_id": "n", "param_key": "speed", "label": "Speed", "min": 0, "max": 1, "default": 0},
+        ],
+    )
+    resolved = RenderLoop()._resolve_param_overrides(
+        effect, {"params": {"speed": 0.6}}, ConsoleState()
+    )
+    assert resolved == {("n", "speed"): 0.6}

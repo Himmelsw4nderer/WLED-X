@@ -10,6 +10,7 @@ interface NodePaletteProps {
 function groupByCategory(descriptors: NodeTypeDescriptor[]): Map<string, NodeTypeDescriptor[]> {
   const groups = new Map<string, NodeTypeDescriptor[]>();
   for (const d of descriptors) {
+    if (d.deprecated) continue; // still valid on the canvas, just not offered here
     const list = groups.get(d.category);
     if (list) list.push(d);
     else groups.set(d.category, [d]);

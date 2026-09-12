@@ -8,6 +8,9 @@ interface AssignmentDraft {
   target: "all" | "specific";
   fixture_ids: number[];
   brightness: number;
+  // Persisted fader-bank values; the editor doesn't touch these, it just
+  // carries them through so saving a scene doesn't wipe them.
+  params: Record<string, number | string>;
 }
 
 let draftKeySeq = 0;
@@ -23,6 +26,7 @@ function assignmentToDraft(a: SceneAssignment): AssignmentDraft {
     target: a.fixture_ids === "all" ? "all" : "specific",
     fixture_ids: a.fixture_ids === "all" ? [] : a.fixture_ids,
     brightness: a.brightness,
+    params: a.params ?? {},
   };
 }
 
@@ -46,7 +50,7 @@ export function SceneEditor({ scene, effects, fixtures, onSave, onCancel, onDele
   function addAssignment() {
     setAssignments((prev) => [
       ...prev,
-      { key: nextDraftKey(), effect_id: effects[0]?.id ?? "", target: "all", fixture_ids: [], brightness: 1 },
+      { key: nextDraftKey(), effect_id: effects[0]?.id ?? "", target: "all", fixture_ids: [], brightness: 1, params: {} },
     ]);
   }
 
@@ -97,7 +101,7 @@ export function SceneEditor({ scene, effects, fixtures, onSave, onCancel, onDele
     const payloadAssignments: SceneAssignment[] = assignments.map((a) => ({
       effect_id: a.effect_id as number,
       fixture_ids: a.target === "all" ? "all" : a.fixture_ids,
-      params: {},
+      params: a.params,
       brightness: a.brightness,
     }));
 

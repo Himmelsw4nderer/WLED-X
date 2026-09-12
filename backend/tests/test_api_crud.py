@@ -173,6 +173,70 @@ def test_effect_and_scene_roundtrip(client):
     assert resp.json()["active"] is True
 
 
+def test_scene_assignment_params_persist_fader_bank_values(client):
+    # The console fader bank writes its values onto the scene's assignments,
+    # keyed "{node_id}:{param_key}", floats for faders and strings for selects.
+    effect = client.post(
+        "/api/effects",
+        json={"name": "P", "graph": {"nodes": [{"id": "n1", "type": "time"}], "edges": []}},
+    ).json()
+    scene = client.post(
+        "/api/scenes",
+        json={
+            "name": "Ride",
+            "assignments": [{"fixture_ids": "all", "effect_id": effect["id"], "brightness": 1.0}],
+        },
+    ).json()
+
+    resp = client.patch(
+        f"/api/scenes/{scene['id']}",
+        json={
+            "assignments": [
+                {
+                    "fixture_ids": "all",
+                    "effect_id": effect["id"],
+                    "brightness": 1.0,
+                    "params": {"n1:speed": 2.5, "p1:axis": "y"},
+                }
+            ]
+        },
+    )
+    assert resp.status_code == 200
+    params = client.get(f"/api/scenes/{scene['id']}").json()["assignments"][0]["params"]
+    assert params == {"n1:speed": 2.5, "p1:axis": "y"}
+
+
+def test_effect_exposes_a_select_param_with_options_and_a_string_default(client):
+    effect = client.post(
+        "/api/effects",
+        json={
+            "name": "Axis Wipe",
+            "graph": {
+                "nodes": [{"id": "p", "type": "position", "data": {"space": "scene", "axis": "x"}}],
+                "edges": [],
+            },
+            "exposed_params": [
+                {
+                    "node_id": "p",
+                    "param_key": "axis",
+                    "label": "Sweep Axis",
+                    "options": ["x", "y", "z", "xz"],
+                    "default": "x",
+                }
+            ],
+        },
+    ).json()
+
+    exposed = effect["exposed_params"][0]
+    assert exposed["options"] == ["x", "y", "z", "xz"]
+    assert exposed["default"] == "x"
+
+    # and it survives a read-back
+    reread = client.get(f"/api/effects/{effect['id']}").json()["exposed_params"][0]
+    assert reread["options"] == ["x", "y", "z", "xz"]
+    assert reread["default"] == "x"
+
+
 def test_duplicate_effect(client):
     graph = {
         "nodes": [
