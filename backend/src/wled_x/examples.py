@@ -990,6 +990,1898 @@ RING_SLAMMER = Effect(
 )
 
 
+# --- Console-authored effects, promoted to shipped defaults ------------------
+#
+# Built by hand in the node editor rather than written directly as Python (like
+# everything above), then exported here verbatim so they ship for everyone --
+# same seeding/skip-by-name mechanism as the rest of this file.
+
+RANDOM_STROBE = Effect(
+    name="Random Strobe",
+    description=(
+        "A narrow band scans the strip (Position X vs. a Time-driven edge through Square), only "
+        "strobing into view on a twice-per-beat pulse (Beat Phase x2 -> Modulo -> Less Than) -- "
+        "Scheme Random Color redraws on that same pulse."
+    ),
+    graph={
+        "nodes": [
+            {
+                "id": "led_color-382da588",
+                "type": "led_color",
+                "position": {
+                    "x": 1662.3868844059216,
+                    "y": 94.19312965815334
+                },
+                "data": {}
+            },
+            {
+                "id": "time-35112d8c",
+                "type": "time",
+                "position": {
+                    "x": -646.8123583692102,
+                    "y": -98.93332099242065
+                },
+                "data": {
+                    "speed": 2
+                }
+            },
+            {
+                "id": "multiply-6169e4c7",
+                "type": "multiply",
+                "position": {
+                    "x": -402.90602536626216,
+                    "y": -100.48266170050886
+                },
+                "data": {
+                    "a": 1,
+                    "b": 1
+                }
+            },
+            {
+                "id": "subtract-f6497a78",
+                "type": "subtract",
+                "position": {
+                    "x": 139.12714384291831,
+                    "y": -309.2658852915016
+                },
+                "data": {
+                    "a": 0,
+                    "b": 0
+                }
+            },
+            {
+                "id": "position_x-61c6c3f4",
+                "type": "position",
+                "position": {
+                    "x": -223.4519286289082,
+                    "y": -492.1851468084791
+                },
+                "data": {
+                    "space": "scene",
+                    "axis": "x"
+                }
+            },
+            {
+                "id": "square-1a3c51ff",
+                "type": "square",
+                "position": {
+                    "x": 408.6512241024837,
+                    "y": -185.59715724965463
+                },
+                "data": {
+                    "x": 0,
+                    "duty": 0.6
+                }
+            },
+            {
+                "id": "multiply-4e71d26e",
+                "type": "multiply",
+                "position": {
+                    "x": 661.8127682302711,
+                    "y": 101.36039238442795
+                },
+                "data": {
+                    "a": 1,
+                    "b": 1
+                }
+            },
+            {
+                "id": "beat_phase-7008f124",
+                "type": "beat_phase",
+                "position": {
+                    "x": -777.6531360918843,
+                    "y": 331.3816693696658
+                },
+                "data": {}
+            },
+            {
+                "id": "less_than-c6ad4ce4",
+                "type": "less_than",
+                "position": {
+                    "x": -71.21254904312764,
+                    "y": 542.0765444737133
+                },
+                "data": {
+                    "value": 0,
+                    "threshold": 0.05
+                }
+            },
+            {
+                "id": "multiply-f52435e3",
+                "type": "multiply",
+                "position": {
+                    "x": -559.8751253820502,
+                    "y": 546.4292976066315
+                },
+                "data": {
+                    "a": 1,
+                    "b": 2
+                }
+            },
+            {
+                "id": "modulo-226ee494",
+                "type": "modulo",
+                "position": {
+                    "x": -313.924490831671,
+                    "y": 541.494739947905
+                },
+                "data": {
+                    "value": 0,
+                    "divisor": 1
+                }
+            },
+            {
+                "id": "scheme_random_color-869bfd4c",
+                "type": "scheme_random_color",
+                "position": {
+                    "x": 801.4951485391414,
+                    "y": -112.79899315245135
+                },
+                "data": {
+                    "trigger": 0,
+                    "seed": 11
+                }
+            },
+            {
+                "id": "brightness-88168ae9",
+                "type": "brightness",
+                "position": {
+                    "x": 1154.7730120036204,
+                    "y": 106.4314230288071
+                },
+                "data": {
+                    "amount": 1
+                }
+            }
+        ],
+        "edges": [
+            {
+                "id": "e-time-35112d8c-value-multiply-6169e4c7-a-ud6jdh",
+                "source": "time-35112d8c",
+                "sourceHandle": "value",
+                "target": "multiply-6169e4c7",
+                "targetHandle": "a"
+            },
+            {
+                "id": "e-position_x-61c6c3f4-value-subtract-f6497a78-a-3ugjnz",
+                "source": "position_x-61c6c3f4",
+                "sourceHandle": "value",
+                "target": "subtract-f6497a78",
+                "targetHandle": "a"
+            },
+            {
+                "id": "e-subtract-f6497a78-value-square-1a3c51ff-x-vehonb",
+                "source": "subtract-f6497a78",
+                "sourceHandle": "value",
+                "target": "square-1a3c51ff",
+                "targetHandle": "x"
+            },
+            {
+                "id": "e-square-1a3c51ff-value-multiply-4e71d26e-a-c38tci",
+                "source": "square-1a3c51ff",
+                "sourceHandle": "value",
+                "target": "multiply-4e71d26e",
+                "targetHandle": "a"
+            },
+            {
+                "id": "e-less_than-c6ad4ce4-value-multiply-4e71d26e-b-9j5a5q",
+                "source": "less_than-c6ad4ce4",
+                "sourceHandle": "value",
+                "target": "multiply-4e71d26e",
+                "targetHandle": "b"
+            },
+            {
+                "id": "e-beat_phase-7008f124-value-multiply-f52435e3-a-4qitur",
+                "source": "beat_phase-7008f124",
+                "sourceHandle": "value",
+                "target": "multiply-f52435e3",
+                "targetHandle": "a"
+            },
+            {
+                "id": "e-multiply-f52435e3-value-modulo-226ee494-value-oj0muk",
+                "source": "multiply-f52435e3",
+                "sourceHandle": "value",
+                "target": "modulo-226ee494",
+                "targetHandle": "value"
+            },
+            {
+                "id": "e-modulo-226ee494-value-less_than-c6ad4ce4-value-3f40kr",
+                "source": "modulo-226ee494",
+                "sourceHandle": "value",
+                "target": "less_than-c6ad4ce4",
+                "targetHandle": "value"
+            },
+            {
+                "id": "e-multiply-6169e4c7-value-subtract-f6497a78-b-o29po4",
+                "source": "multiply-6169e4c7",
+                "sourceHandle": "value",
+                "target": "subtract-f6497a78",
+                "targetHandle": "b"
+            },
+            {
+                "id": "e-scheme_random_color-869bfd4c-value-brightness-88168ae9-color-njjzkv",
+                "source": "scheme_random_color-869bfd4c",
+                "sourceHandle": "value",
+                "target": "brightness-88168ae9",
+                "targetHandle": "color"
+            },
+            {
+                "id": "e-multiply-4e71d26e-value-brightness-88168ae9-amount-io4e4p",
+                "source": "multiply-4e71d26e",
+                "sourceHandle": "value",
+                "target": "brightness-88168ae9",
+                "targetHandle": "amount"
+            },
+            {
+                "id": "e-brightness-88168ae9-value-led_color-382da588-color-1ffqf9",
+                "source": "brightness-88168ae9",
+                "sourceHandle": "value",
+                "target": "led_color-382da588",
+                "targetHandle": "color"
+            }
+        ]
+    },
+    exposed_params=[],
+)
+
+
+SIDE_PHASE = Effect(
+    name="Side Phase",
+    description=(
+        "A lit band rides Beat Phase across the strip like Beat Wipe, but Position X is mirrored (1 - "
+        "x) first so it sweeps in from the opposite end -- Greater/Less Than gate a window (width "
+        "exposed) around Beat Phase, tinted by one fixed Scheme Random Color pick."
+    ),
+    graph={
+        "nodes": [
+            {
+                "id": "beat_phase-e7a511d3",
+                "type": "beat_phase",
+                "position": {
+                    "x": -107.47577445873173,
+                    "y": 297.2794307721846
+                },
+                "data": {
+                    "source": "desktop"
+                }
+            },
+            {
+                "id": "led_color-b595444b",
+                "type": "led_color",
+                "position": {
+                    "x": 1291.0713228246407,
+                    "y": 237.43380511744618
+                },
+                "data": {}
+            },
+            {
+                "id": "greater_than-0682f9fa",
+                "type": "greater_than",
+                "position": {
+                    "x": 440.6492911907536,
+                    "y": 152.60651454776536
+                },
+                "data": {
+                    "value": 0,
+                    "threshold": 0.5
+                }
+            },
+            {
+                "id": "less_than-ac4c3360",
+                "type": "less_than",
+                "position": {
+                    "x": 444.7827655057571,
+                    "y": 299.640100895742
+                },
+                "data": {
+                    "value": 0,
+                    "threshold": 0.5
+                }
+            },
+            {
+                "id": "add-d90b71a3",
+                "type": "add",
+                "position": {
+                    "x": 154.84906712480716,
+                    "y": 408.2914257472589
+                },
+                "data": {
+                    "a": 0,
+                    "b": 0
+                }
+            },
+            {
+                "id": "subtract-d7f3bd3e",
+                "type": "subtract",
+                "position": {
+                    "x": 154.25857079409235,
+                    "y": 239.99997149355062
+                },
+                "data": {
+                    "a": 0,
+                    "b": 0
+                }
+            },
+            {
+                "id": "constant-3a6a31b7",
+                "type": "constant",
+                "position": {
+                    "x": -116.77924500398501,
+                    "y": 443.13070925943
+                },
+                "data": {
+                    "value": 0.2
+                }
+            },
+            {
+                "id": "and_or-29818f0f",
+                "type": "and_or",
+                "position": {
+                    "x": 706.9631363431129,
+                    "y": 198.66522834351701
+                },
+                "data": {
+                    "a": 0,
+                    "b": 0,
+                    "mode": "and"
+                }
+            },
+            {
+                "id": "position_x-223d5f3d",
+                "type": "position",
+                "position": {
+                    "x": -136.28917796062834,
+                    "y": -177.54104620849802
+                },
+                "data": {
+                    "space": "scene",
+                    "axis": "x"
+                }
+            },
+            {
+                "id": "multiply-c174e138",
+                "type": "multiply",
+                "position": {
+                    "x": 268.3904688071749,
+                    "y": -297.2589941376679
+                },
+                "data": {
+                    "a": 1,
+                    "b": -1
+                }
+            },
+            {
+                "id": "add-8fdeda67",
+                "type": "add",
+                "position": {
+                    "x": 604.170651129605,
+                    "y": -236.4127077436851
+                },
+                "data": {
+                    "a": 0,
+                    "b": 1
+                }
+            },
+            {
+                "id": "multiply-89c92675",
+                "type": "multiply",
+                "position": {
+                    "x": 251.1133055937624,
+                    "y": -131.5857049123779
+                },
+                "data": {
+                    "a": 1,
+                    "b": -1
+                }
+            },
+            {
+                "id": "constant-40ede49d",
+                "type": "constant",
+                "position": {
+                    "x": -76.78555926256647,
+                    "y": 25.235491323257577
+                },
+                "data": {
+                    "value": 1
+                }
+            },
+            {
+                "id": "clamp-65d3a4f6",
+                "type": "clamp",
+                "position": {
+                    "x": 508.56842454745276,
+                    "y": -44.36963855673039
+                },
+                "data": {
+                    "value": 0,
+                    "min": 0,
+                    "max": 1
+                }
+            },
+            {
+                "id": "scheme_random_color-c0eb7c38",
+                "type": "scheme_random_color",
+                "position": {
+                    "x": 933.937210759846,
+                    "y": -58.31865113608944
+                },
+                "data": {
+                    "trigger": 0,
+                    "seed": 42
+                }
+            },
+            {
+                "id": "brightness-52155604",
+                "type": "brightness",
+                "position": {
+                    "x": 1036.3832414465523,
+                    "y": 127.77597341407466
+                },
+                "data": {
+                    "amount": 1
+                }
+            }
+        ],
+        "edges": [
+            {
+                "id": "e-beat_phase-e7a511d3-value-add-d90b71a3-a-kfxiru",
+                "source": "beat_phase-e7a511d3",
+                "sourceHandle": "value",
+                "target": "add-d90b71a3",
+                "targetHandle": "a"
+            },
+            {
+                "id": "e-add-d90b71a3-value-less_than-ac4c3360-threshold-hd8ls1",
+                "source": "add-d90b71a3",
+                "sourceHandle": "value",
+                "target": "less_than-ac4c3360",
+                "targetHandle": "threshold"
+            },
+            {
+                "id": "e-constant-3a6a31b7-value-add-d90b71a3-b-fxdrg9",
+                "source": "constant-3a6a31b7",
+                "sourceHandle": "value",
+                "target": "add-d90b71a3",
+                "targetHandle": "b"
+            },
+            {
+                "id": "e-constant-3a6a31b7-value-subtract-d7f3bd3e-b-e8ie3b",
+                "source": "constant-3a6a31b7",
+                "sourceHandle": "value",
+                "target": "subtract-d7f3bd3e",
+                "targetHandle": "b"
+            },
+            {
+                "id": "e-beat_phase-e7a511d3-value-subtract-d7f3bd3e-a-48e7gv",
+                "source": "beat_phase-e7a511d3",
+                "sourceHandle": "value",
+                "target": "subtract-d7f3bd3e",
+                "targetHandle": "a"
+            },
+            {
+                "id": "e-subtract-d7f3bd3e-value-greater_than-0682f9fa-threshold-et0rld",
+                "source": "subtract-d7f3bd3e",
+                "sourceHandle": "value",
+                "target": "greater_than-0682f9fa",
+                "targetHandle": "threshold"
+            },
+            {
+                "id": "e-less_than-ac4c3360-value-and_or-29818f0f-b-9heovy",
+                "source": "less_than-ac4c3360",
+                "sourceHandle": "value",
+                "target": "and_or-29818f0f",
+                "targetHandle": "b"
+            },
+            {
+                "id": "e-greater_than-0682f9fa-value-and_or-29818f0f-a-1u9noh",
+                "source": "greater_than-0682f9fa",
+                "sourceHandle": "value",
+                "target": "and_or-29818f0f",
+                "targetHandle": "a"
+            },
+            {
+                "id": "e-position_x-223d5f3d-value-multiply-c174e138-a-4snke5",
+                "source": "position_x-223d5f3d",
+                "sourceHandle": "value",
+                "target": "multiply-c174e138",
+                "targetHandle": "a"
+            },
+            {
+                "id": "e-multiply-c174e138-value-add-8fdeda67-a-0f121s",
+                "source": "multiply-c174e138",
+                "sourceHandle": "value",
+                "target": "add-8fdeda67",
+                "targetHandle": "a"
+            },
+            {
+                "id": "e-add-8fdeda67-value-greater_than-0682f9fa-value-s5sei8",
+                "source": "add-8fdeda67",
+                "sourceHandle": "value",
+                "target": "greater_than-0682f9fa",
+                "targetHandle": "value"
+            },
+            {
+                "id": "e-add-8fdeda67-value-less_than-ac4c3360-value-rmykb1",
+                "source": "add-8fdeda67",
+                "sourceHandle": "value",
+                "target": "less_than-ac4c3360",
+                "targetHandle": "value"
+            },
+            {
+                "id": "e-multiply-89c92675-value-multiply-c174e138-b-snye00",
+                "source": "multiply-89c92675",
+                "sourceHandle": "value",
+                "target": "multiply-c174e138",
+                "targetHandle": "b"
+            },
+            {
+                "id": "e-constant-40ede49d-value-multiply-89c92675-a-mjys8u",
+                "source": "constant-40ede49d",
+                "sourceHandle": "value",
+                "target": "multiply-89c92675",
+                "targetHandle": "a"
+            },
+            {
+                "id": "e-constant-40ede49d-value-clamp-65d3a4f6-value-llfssx",
+                "source": "constant-40ede49d",
+                "sourceHandle": "value",
+                "target": "clamp-65d3a4f6",
+                "targetHandle": "value"
+            },
+            {
+                "id": "e-clamp-65d3a4f6-value-add-8fdeda67-b-7zdui6",
+                "source": "clamp-65d3a4f6",
+                "sourceHandle": "value",
+                "target": "add-8fdeda67",
+                "targetHandle": "b"
+            },
+            {
+                "id": "e-scheme_random_color-c0eb7c38-value-brightness-52155604-color-q0gq0b",
+                "source": "scheme_random_color-c0eb7c38",
+                "sourceHandle": "value",
+                "target": "brightness-52155604",
+                "targetHandle": "color"
+            },
+            {
+                "id": "e-and_or-29818f0f-value-brightness-52155604-amount-kug1k3",
+                "source": "and_or-29818f0f",
+                "sourceHandle": "value",
+                "target": "brightness-52155604",
+                "targetHandle": "amount"
+            },
+            {
+                "id": "e-brightness-52155604-value-led_color-b595444b-color-wrawi3",
+                "source": "brightness-52155604",
+                "sourceHandle": "value",
+                "target": "led_color-b595444b",
+                "targetHandle": "color"
+            }
+        ]
+    },
+    exposed_params=[
+        {"node_id": "constant-3a6a31b7", "param_key": "value", "label": "Beat Window", "min": 0.0, "max": 1.0, "default": 0.2},
+        {"node_id": "position_x-223d5f3d", "param_key": "axis", "label": "Sweep Axis", "options": ["x", "y", "z", "xy", "xz", "yz", "xyz"], "default": "x"},
+        {"node_id": "position_x-223d5f3d", "param_key": "space", "label": "Sweep Space", "options": ["scene", "local", "meters"], "default": "scene"},
+        {"node_id": "constant-40ede49d", "param_key": "value", "label": "Mirror Amount", "min": -1.0, "max": 1.0, "default": 0.0},
+    ],
+)
+
+
+IN_AND_OUT = Effect(
+    name="In and Out",
+    description=(
+        "Position X is folded into a centre-distance parabola, then added to or subtracted from Beat "
+        "Phase depending on which half of an 8-beat Counter cycle it is (Greater Than/Not switches "
+        "the sign) and thresholded through Square -- so the lit segments sweep toward the centre for "
+        "four beats, then away from it for the next four, tinted by one fixed Scheme Random Color "
+        "pick."
+    ),
+    graph={
+        "nodes": [
+            {
+                "id": "led_color-b2557e48",
+                "type": "led_color",
+                "position": {
+                    "x": 2102.2067980382326,
+                    "y": 106.93881372889075
+                },
+                "data": {}
+            },
+            {
+                "id": "beat_phase-ccaeb9a9",
+                "type": "beat_phase",
+                "position": {
+                    "x": -250.5746917907017,
+                    "y": 214.87922895264302
+                },
+                "data": {}
+            },
+            {
+                "id": "counter-4e64f03d",
+                "type": "counter",
+                "position": {
+                    "x": 65.4249377534191,
+                    "y": 281.8139811835756
+                },
+                "data": {
+                    "trigger": 0,
+                    "reset": 0,
+                    "max": 8
+                }
+            },
+            {
+                "id": "add-2400514c",
+                "type": "add",
+                "position": {
+                    "x": 249.58140697611185,
+                    "y": 514.9539523881058
+                },
+                "data": {
+                    "a": 0,
+                    "b": 0
+                }
+            },
+            {
+                "id": "add-f823b312",
+                "type": "add",
+                "position": {
+                    "x": 784.5239585716878,
+                    "y": -12.367043298591227
+                },
+                "data": {
+                    "a": 0,
+                    "b": 0
+                }
+            },
+            {
+                "id": "square-b6558b2d",
+                "type": "square",
+                "position": {
+                    "x": 1282.653272635856,
+                    "y": -173.09520028973196
+                },
+                "data": {
+                    "x": 0,
+                    "duty": 0.5
+                }
+            },
+            {
+                "id": "greater_than-272a45f3",
+                "type": "greater_than",
+                "position": {
+                    "x": 682.8177525910747,
+                    "y": 596.3493929672599
+                },
+                "data": {
+                    "value": 0,
+                    "threshold": 4.5
+                }
+            },
+            {
+                "id": "subtract-d9c93939",
+                "type": "subtract",
+                "position": {
+                    "x": 423.9185597719462,
+                    "y": 716.0509506728522
+                },
+                "data": {
+                    "a": 0,
+                    "b": 1
+                }
+            },
+            {
+                "id": "not-0c884131",
+                "type": "not",
+                "position": {
+                    "x": 1005.5715300810114,
+                    "y": 668.5851547646664
+                },
+                "data": {
+                    "value": 0
+                }
+            },
+            {
+                "id": "subtract-e83231a6",
+                "type": "subtract",
+                "position": {
+                    "x": 727.9088823101135,
+                    "y": 183.06116373194328
+                },
+                "data": {
+                    "a": 0,
+                    "b": 0
+                }
+            },
+            {
+                "id": "multiply-cf0eb3a0",
+                "type": "multiply",
+                "position": {
+                    "x": 1262.848580345762,
+                    "y": 231.88371054852382
+                },
+                "data": {
+                    "a": 1,
+                    "b": 1
+                }
+            },
+            {
+                "id": "multiply-a2ef1c34",
+                "type": "multiply",
+                "position": {
+                    "x": 1263.952049534486,
+                    "y": 399.98510730295743
+                },
+                "data": {
+                    "a": 1,
+                    "b": 1
+                }
+            },
+            {
+                "id": "add-2f6b7f5f",
+                "type": "add",
+                "position": {
+                    "x": 1585.8170048771758,
+                    "y": 323.86435855460775
+                },
+                "data": {
+                    "a": 0,
+                    "b": 0
+                }
+            },
+            {
+                "id": "scheme_random_color-e98cf996",
+                "type": "scheme_random_color",
+                "position": {
+                    "x": 1588.7592503779308,
+                    "y": -301.9159312338036
+                },
+                "data": {
+                    "trigger": 0,
+                    "seed": 32
+                }
+            },
+            {
+                "id": "brightness-beba5cd4",
+                "type": "brightness",
+                "position": {
+                    "x": 1897.6186514004166,
+                    "y": -79.3012794228471
+                },
+                "data": {
+                    "amount": 1
+                }
+            },
+            {
+                "id": "position-c01c8238",
+                "type": "position",
+                "position": {
+                    "x": -99.43066072002281,
+                    "y": -440.2074859784965
+                },
+                "data": {
+                    "space": "scene",
+                    "axis": "x"
+                }
+            },
+            {
+                "id": "add-4c97499e",
+                "type": "add",
+                "position": {
+                    "x": 434.10190830161434,
+                    "y": -513.397210190439
+                },
+                "data": {
+                    "a": 0,
+                    "b": 1
+                }
+            },
+            {
+                "id": "multiply-57547940",
+                "type": "multiply",
+                "position": {
+                    "x": 184.4360266440533,
+                    "y": -502.45295236435413
+                },
+                "data": {
+                    "a": 1,
+                    "b": -2
+                }
+            },
+            {
+                "id": "multiply-646d419c",
+                "type": "multiply",
+                "position": {
+                    "x": 817.8349483287147,
+                    "y": -459.4668146919779
+                },
+                "data": {
+                    "a": 1,
+                    "b": 1
+                }
+            }
+        ],
+        "edges": [
+            {
+                "id": "e-beat_phase-ccaeb9a9-value-counter-4e64f03d-trigger-7vtxqm",
+                "source": "beat_phase-ccaeb9a9",
+                "sourceHandle": "value",
+                "target": "counter-4e64f03d",
+                "targetHandle": "trigger"
+            },
+            {
+                "id": "e-beat_phase-ccaeb9a9-value-add-2400514c-a-cvh15v",
+                "source": "beat_phase-ccaeb9a9",
+                "sourceHandle": "value",
+                "target": "add-2400514c",
+                "targetHandle": "a"
+            },
+            {
+                "id": "e-counter-4e64f03d-count-add-2400514c-b-zklipl",
+                "source": "counter-4e64f03d",
+                "sourceHandle": "count",
+                "target": "add-2400514c",
+                "targetHandle": "b"
+            },
+            {
+                "id": "e-add-2400514c-value-subtract-d9c93939-a-6drxvk",
+                "source": "add-2400514c",
+                "sourceHandle": "value",
+                "target": "subtract-d9c93939",
+                "targetHandle": "a"
+            },
+            {
+                "id": "e-subtract-d9c93939-value-greater_than-272a45f3-value-kg4b4r",
+                "source": "subtract-d9c93939",
+                "sourceHandle": "value",
+                "target": "greater_than-272a45f3",
+                "targetHandle": "value"
+            },
+            {
+                "id": "e-greater_than-272a45f3-value-not-0c884131-value-tc8uei",
+                "source": "greater_than-272a45f3",
+                "sourceHandle": "value",
+                "target": "not-0c884131",
+                "targetHandle": "value"
+            },
+            {
+                "id": "e-subtract-e83231a6-value-multiply-cf0eb3a0-a-2mrxaf",
+                "source": "subtract-e83231a6",
+                "sourceHandle": "value",
+                "target": "multiply-cf0eb3a0",
+                "targetHandle": "a"
+            },
+            {
+                "id": "e-greater_than-272a45f3-value-multiply-cf0eb3a0-b-evqnt1",
+                "source": "greater_than-272a45f3",
+                "sourceHandle": "value",
+                "target": "multiply-cf0eb3a0",
+                "targetHandle": "b"
+            },
+            {
+                "id": "e-not-0c884131-value-multiply-a2ef1c34-b-67mrci",
+                "source": "not-0c884131",
+                "sourceHandle": "value",
+                "target": "multiply-a2ef1c34",
+                "targetHandle": "b"
+            },
+            {
+                "id": "e-add-f823b312-value-multiply-a2ef1c34-a-lpuo04",
+                "source": "add-f823b312",
+                "sourceHandle": "value",
+                "target": "multiply-a2ef1c34",
+                "targetHandle": "a"
+            },
+            {
+                "id": "e-beat_phase-ccaeb9a9-value-subtract-e83231a6-b-c9olmx",
+                "source": "beat_phase-ccaeb9a9",
+                "sourceHandle": "value",
+                "target": "subtract-e83231a6",
+                "targetHandle": "b"
+            },
+            {
+                "id": "e-beat_phase-ccaeb9a9-value-add-f823b312-b-b227s3",
+                "source": "beat_phase-ccaeb9a9",
+                "sourceHandle": "value",
+                "target": "add-f823b312",
+                "targetHandle": "b"
+            },
+            {
+                "id": "e-multiply-cf0eb3a0-value-add-2f6b7f5f-a-fr7xl7",
+                "source": "multiply-cf0eb3a0",
+                "sourceHandle": "value",
+                "target": "add-2f6b7f5f",
+                "targetHandle": "a"
+            },
+            {
+                "id": "e-multiply-a2ef1c34-value-add-2f6b7f5f-b-ub70cd",
+                "source": "multiply-a2ef1c34",
+                "sourceHandle": "value",
+                "target": "add-2f6b7f5f",
+                "targetHandle": "b"
+            },
+            {
+                "id": "e-add-2f6b7f5f-value-square-b6558b2d-x-tfxesu",
+                "source": "add-2f6b7f5f",
+                "sourceHandle": "value",
+                "target": "square-b6558b2d",
+                "targetHandle": "x"
+            },
+            {
+                "id": "e-square-b6558b2d-value-brightness-beba5cd4-amount-88o3oc",
+                "source": "square-b6558b2d",
+                "sourceHandle": "value",
+                "target": "brightness-beba5cd4",
+                "targetHandle": "amount"
+            },
+            {
+                "id": "e-scheme_random_color-e98cf996-value-brightness-beba5cd4-color-5jjh4h",
+                "source": "scheme_random_color-e98cf996",
+                "sourceHandle": "value",
+                "target": "brightness-beba5cd4",
+                "targetHandle": "color"
+            },
+            {
+                "id": "e-brightness-beba5cd4-value-led_color-b2557e48-color-35b3tf",
+                "source": "brightness-beba5cd4",
+                "sourceHandle": "value",
+                "target": "led_color-b2557e48",
+                "targetHandle": "color"
+            },
+            {
+                "id": "e-position-c01c8238-value-multiply-57547940-a-gtdr6c",
+                "source": "position-c01c8238",
+                "sourceHandle": "value",
+                "target": "multiply-57547940",
+                "targetHandle": "a"
+            },
+            {
+                "id": "e-multiply-57547940-value-add-4c97499e-a-gz3gzi",
+                "source": "multiply-57547940",
+                "sourceHandle": "value",
+                "target": "add-4c97499e",
+                "targetHandle": "a"
+            },
+            {
+                "id": "e-add-4c97499e-value-multiply-646d419c-a-rtnicz",
+                "source": "add-4c97499e",
+                "sourceHandle": "value",
+                "target": "multiply-646d419c",
+                "targetHandle": "a"
+            },
+            {
+                "id": "e-add-4c97499e-value-multiply-646d419c-b-djztu4",
+                "source": "add-4c97499e",
+                "sourceHandle": "value",
+                "target": "multiply-646d419c",
+                "targetHandle": "b"
+            },
+            {
+                "id": "e-multiply-646d419c-value-add-f823b312-a-7m8rci",
+                "source": "multiply-646d419c",
+                "sourceHandle": "value",
+                "target": "add-f823b312",
+                "targetHandle": "a"
+            },
+            {
+                "id": "e-multiply-646d419c-value-subtract-e83231a6-a-8fe54f",
+                "source": "multiply-646d419c",
+                "sourceHandle": "value",
+                "target": "subtract-e83231a6",
+                "targetHandle": "a"
+            }
+        ]
+    },
+    exposed_params=[
+        {"node_id": "position-c01c8238", "param_key": "axis", "label": "Sweep Axis", "options": ["x", "y", "z", "xy", "xz", "yz", "xyz"], "default": "x"},
+    ],
+)
+
+
+NOISE_DRIFT = Effect(
+    name="Noise Drift",
+    description=(
+        "A 1-D value-noise field drifts across the strip: Position X (scale exposed) plus an ever- "
+        "advancing offset (a Counter incremented once per beat, nudged by Beat Phase x a small "
+        "amount) feeds Noise, remapped into brightness and tinted by one fixed Scheme Random Color "
+        "pick."
+    ),
+    graph={
+        "nodes": [
+            {
+                "id": "noise-a07ad5cd",
+                "type": "noise",
+                "position": {
+                    "x": 363,
+                    "y": 284.09375
+                },
+                "data": {
+                    "scale": 1,
+                    "seed": 0
+                }
+            },
+            {
+                "id": "position-84b64585",
+                "type": "position",
+                "position": {
+                    "x": -504.1074872262657,
+                    "y": 72.37243215766563
+                },
+                "data": {
+                    "space": "scene",
+                    "axis": "x"
+                }
+            },
+            {
+                "id": "beat_phase-4e14988c",
+                "type": "beat_phase",
+                "position": {
+                    "x": -837.2356704497718,
+                    "y": 444.7629082691316
+                },
+                "data": {}
+            },
+            {
+                "id": "counter-12ac314c",
+                "type": "counter",
+                "position": {
+                    "x": -539.880614723844,
+                    "y": 251.96397402043772
+                },
+                "data": {
+                    "trigger": 0,
+                    "reset": 0,
+                    "max": 1114
+                }
+            },
+            {
+                "id": "scheme_random_color-11d71eb3",
+                "type": "scheme_random_color",
+                "position": {
+                    "x": 710.5966296738711,
+                    "y": 77.89388216076753
+                },
+                "data": {
+                    "trigger": 0,
+                    "seed": 0
+                }
+            },
+            {
+                "id": "brightness-65975ce4",
+                "type": "brightness",
+                "position": {
+                    "x": 875.1763823032193,
+                    "y": 330.34248577019105
+                },
+                "data": {
+                    "amount": 1
+                }
+            },
+            {
+                "id": "led_color-a7bd90f0",
+                "type": "led_color",
+                "position": {
+                    "x": 1274.7704427126102,
+                    "y": 409.14550291898894
+                },
+                "data": {}
+            },
+            {
+                "id": "multiply-41229d76",
+                "type": "multiply",
+                "position": {
+                    "x": -192.587857558012,
+                    "y": 39.243291278724314
+                },
+                "data": {
+                    "a": 1,
+                    "b": 1
+                }
+            },
+            {
+                "id": "add-01d2497b",
+                "type": "add",
+                "position": {
+                    "x": 137.73848598269421,
+                    "y": 176.31038696969074
+                },
+                "data": {
+                    "a": 0,
+                    "b": 0
+                }
+            },
+            {
+                "id": "multiply-2858d1fb",
+                "type": "multiply",
+                "position": {
+                    "x": 389.80608092319164,
+                    "y": 496.32229368761796
+                },
+                "data": {
+                    "a": 1,
+                    "b": 4
+                }
+            },
+            {
+                "id": "add-48d1765d",
+                "type": "add",
+                "position": {
+                    "x": 661.1180208667796,
+                    "y": 464.70599716302615
+                },
+                "data": {
+                    "a": 0,
+                    "b": -2
+                }
+            },
+            {
+                "id": "sine-906acfc1",
+                "type": "sine",
+                "position": {
+                    "x": 1354.1766511942217,
+                    "y": 691.1669118042869
+                },
+                "data": {
+                    "x": 0
+                }
+            },
+            {
+                "id": "multiply-8df68a34",
+                "type": "multiply",
+                "position": {
+                    "x": -255.18287271227214,
+                    "y": 467.6161341186304
+                },
+                "data": {
+                    "a": 1,
+                    "b": 0.2
+                }
+            },
+            {
+                "id": "add-b1259aee",
+                "type": "add",
+                "position": {
+                    "x": 77.36969534381626,
+                    "y": 392.59901794506436
+                },
+                "data": {
+                    "a": 0,
+                    "b": 0
+                }
+            }
+        ],
+        "edges": [
+            {
+                "id": "e-beat_phase-4e14988c-value-counter-12ac314c-trigger-pz466a",
+                "source": "beat_phase-4e14988c",
+                "sourceHandle": "value",
+                "target": "counter-12ac314c",
+                "targetHandle": "trigger"
+            },
+            {
+                "id": "e-scheme_random_color-11d71eb3-value-brightness-65975ce4-color-ban33w",
+                "source": "scheme_random_color-11d71eb3",
+                "sourceHandle": "value",
+                "target": "brightness-65975ce4",
+                "targetHandle": "color"
+            },
+            {
+                "id": "e-brightness-65975ce4-value-led_color-a7bd90f0-color-3dj3vo",
+                "source": "brightness-65975ce4",
+                "sourceHandle": "value",
+                "target": "led_color-a7bd90f0",
+                "targetHandle": "color"
+            },
+            {
+                "id": "e-position-84b64585-value-multiply-41229d76-a-vsol2s",
+                "source": "position-84b64585",
+                "sourceHandle": "value",
+                "target": "multiply-41229d76",
+                "targetHandle": "a"
+            },
+            {
+                "id": "e-multiply-41229d76-value-add-01d2497b-b-43kl4a",
+                "source": "multiply-41229d76",
+                "sourceHandle": "value",
+                "target": "add-01d2497b",
+                "targetHandle": "b"
+            },
+            {
+                "id": "e-add-01d2497b-value-noise-a07ad5cd-x-3r2pqw",
+                "source": "add-01d2497b",
+                "sourceHandle": "value",
+                "target": "noise-a07ad5cd",
+                "targetHandle": "x"
+            },
+            {
+                "id": "e-noise-a07ad5cd-value-multiply-2858d1fb-a-2gq7rd",
+                "source": "noise-a07ad5cd",
+                "sourceHandle": "value",
+                "target": "multiply-2858d1fb",
+                "targetHandle": "a"
+            },
+            {
+                "id": "e-multiply-2858d1fb-value-add-48d1765d-a-hsajau",
+                "source": "multiply-2858d1fb",
+                "sourceHandle": "value",
+                "target": "add-48d1765d",
+                "targetHandle": "a"
+            },
+            {
+                "id": "e-add-48d1765d-value-brightness-65975ce4-amount-t1zn5i",
+                "source": "add-48d1765d",
+                "sourceHandle": "value",
+                "target": "brightness-65975ce4",
+                "targetHandle": "amount"
+            },
+            {
+                "id": "e-beat_phase-4e14988c-value-multiply-8df68a34-a-5fo8l3",
+                "source": "beat_phase-4e14988c",
+                "sourceHandle": "value",
+                "target": "multiply-8df68a34",
+                "targetHandle": "a"
+            },
+            {
+                "id": "e-multiply-8df68a34-value-add-b1259aee-b-nzlg8h",
+                "source": "multiply-8df68a34",
+                "sourceHandle": "value",
+                "target": "add-b1259aee",
+                "targetHandle": "b"
+            },
+            {
+                "id": "e-add-b1259aee-value-add-01d2497b-a-52pvle",
+                "source": "add-b1259aee",
+                "sourceHandle": "value",
+                "target": "add-01d2497b",
+                "targetHandle": "a"
+            },
+            {
+                "id": "e-counter-12ac314c-count-add-b1259aee-a-dhu0d9",
+                "source": "counter-12ac314c",
+                "sourceHandle": "count",
+                "target": "add-b1259aee",
+                "targetHandle": "a"
+            }
+        ]
+    },
+    exposed_params=[
+        {"node_id": "multiply-41229d76", "param_key": "b", "label": "Noise Scale", "min": 0.0, "max": 4.0, "default": 3.0},
+    ],
+)
+
+
+HALOGEN_BLINDER = Effect(
+    name="Halogen Blinder",
+    description=(
+        "A halogen-blinder-style hit that steps round-robin across the fixtures on the beat: Beat "
+        "Phase gates a Counter (max wired to Fixture Index's count, one advance per beat) whose count "
+        "is matched (Subtract -> Abs -> Less Than) against this fixture's index -- only the matching "
+        "fixture retriggers the Envelope (fast attack, exponential decay). The same Envelope value "
+        "drives Brightness and, remapped into a falling Kelvin value, cools Color Temperature from "
+        "~2800K toward ~1200K as the flash dies out, mimicking a filament cooling rather than just "
+        "dimming."
+    ),
+    graph={
+        "nodes": [
+            {
+                "id": "beat_phase-ab55f2cb",
+                "type": "beat_phase",
+                "position": {
+                    "x": 239.5,
+                    "y": 383.09375
+                },
+                "data": {}
+            },
+            {
+                "id": "envelope-9cb9e497",
+                "type": "envelope",
+                "position": {
+                    "x": 1988.226723530717,
+                    "y": 506.3854710926547
+                },
+                "data": {
+                    "trigger": 0,
+                    "attack": 0.01,
+                    "hold": 0,
+                    "decay": 0.5,
+                    "curve": "exponential"
+                }
+            },
+            {
+                "id": "fixture_index-e643739c",
+                "type": "fixture_index",
+                "position": {
+                    "x": 803.7784036285634,
+                    "y": 68.04123499995967
+                },
+                "data": {
+                    "axis": "y",
+                    "reverse": "false"
+                }
+            },
+            {
+                "id": "brightness-53e3c62d",
+                "type": "brightness",
+                "position": {
+                    "x": 2584.073700258956,
+                    "y": 105.23507530185151
+                },
+                "data": {
+                    "amount": 1
+                }
+            },
+            {
+                "id": "color_temperature-21e7b355",
+                "type": "color_temperature",
+                "position": {
+                    "x": 2281.051680690979,
+                    "y": -98.18015425546545
+                },
+                "data": {
+                    "kelvin": 2800
+                }
+            },
+            {
+                "id": "less_than-7a95d8f5",
+                "type": "less_than",
+                "position": {
+                    "x": 596.1619453636314,
+                    "y": 366.845001083786
+                },
+                "data": {
+                    "value": 0,
+                    "threshold": 0.05
+                }
+            },
+            {
+                "id": "led_color-fe324385",
+                "type": "led_color",
+                "position": {
+                    "x": 2952.2031472766794,
+                    "y": 519.2775714613606
+                },
+                "data": {}
+            },
+            {
+                "id": "counter-dc1d83bd",
+                "type": "counter",
+                "position": {
+                    "x": 898.5006746477221,
+                    "y": 401.42706381312587
+                },
+                "data": {
+                    "trigger": 0,
+                    "reset": 0,
+                    "max": 4
+                }
+            },
+            {
+                "id": "subtract-effe7309",
+                "type": "subtract",
+                "position": {
+                    "x": 1233.643059147922,
+                    "y": 360.6624557536525
+                },
+                "data": {
+                    "a": 0,
+                    "b": 0
+                }
+            },
+            {
+                "id": "add-6314f22a",
+                "type": "add",
+                "position": {
+                    "x": 1142.2574369150389,
+                    "y": 114.81087027757775
+                },
+                "data": {
+                    "a": 0,
+                    "b": 1
+                }
+            },
+            {
+                "id": "abs-99254d74",
+                "type": "abs",
+                "position": {
+                    "x": 1494.0516463956062,
+                    "y": 342.87056469946276
+                },
+                "data": {
+                    "value": 0
+                }
+            },
+            {
+                "id": "less_than-4282b371",
+                "type": "less_than",
+                "position": {
+                    "x": 1764.973623811676,
+                    "y": 321.56073155046755
+                },
+                "data": {
+                    "value": 0,
+                    "threshold": 0.5
+                }
+            },
+            {
+                "id": "remap-b7f3e983",
+                "type": "remap",
+                "position": {
+                    "x": 1957.8804450136822,
+                    "y": -145.8001004348273
+                },
+                "data": {
+                    "value": 0,
+                    "in_min": 0,
+                    "in_max": 1,
+                    "out_min": 1200,
+                    "out_max": 2800
+                }
+            }
+        ],
+        "edges": [
+            {
+                "id": "e-color_temperature-21e7b355-value-brightness-53e3c62d-color-kkc63t",
+                "source": "color_temperature-21e7b355",
+                "sourceHandle": "value",
+                "target": "brightness-53e3c62d",
+                "targetHandle": "color"
+            },
+            {
+                "id": "e-envelope-9cb9e497-value-brightness-53e3c62d-amount-rfzqix",
+                "source": "envelope-9cb9e497",
+                "sourceHandle": "value",
+                "target": "brightness-53e3c62d",
+                "targetHandle": "amount"
+            },
+            {
+                "id": "e-beat_phase-ab55f2cb-value-less_than-7a95d8f5-value-2i04ib",
+                "source": "beat_phase-ab55f2cb",
+                "sourceHandle": "value",
+                "target": "less_than-7a95d8f5",
+                "targetHandle": "value"
+            },
+            {
+                "id": "e-less_than-7a95d8f5-value-counter-dc1d83bd-trigger-gqbokj",
+                "source": "less_than-7a95d8f5",
+                "sourceHandle": "value",
+                "target": "counter-dc1d83bd",
+                "targetHandle": "trigger"
+            },
+            {
+                "id": "e-fixture_index-e643739c-index-add-6314f22a-a-ri68dk",
+                "source": "fixture_index-e643739c",
+                "sourceHandle": "index",
+                "target": "add-6314f22a",
+                "targetHandle": "a"
+            },
+            {
+                "id": "e-counter-dc1d83bd-count-subtract-effe7309-a-zpc8pp",
+                "source": "counter-dc1d83bd",
+                "sourceHandle": "count",
+                "target": "subtract-effe7309",
+                "targetHandle": "a"
+            },
+            {
+                "id": "e-add-6314f22a-value-subtract-effe7309-b-znliic",
+                "source": "add-6314f22a",
+                "sourceHandle": "value",
+                "target": "subtract-effe7309",
+                "targetHandle": "b"
+            },
+            {
+                "id": "e-subtract-effe7309-value-abs-99254d74-value-d0pkx0",
+                "source": "subtract-effe7309",
+                "sourceHandle": "value",
+                "target": "abs-99254d74",
+                "targetHandle": "value"
+            },
+            {
+                "id": "e-abs-99254d74-value-less_than-4282b371-value-tmguif",
+                "source": "abs-99254d74",
+                "sourceHandle": "value",
+                "target": "less_than-4282b371",
+                "targetHandle": "value"
+            },
+            {
+                "id": "e-less_than-4282b371-value-envelope-9cb9e497-trigger-vkpnlg",
+                "source": "less_than-4282b371",
+                "sourceHandle": "value",
+                "target": "envelope-9cb9e497",
+                "targetHandle": "trigger"
+            },
+            {
+                "id": "e-envelope-9cb9e497-value-remap-b7f3e983-value-nhc0yb",
+                "source": "envelope-9cb9e497",
+                "sourceHandle": "value",
+                "target": "remap-b7f3e983",
+                "targetHandle": "value"
+            },
+            {
+                "id": "e-remap-b7f3e983-value-color_temperature-21e7b355-kelvin-shalt2",
+                "source": "remap-b7f3e983",
+                "sourceHandle": "value",
+                "target": "color_temperature-21e7b355",
+                "targetHandle": "kelvin"
+            },
+            {
+                "id": "e-fixture_index-e643739c-count-counter-dc1d83bd-max-trdq1n",
+                "source": "fixture_index-e643739c",
+                "sourceHandle": "count",
+                "target": "counter-dc1d83bd",
+                "targetHandle": "max"
+            },
+            {
+                "id": "e-brightness-53e3c62d-value-led_color-fe324385-color-olirtl",
+                "source": "brightness-53e3c62d",
+                "sourceHandle": "value",
+                "target": "led_color-fe324385",
+                "targetHandle": "color"
+            }
+        ]
+    },
+    exposed_params=[
+        {"node_id": "envelope-9cb9e497", "param_key": "attack", "label": "Attack (s)", "min": 0.0, "max": 5.0, "default": 0.01},
+        {"node_id": "envelope-9cb9e497", "param_key": "hold", "label": "Hold (s)", "min": 0.0, "max": 5.0, "default": 0.0},
+        {"node_id": "envelope-9cb9e497", "param_key": "decay", "label": "Decay (s)", "min": 0.01, "max": 10.0, "default": 0.5},
+        {"node_id": "less_than-4282b371", "param_key": "threshold", "label": "Match Tolerance", "min": 0.0, "max": 1.0, "default": 0.5},
+        {"node_id": "remap-b7f3e983", "param_key": "out_min", "label": "Cool Temp (K)", "min": 0.0, "max": 12000.0, "default": 1200.0},
+        {"node_id": "remap-b7f3e983", "param_key": "out_max", "label": "Hot Temp (K)", "min": 0.0, "max": 12000.0, "default": 2800.0},
+        {"node_id": "add-6314f22a", "param_key": "b", "label": "Fixture Offset", "min": 0.0, "max": 1.0, "default": 1.0},
+    ],
+)
+
+
+HALOGEN_BLINDER_WASH = Effect(
+    name="Halogen Blinder Wash",
+    description=(
+        "Halogen Blinder, plus a dim, ever-present Scheme Random Color wash mixed underneath the "
+        "flash (Mix Color between the blinder output and a low-brightness scheme swatch) so the room "
+        "never goes fully black between hits."
+    ),
+    graph={
+        "nodes": [
+            {
+                "id": "beat_phase-ab55f2cb",
+                "type": "beat_phase",
+                "position": {
+                    "x": 239.5,
+                    "y": 383.09375
+                },
+                "data": {}
+            },
+            {
+                "id": "envelope-9cb9e497",
+                "type": "envelope",
+                "position": {
+                    "x": 1988.226723530717,
+                    "y": 506.3854710926547
+                },
+                "data": {
+                    "trigger": 0,
+                    "attack": 0.01,
+                    "hold": 0,
+                    "decay": 0.5,
+                    "curve": "exponential"
+                }
+            },
+            {
+                "id": "fixture_index-e643739c",
+                "type": "fixture_index",
+                "position": {
+                    "x": 803.7784036285634,
+                    "y": 68.04123499995967
+                },
+                "data": {
+                    "axis": "y",
+                    "reverse": "false"
+                }
+            },
+            {
+                "id": "brightness-53e3c62d",
+                "type": "brightness",
+                "position": {
+                    "x": 2584.073700258956,
+                    "y": 105.23507530185151
+                },
+                "data": {
+                    "amount": 1
+                }
+            },
+            {
+                "id": "color_temperature-21e7b355",
+                "type": "color_temperature",
+                "position": {
+                    "x": 2281.051680690979,
+                    "y": -98.18015425546545
+                },
+                "data": {
+                    "kelvin": 2800
+                }
+            },
+            {
+                "id": "less_than-7a95d8f5",
+                "type": "less_than",
+                "position": {
+                    "x": 596.1619453636314,
+                    "y": 366.845001083786
+                },
+                "data": {
+                    "value": 0,
+                    "threshold": 0.05
+                }
+            },
+            {
+                "id": "led_color-fe324385",
+                "type": "led_color",
+                "position": {
+                    "x": 2952.2031472766794,
+                    "y": 519.2775714613606
+                },
+                "data": {}
+            },
+            {
+                "id": "counter-dc1d83bd",
+                "type": "counter",
+                "position": {
+                    "x": 898.5006746477221,
+                    "y": 401.42706381312587
+                },
+                "data": {
+                    "trigger": 0,
+                    "reset": 0,
+                    "max": 4
+                }
+            },
+            {
+                "id": "subtract-effe7309",
+                "type": "subtract",
+                "position": {
+                    "x": 1233.643059147922,
+                    "y": 360.6624557536525
+                },
+                "data": {
+                    "a": 0,
+                    "b": 0
+                }
+            },
+            {
+                "id": "add-6314f22a",
+                "type": "add",
+                "position": {
+                    "x": 1142.2574369150389,
+                    "y": 114.81087027757775
+                },
+                "data": {
+                    "a": 0,
+                    "b": 1
+                }
+            },
+            {
+                "id": "abs-99254d74",
+                "type": "abs",
+                "position": {
+                    "x": 1494.0516463956062,
+                    "y": 342.87056469946276
+                },
+                "data": {
+                    "value": 0
+                }
+            },
+            {
+                "id": "less_than-4282b371",
+                "type": "less_than",
+                "position": {
+                    "x": 1764.973623811676,
+                    "y": 321.56073155046755
+                },
+                "data": {
+                    "value": 0,
+                    "threshold": 0.5
+                }
+            },
+            {
+                "id": "remap-b7f3e983",
+                "type": "remap",
+                "position": {
+                    "x": 1957.8804450136822,
+                    "y": -145.8001004348273
+                },
+                "data": {
+                    "value": 0,
+                    "in_min": 0,
+                    "in_max": 1,
+                    "out_min": 1200,
+                    "out_max": 2800
+                }
+            },
+            {
+                "id": "scheme_random_color-5439ec07",
+                "type": "scheme_random_color",
+                "position": {
+                    "x": 1321.1151059397764,
+                    "y": 931.4062743590886
+                },
+                "data": {
+                    "trigger": 0,
+                    "seed": 0
+                }
+            },
+            {
+                "id": "mix_color-a3f7cd08",
+                "type": "mix_color",
+                "position": {
+                    "x": 2627.599087517736,
+                    "y": 747.271236019887
+                },
+                "data": {
+                    "t": 0.5
+                }
+            },
+            {
+                "id": "brightness-09f0d825",
+                "type": "brightness",
+                "position": {
+                    "x": 1704.887011469733,
+                    "y": 973.3236054408028
+                },
+                "data": {
+                    "amount": 0.03
+                }
+            }
+        ],
+        "edges": [
+            {
+                "id": "e-color_temperature-21e7b355-value-brightness-53e3c62d-color-kkc63t",
+                "source": "color_temperature-21e7b355",
+                "sourceHandle": "value",
+                "target": "brightness-53e3c62d",
+                "targetHandle": "color"
+            },
+            {
+                "id": "e-envelope-9cb9e497-value-brightness-53e3c62d-amount-rfzqix",
+                "source": "envelope-9cb9e497",
+                "sourceHandle": "value",
+                "target": "brightness-53e3c62d",
+                "targetHandle": "amount"
+            },
+            {
+                "id": "e-beat_phase-ab55f2cb-value-less_than-7a95d8f5-value-2i04ib",
+                "source": "beat_phase-ab55f2cb",
+                "sourceHandle": "value",
+                "target": "less_than-7a95d8f5",
+                "targetHandle": "value"
+            },
+            {
+                "id": "e-less_than-7a95d8f5-value-counter-dc1d83bd-trigger-gqbokj",
+                "source": "less_than-7a95d8f5",
+                "sourceHandle": "value",
+                "target": "counter-dc1d83bd",
+                "targetHandle": "trigger"
+            },
+            {
+                "id": "e-fixture_index-e643739c-index-add-6314f22a-a-ri68dk",
+                "source": "fixture_index-e643739c",
+                "sourceHandle": "index",
+                "target": "add-6314f22a",
+                "targetHandle": "a"
+            },
+            {
+                "id": "e-counter-dc1d83bd-count-subtract-effe7309-a-zpc8pp",
+                "source": "counter-dc1d83bd",
+                "sourceHandle": "count",
+                "target": "subtract-effe7309",
+                "targetHandle": "a"
+            },
+            {
+                "id": "e-add-6314f22a-value-subtract-effe7309-b-znliic",
+                "source": "add-6314f22a",
+                "sourceHandle": "value",
+                "target": "subtract-effe7309",
+                "targetHandle": "b"
+            },
+            {
+                "id": "e-subtract-effe7309-value-abs-99254d74-value-d0pkx0",
+                "source": "subtract-effe7309",
+                "sourceHandle": "value",
+                "target": "abs-99254d74",
+                "targetHandle": "value"
+            },
+            {
+                "id": "e-abs-99254d74-value-less_than-4282b371-value-tmguif",
+                "source": "abs-99254d74",
+                "sourceHandle": "value",
+                "target": "less_than-4282b371",
+                "targetHandle": "value"
+            },
+            {
+                "id": "e-less_than-4282b371-value-envelope-9cb9e497-trigger-vkpnlg",
+                "source": "less_than-4282b371",
+                "sourceHandle": "value",
+                "target": "envelope-9cb9e497",
+                "targetHandle": "trigger"
+            },
+            {
+                "id": "e-envelope-9cb9e497-value-remap-b7f3e983-value-nhc0yb",
+                "source": "envelope-9cb9e497",
+                "sourceHandle": "value",
+                "target": "remap-b7f3e983",
+                "targetHandle": "value"
+            },
+            {
+                "id": "e-remap-b7f3e983-value-color_temperature-21e7b355-kelvin-shalt2",
+                "source": "remap-b7f3e983",
+                "sourceHandle": "value",
+                "target": "color_temperature-21e7b355",
+                "targetHandle": "kelvin"
+            },
+            {
+                "id": "e-fixture_index-e643739c-count-counter-dc1d83bd-max-trdq1n",
+                "source": "fixture_index-e643739c",
+                "sourceHandle": "count",
+                "target": "counter-dc1d83bd",
+                "targetHandle": "max"
+            },
+            {
+                "id": "e-brightness-53e3c62d-value-mix_color-a3f7cd08-a-qforru",
+                "source": "brightness-53e3c62d",
+                "sourceHandle": "value",
+                "target": "mix_color-a3f7cd08",
+                "targetHandle": "a"
+            },
+            {
+                "id": "e-mix_color-a3f7cd08-value-led_color-fe324385-color-huxbyq",
+                "source": "mix_color-a3f7cd08",
+                "sourceHandle": "value",
+                "target": "led_color-fe324385",
+                "targetHandle": "color"
+            },
+            {
+                "id": "e-scheme_random_color-5439ec07-value-brightness-09f0d825-color-9imcb5",
+                "source": "scheme_random_color-5439ec07",
+                "sourceHandle": "value",
+                "target": "brightness-09f0d825",
+                "targetHandle": "color"
+            },
+            {
+                "id": "e-brightness-09f0d825-value-mix_color-a3f7cd08-b-mkngab",
+                "source": "brightness-09f0d825",
+                "sourceHandle": "value",
+                "target": "mix_color-a3f7cd08",
+                "targetHandle": "b"
+            }
+        ]
+    },
+    exposed_params=[
+        {"node_id": "brightness-09f0d825", "param_key": "amount", "label": "Background Brightness", "min": 0.0, "max": 1.0, "default": 0.03},
+        {"node_id": "envelope-9cb9e497", "param_key": "attack", "label": "Attack (s)", "min": 0.0, "max": 5.0, "default": 0.01},
+        {"node_id": "envelope-9cb9e497", "param_key": "hold", "label": "Hold (s)", "min": 0.0, "max": 5.0, "default": 0.0},
+        {"node_id": "envelope-9cb9e497", "param_key": "decay", "label": "Decay (s)", "min": 0.01, "max": 10.0, "default": 0.5},
+        {"node_id": "less_than-4282b371", "param_key": "threshold", "label": "Match Tolerance", "min": 0.0, "max": 1.0, "default": 0.5},
+        {"node_id": "remap-b7f3e983", "param_key": "out_min", "label": "Cool Temp (K)", "min": 0.0, "max": 12000.0, "default": 1200.0},
+        {"node_id": "remap-b7f3e983", "param_key": "out_max", "label": "Hot Temp (K)", "min": 0.0, "max": 12000.0, "default": 2800.0},
+        {"node_id": "add-6314f22a", "param_key": "b", "label": "Fixture Offset", "min": 0.0, "max": 1.0, "default": 1.0},
+    ],
+)
+
 EXAMPLE_EFFECTS: list[Effect] = [
     BEAT_BAR,
     BASS_PULSE_RAINBOW,
@@ -1005,6 +2897,12 @@ EXAMPLE_EFFECTS: list[Effect] = [
     CORE_SHOCKWAVE,
     BASS_BLOOM,
     RING_SLAMMER,
+    RANDOM_STROBE,
+    SIDE_PHASE,
+    IN_AND_OUT,
+    NOISE_DRIFT,
+    HALOGEN_BLINDER,
+    HALOGEN_BLINDER_WASH,
 ]
 
 

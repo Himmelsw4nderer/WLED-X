@@ -64,5 +64,7 @@ Open http://localhost:5173.
 ## Status
 
 Core loop is working end-to-end: discovery, 3D fixture layout, node-graph
-effects, audio-reactive rendering over DDP, and a live console. Backend has
-pytest coverage; frontend test coverage is in progress.
+effects, audio-reactive rendering over DDP, and a live console. Ships with a
+library of 20 built-in example effects (seeded on first run) to start from or
+copy node patterns out of. Backend has pytest coverage; frontend test
+coverage is in progress.
