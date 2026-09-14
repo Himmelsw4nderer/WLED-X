@@ -119,6 +119,34 @@ def test_fixture_reverse_defaults_false_and_can_be_toggled(client):
     assert resp.json()["reverse"] is True
 
 
+def test_color_scheme_crud(client):
+    resp = client.post(
+        "/api/color-schemes",
+        json={"name": "Sunset", "colors": [[1.0, 0.4, 0.0], [0.8, 0.0, 0.3]]},
+    )
+    assert resp.status_code == 201
+    scheme = resp.json()
+    assert scheme["name"] == "Sunset"
+    assert scheme["colors"] == [[1.0, 0.4, 0.0], [0.8, 0.0, 0.3]]
+
+    resp = client.get("/api/color-schemes")
+    assert len(resp.json()) == 1
+
+    resp = client.patch(
+        f"/api/color-schemes/{scheme['id']}",
+        json={"colors": [[0.0, 1.0, 0.0]]},
+    )
+    assert resp.status_code == 200
+    assert resp.json()["colors"] == [[0.0, 1.0, 0.0]]
+    assert resp.json()["name"] == "Sunset"  # untouched by a partial update
+
+    resp = client.delete(f"/api/color-schemes/{scheme['id']}")
+    assert resp.status_code == 204
+    assert client.get("/api/color-schemes").json() == []
+    assert client.patch(f"/api/color-schemes/{scheme['id']}", json={"name": "x"}).status_code == 404
+    assert client.delete(f"/api/color-schemes/{scheme['id']}").status_code == 404
+
+
 def test_fixture_device_id_can_be_reassigned(client):
     # Regression test: PATCH /api/fixtures/{id} used to silently drop device_id
     # since it was missing from FixtureUpdate, so reassigning a fixture to a
@@ -171,6 +199,70 @@ def test_effect_and_scene_roundtrip(client):
 
     resp = client.patch(f"/api/scenes/{scene['id']}", json={"active": True})
     assert resp.json()["active"] is True
+
+
+def test_scene_assignment_params_persist_fader_bank_values(client):
+    # The console fader bank writes its values onto the scene's assignments,
+    # keyed "{node_id}:{param_key}", floats for faders and strings for selects.
+    effect = client.post(
+        "/api/effects",
+        json={"name": "P", "graph": {"nodes": [{"id": "n1", "type": "time"}], "edges": []}},
+    ).json()
+    scene = client.post(
+        "/api/scenes",
+        json={
+            "name": "Ride",
+            "assignments": [{"fixture_ids": "all", "effect_id": effect["id"], "brightness": 1.0}],
+        },
+    ).json()
+
+    resp = client.patch(
+        f"/api/scenes/{scene['id']}",
+        json={
+            "assignments": [
+                {
+                    "fixture_ids": "all",
+                    "effect_id": effect["id"],
+                    "brightness": 1.0,
+                    "params": {"n1:speed": 2.5, "p1:axis": "y"},
+                }
+            ]
+        },
+    )
+    assert resp.status_code == 200
+    params = client.get(f"/api/scenes/{scene['id']}").json()["assignments"][0]["params"]
+    assert params == {"n1:speed": 2.5, "p1:axis": "y"}
+
+
+def test_effect_exposes_a_select_param_with_options_and_a_string_default(client):
+    effect = client.post(
+        "/api/effects",
+        json={
+            "name": "Axis Wipe",
+            "graph": {
+                "nodes": [{"id": "p", "type": "position", "data": {"space": "scene", "axis": "x"}}],
+                "edges": [],
+            },
+            "exposed_params": [
+                {
+                    "node_id": "p",
+                    "param_key": "axis",
+                    "label": "Sweep Axis",
+                    "options": ["x", "y", "z", "xz"],
+                    "default": "x",
+                }
+            ],
+        },
+    ).json()
+
+    exposed = effect["exposed_params"][0]
+    assert exposed["options"] == ["x", "y", "z", "xz"]
+    assert exposed["default"] == "x"
+
+    # and it survives a read-back
+    reread = client.get(f"/api/effects/{effect['id']}").json()["exposed_params"][0]
+    assert reread["options"] == ["x", "y", "z", "xz"]
+    assert reread["default"] == "x"
 
 
 def test_duplicate_effect(client):

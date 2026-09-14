@@ -154,7 +154,7 @@ def _load_targets(
         )
         brightness = float(assignment.get("brightness", 1.0))
         scene_params = assignment.get("params") or {}
-        overrides: dict[tuple[str, str], float] = {}
+        overrides: dict[tuple[str, str], float | str] = {}
         for exposed in effect.exposed_params:
             key = exposed["param_key"]
             if key in scene_params:

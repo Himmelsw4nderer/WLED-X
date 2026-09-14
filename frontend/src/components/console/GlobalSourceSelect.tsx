@@ -32,11 +32,8 @@ export function GlobalSourceSelect() {
 
   return (
     <div className="global-source-select">
-      <div className="global-source-select__head">
-        <span>Audio source</span>
-      </div>
+      <div className="console-card__sublabel">Audio source</div>
       <select
-        className="global-source-select__input"
         value={audioSource}
         onChange={(e) => setAudioSource(e.target.value)}
       >

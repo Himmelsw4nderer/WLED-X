@@ -69,7 +69,11 @@ class ExposedParam(BaseModel):
     label: str
     min: float = 0.0
     max: float = 1.0
-    default: float = 0.0
+    # `default` is a string when `options` is set (the param is a select, e.g.
+    # Position's axis) -- the console then renders a dropdown instead of a fader
+    # and its override value is the chosen option string.
+    default: float | str = 0.0
+    options: list[str] | None = None
 
 
 class EffectRead(BaseModel):
@@ -98,7 +102,12 @@ class EffectUpdate(BaseModel):
 class SceneAssignment(BaseModel):
     fixture_ids: list[int] | str  # explicit ids, or "all"
     effect_id: int
-    params: dict[str, float] = {}
+    # Per-scene fader-bank values for this effect's console-exposed params,
+    # keyed "{node_id}:{param_key}" (floats for faders, strings for selects).
+    # This is where riding the console's fader bank persists to -- the effect
+    # only defines *which* params are exposed, not their live values. Older
+    # scenes may still key by bare "{param_key}"; the engine reads both.
+    params: dict[str, float | str] = {}
     brightness: float = 1.0
 
 
@@ -120,9 +129,25 @@ class SceneUpdate(BaseModel):
     active: bool | None = None
 
 
+class ColorSchemeRead(BaseModel):
+    id: int
+    name: str
+    colors: list[list[float]]
+
+
+class ColorSchemeCreate(BaseModel):
+    name: str
+    colors: list[list[float]] = []
+
+
+class ColorSchemeUpdate(BaseModel):
+    name: str | None = None
+    colors: list[list[float]] | None = None
+
+
 class NodeSocket(BaseModel):
     key: str
-    type: str  # "scalar" | "field" | "color"
+    type: str  # "scalar" | "field" | "color" | "vec3"
     label: str = ""
 
 
@@ -142,17 +167,26 @@ class NodeTypeDescriptor(BaseModel):
     inputs: list[NodeSocket] = []
     outputs: list[NodeSocket] = []
     params: list[NodeParam] = []
+    # Kept working by the executor for graphs that still reference it, but
+    # hidden from the editor's "add node" palette so nothing new can use it.
+    deprecated: bool = False
 
 
 class ConsoleState(BaseModel):
     master_brightness: float = 1.0
     active_scene_id: int | None = None
-    param_overrides: dict[str, float] = {}
+    # values are floats for fader params, strings for select params (see ExposedParam)
+    param_overrides: dict[str, float | str] = {}
     hype: float = 0.0
     # Which configured audio source ("desktop" / "mic" / ...) drives every
     # audio-reactive node and the phrase-clock. Chosen once here instead of
     # per node -- see wled_x.effects.nodes.audio_nodes.
     audio_source: str = "desktop"
+    # The ColorScheme every Scheme Color / Scheme Random Color node reads from
+    # -- None falls back to a single white swatch (see
+    # wled_x.effects.color_schemes.resolve_scheme_colors), so effects built
+    # around those nodes stay plain white until a scheme is actually picked.
+    active_color_scheme_id: int | None = None
 
 
 class PhraseClockState(BaseModel):
@@ -244,13 +278,27 @@ class PreviewRequest(BaseModel):
     graph: dict[str, Any]
     led_count: int = 30
     length_meters: float = 1.0
-    param_overrides: dict[str, float] = {}
+    param_overrides: dict[str, float | str] = {}
 
 
 class NodePreview(BaseModel):
-    socket_type: str  # "scalar" | "field" | "color"
-    # scalar: length-1 list; field: one float per LED; color: one [r,g,b] (0-255) per LED.
+    socket_type: str  # "scalar" | "field" | "color" | "vec3"
+    # scalar: length-1 list; field: one float per LED; color: one [r,g,b] (0-255)
+    # per LED; vec3: one [x,y,z] (raw units) per LED.
     values: list[Any]
+
+
+class RoomPreviewRequest(BaseModel):
+    graph: dict[str, Any]
+    param_overrides: dict[str, float | str] = {}
+
+
+class RoomPreviewResponse(BaseModel):
+    # Same shape as the live WS "frame" message's `fixtures` field -- one
+    # [r,g,b] (0-255) per LED, keyed by fixture id as a string -- so the room
+    # view's FixtureStrip can render either source with the same code path.
+    fixtures: dict[str, list[list[int]]]
+    warning: str | None = None
 
 
 class PreviewResponse(BaseModel):

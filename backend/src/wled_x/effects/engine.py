@@ -25,6 +25,7 @@ from wled_x.audio.analysis import NUM_BANDS, AudioAnalyzer, AudioFrame
 from wled_x.audio.capture import AudioCapture
 from wled_x.config import settings
 from wled_x.console.state import console
+from wled_x.effects.color_schemes import resolve_scheme_colors
 from wled_x.effects.geometry import led_positions, scene_bounds
 from wled_x.effects.graph import EvalContext, evaluate_graph
 from wled_x.effects.nodes import NODE_REGISTRY
@@ -106,6 +107,10 @@ class RenderLoop:
         # in run() when that module is present (added separately).
         self._phrase_clock = PhraseClock()
         self._playlist_runner: Any = None
+        # Last active Scene.id we rendered; when it changes (console pick or a
+        # playlist advance) we wipe the console's live fader overrides so the
+        # incoming scene starts from its own stored params, not the last one's.
+        self._active_scene_id: int | None = None
 
     def _build_source(self, mode: str, device: str | None) -> _AudioSource:
         return _AudioSource(
@@ -301,13 +306,36 @@ class RenderLoop:
         with Session(db.engine) as session:
             scene = session.exec(select(Scene).where(Scene.active)).first()
             if scene is None:
+                self._active_scene_id = None
                 self._broadcast_phrase_and_audio(primary_frame, audio_frames)
                 return
             fixtures_by_id = {f.id: f for f in session.exec(select(Fixture)).all()}
             devices_by_id = {d.id: d for d in session.exec(select(Device)).all()}
             effects_by_id = {e.id: e for e in session.exec(select(Effect)).all()}
+            color_scheme_colors = resolve_scheme_colors(
+                session, console_state.active_color_scheme_id
+            )
+
+        if scene.id != self._active_scene_id:
+            self._active_scene_id = scene.id
+            # New scene live -> drop the outgoing scene's fader rides and render
+            # this frame from the incoming scene's own stored params.
+            await console.clear_param_overrides()
+            console_state = console.snapshot()
+            # Also wipe every node's working state -- Counters restart, Square's
+            # phase resets, and (the point of this for a "just white" show) a
+            # Scheme Random Color node redraws so switching scenes/effects
+            # visibly picks a new color instead of holding whatever it drew
+            # for the outgoing scene.
+            self._node_state.clear()
 
         bounds = scene_bounds([f.points for f in fixtures_by_id.values()])
+        fixture_centers = {
+            fid: np.mean(np.asarray(f.points, dtype=np.float32), axis=0)
+            if f.points
+            else np.zeros(3, dtype=np.float32)
+            for fid, f in fixtures_by_id.items()
+        }
         device_buffers: dict[int, np.ndarray] = {}
         preview: dict[str, list[list[int]]] = {}
         preview_names: dict[str, str] = {}
@@ -331,7 +359,7 @@ class RenderLoop:
             for fixture in target_fixtures:
                 colors = self._render_fixture(
                     fixture, effect, param_overrides, now, console_state.hype, bounds,
-                    primary_frame, audio_frames,
+                    primary_frame, audio_frames, color_scheme_colors, fixture_centers,
                 )
                 colors = np.clip(colors, 0.0, 1.0) * brightness
                 colors = np.clip(colors, 0.0, 1.0)
@@ -396,8 +424,8 @@ class RenderLoop:
 
     def _resolve_param_overrides(
         self, effect: Effect, assignment: dict[str, Any], console_state: ConsoleState
-    ) -> dict[tuple[str, str], float]:
-        overrides: dict[tuple[str, str], float] = {}
+    ) -> dict[tuple[str, str], float | str]:
+        overrides: dict[tuple[str, str], float | str] = {}
         scene_params = assignment.get("params") or {}
         for exposed in effect.exposed_params:
             node_id = exposed["node_id"]
@@ -407,9 +435,15 @@ class RenderLoop:
             # "value", and without node_id in the key they'd collide onto the same
             # console override, making them impossible to control separately.
             override_key = f"{effect.id}:{node_id}:{param_key}"
+            scene_key = f"{node_id}:{param_key}"
             if override_key in console_state.param_overrides:
+                # Live fader ride, this frame.
                 value = console_state.param_overrides[override_key]
+            elif scene_key in scene_params:
+                # Persisted fader-bank value for this scene.
+                value = scene_params[scene_key]
             elif param_key in scene_params:
+                # Legacy scenes keyed params by bare param_key.
                 value = scene_params[param_key]
             else:
                 continue
@@ -420,12 +454,14 @@ class RenderLoop:
         self,
         fixture: Fixture,
         effect: Effect,
-        param_overrides: dict[tuple[str, str], float],
+        param_overrides: dict[tuple[str, str], float | str],
         now: float,
         hype: float,
         bounds: tuple[np.ndarray, np.ndarray] | None,
         primary: AudioFrame,
         audio_frames: dict[str, AudioFrame],
+        color_scheme: np.ndarray,
+        fixture_centers: dict[int, np.ndarray],
     ) -> np.ndarray:
         positions = led_positions(fixture.points, fixture.led_count, reverse=fixture.reverse)
         node_state = self._node_state.setdefault(fixture.id, {})
@@ -438,6 +474,9 @@ class RenderLoop:
             state=node_state,
             scene_bounds=bounds,
             audio_sources=audio_frames,
+            color_scheme=color_scheme,
+            fixture_id=fixture.id,
+            fixture_centers=fixture_centers,
         )
         try:
             colors, _node_outputs = evaluate_graph(

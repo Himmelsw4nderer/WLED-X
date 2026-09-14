@@ -1,5 +1,5 @@
 .node-palette {
-  width: 190px;
+  width: 200px;
   flex: none;
   overflow-y: auto;
   border-right: 3px solid var(--border);
@@ -35,10 +35,11 @@
 }
 
 .node-palette__item {
-  padding: 0.4rem 0.55rem;
+  padding: 0.45rem 0.6rem;
   margin-bottom: 0.3rem;
   border: 2px solid var(--border);
-  border-radius: 7px;
+  border-bottom-width: 4px;
+  border-radius: var(--r-sm);
   background: var(--bg);
   font-size: 0.78rem;
   cursor: grab;
@@ -46,9 +47,61 @@
 
 .node-palette__item:hover {
   border-color: var(--violet);
+  box-shadow: var(--glow-violet);
   color: var(--text);
 }
 
 .node-palette__item:active {
   cursor: grabbing;
+  border-bottom-width: 2px;
+  transform: translateY(2px);
+}
+
+.node-palette__legend {
+  margin-top: 0.4rem;
+  padding-top: 0.7rem;
+  border-top: 2px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.node-palette__legend-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.72rem;
+  color: var(--text-dim);
+}
+
+.node-palette__socket {
+  width: 11px;
+  height: 11px;
+  flex: none;
+  border: 2px solid var(--bg-elevated);
+  box-shadow: 0 0 6px currentColor;
+}
+
+.node-palette__socket--scalar {
+  border-radius: 50%;
+  background: var(--gold);
+  color: var(--gold);
+}
+
+.node-palette__socket--field {
+  background: var(--cyan);
+  color: var(--cyan);
+}
+
+.node-palette__socket--color {
+  background: var(--accent);
+  color: var(--accent);
+  transform: rotate(45deg);
+}
+
+.node-palette__socket--vec3 {
+  background: var(--violet);
+  color: var(--violet);
+  border: none;
+  clip-path: polygon(50% 0%, 100% 100%, 0% 100%);
 }

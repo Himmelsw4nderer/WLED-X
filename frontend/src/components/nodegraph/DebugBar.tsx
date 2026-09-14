@@ -64,7 +64,11 @@ export function DebugBar({
       {enabled && result && (
         <div className="debug-bar__strip" title="Live final LED Color output for a synthetic straight strip">
           {result.colors.map((c, i) => (
-            <span key={i} className="debug-bar__led" style={{ background: `rgb(${c.join(",")})` }} />
+            <span
+              key={i}
+              className="debug-bar__led"
+              style={{ background: `rgb(${c.join(",")})`, color: `rgb(${c.join(",")})` }}
+            />
           ))}
         </div>
       )}

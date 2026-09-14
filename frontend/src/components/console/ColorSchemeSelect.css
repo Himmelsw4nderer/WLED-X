@@ -1,0 +1,45 @@
+.color-scheme-select {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+/* Same size/spacing as every other card sublabel (see ConsoleCard.css) --
+   just its own accent color to tie it to the Colors tab. */
+.color-scheme-select .console-card__sublabel {
+  color: var(--violet);
+}
+
+.color-scheme-select__row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.color-scheme-select__input {
+  flex: 1;
+  background: var(--bg);
+  color: inherit;
+  border: 2px solid var(--border);
+  border-radius: var(--r-sm);
+  padding: 0.4rem 0.55rem;
+  font-size: 0.85rem;
+}
+
+.color-scheme-select__swatches {
+  display: flex;
+  width: 36px;
+  height: 22px;
+  border-radius: var(--r-sm);
+  overflow: hidden;
+  border: 2px solid var(--border);
+  flex-shrink: 0;
+}
+
+.color-scheme-select__swatch {
+  flex: 1;
+}
+
+.color-scheme-select__swatches--empty {
+  background: var(--void);
+}

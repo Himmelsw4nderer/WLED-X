@@ -35,6 +35,30 @@
   color: var(--text);
 }
 
+.fixture-editor__row--controls {
+  align-items: flex-start;
+  gap: 1.25rem;
+}
+
+.fixture-editor__num {
+  flex: 1;
+}
+
+.fixture-editor__fill {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  margin-top: -0.3rem;
+}
+
+.fixture-editor__fill-head {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.72rem;
+  color: var(--text-dim);
+  font-variant-numeric: tabular-nums;
+}
+
 .fixture-list {
   list-style: none;
   margin: 0;
@@ -66,6 +90,7 @@
 .fixture-list__item--active {
   border-color: var(--gold);
   background: rgba(255, 201, 60, 0.1);
+  box-shadow: var(--glow-gold);
 }
 
 .fixture-list__item--conflict {

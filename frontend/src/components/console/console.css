@@ -2,113 +2,121 @@
   display: flex;
   flex-direction: column;
   height: 100%;
-  padding: 1.25rem;
+  padding: clamp(0.75rem, 2vw, 1.25rem);
   gap: 1rem;
+  overflow-y: auto;
 }
 
-.console-page__top {
+/* ---- Top deck: master module | cue stack | audio ---- */
+/* Bootstrap-ish auto-fit grid: as many ~260px columns as fit, reflowing down
+   to a single column on a phone without a hand-picked breakpoint. Every card
+   here is a <ConsoleCard> (see ConsoleCard.tsx/.css) -- this file only adds
+   the page-specific sizing/layout each one needs on top of that shared shell. */
+.console-deck {
   display: grid;
-  grid-template-columns: minmax(280px, 1.4fr) minmax(220px, 1fr) auto;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
   gap: 1rem;
   align-items: stretch;
 }
 
-.console-page__meter {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-  border: 3px solid var(--border);
-  border-radius: 14px;
-  background: var(--bg-elevated);
-  padding: 0.6rem 1rem;
-}
-
-.console-page__faders {
-  flex: 1;
-  min-height: 0;
-  overflow-y: auto;
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-}
-
-.console-page__hint {
-  color: var(--text-dim);
-  font-size: 0.9rem;
-  margin: 0;
-}
-
-.fader-group {
-  border: 3px solid var(--border);
-  border-radius: 14px;
-  background: var(--bg-elevated);
-  padding: 1rem 1.25rem;
-}
-
-.fader-group h3 {
-  margin: 0 0 0.85rem;
-  font-size: 0.85rem;
-  font-family: var(--font-label);
-  color: var(--gold);
-  text-transform: uppercase;
-  letter-spacing: 0.12em;
-}
-
-.fader-group__row {
-  display: flex;
+/* The Master card's body is the one place on this page that reads
+   left-to-right instead of stacking -- brightness, hype, and color scheme
+   as three side-by-side modules. */
+.console-deck__master .console-card__body {
+  flex-direction: row;
   flex-wrap: wrap;
-  gap: 1.75rem;
+  gap: 1.5rem;
+  align-items: flex-start;
+  justify-content: center;
 }
 
-.param-fader {
+.console-deck__audio-io {
   display: flex;
   flex-direction: column;
-  gap: 0.4rem;
-  min-width: 170px;
+  gap: 0.75rem;
 }
 
-.param-fader__head {
+/* ---- Lower deck: fader bank (wide) | playlists (narrow) ---- */
+
+.console-lower {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+  gap: 1rem;
+  align-items: start;
+}
+
+@media (max-width: 900px) {
+  .console-lower {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ---- Master module ---- */
+
+.master-fader {
   display: flex;
-  justify-content: space-between;
-  gap: 0.5rem;
-  font-size: 0.8rem;
-  color: var(--text-dim);
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
 }
 
-.param-fader__value {
-  color: var(--text);
-  font-variant-numeric: tabular-nums;
+/* ---- HIT / hype module ---- */
+
+.hit-button {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
 }
 
-.param-fader input[type="range"] {
-  width: 100%;
-  accent-color: var(--accent);
+.hit-button__stage {
+  display: flex;
+  align-items: stretch;
+  gap: 0.85rem;
+  height: 260px;
+}
+
+.hit-button__btn {
+  align-self: center;
+  width: 104px;
+  height: 104px;
+  border-radius: 50%;
+  border: 4px solid #b01059;
+  background: var(--accent);
+  box-shadow: 0 0 calc(20px + var(--hype, 0) * 40px) rgba(255, 46, 136, calc(0.4 + var(--hype, 0) * 0.5));
+  color: #40001c;
+  font-family: var(--font-display);
+  font-size: 1.05rem;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  transition:
+    transform 0.06s ease,
+    box-shadow 0.12s ease;
+}
+
+.hit-button__btn:hover {
+  box-shadow: 0 0 46px rgba(255, 46, 136, 0.65);
+}
+
+.hit-button__btn:active {
+  transform: scale(0.93);
+}
+
+/* ---- Cue stack (scene transport) ---- */
+
+.console-deck__cues {
+  min-height: 0;
+}
+
+.console-deck__cues .console-card__body {
+  min-height: 0;
 }
 
 .scene-transport {
-  border: 3px solid var(--border);
-  border-radius: 14px;
-  background: var(--bg-elevated);
-  padding: 1rem;
   display: flex;
   flex-direction: column;
   min-height: 0;
-}
-
-.scene-transport__head {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 0.6rem;
-}
-
-.scene-transport__head h2 {
-  margin: 0;
-  font-size: 0.85rem;
-  font-family: var(--font-label);
-  color: var(--gold);
-  text-transform: uppercase;
-  letter-spacing: 0.12em;
+  gap: 0.6rem;
 }
 
 .scene-transport__list {
@@ -117,9 +125,9 @@
   padding: 0;
   display: flex;
   flex-direction: column;
-  gap: 0.35rem;
+  gap: 0.4rem;
   overflow-y: auto;
-  max-height: 220px;
+  max-height: 260px;
 }
 
 .scene-transport__empty {
@@ -139,24 +147,29 @@
   display: flex;
   align-items: center;
   gap: 0.6rem;
-  background: transparent;
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  padding: 0.5rem 0.7rem;
+  background: var(--bg);
+  border: 2px solid var(--border);
+  border-radius: var(--r-sm);
+  padding: 0.55rem 0.75rem;
   color: var(--text);
   cursor: pointer;
   text-align: left;
   font: inherit;
 }
 
+.scene-row__select:hover {
+  border-color: var(--violet);
+}
+
 .scene-row--live .scene-row__select {
   border-color: var(--accent);
   background: var(--accent-soft);
+  box-shadow: var(--glow-accent);
 }
 
 .scene-row__dot {
-  width: 8px;
-  height: 8px;
+  width: 9px;
+  height: 9px;
   border-radius: 50%;
   background: var(--border);
   flex-shrink: 0;
@@ -173,138 +186,32 @@
 }
 
 .scene-row__count {
-  font-size: 0.75rem;
+  font-size: 0.72rem;
   color: var(--text-dim);
   white-space: nowrap;
 }
 
-.master-fader {
-  border: 3px solid var(--border);
-  border-radius: 14px;
-  background: var(--bg-elevated);
-  padding: 1rem;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  gap: 0.75rem;
-}
-
-.master-fader__head {
-  display: flex;
-  justify-content: space-between;
-  font-size: 0.8rem;
-  font-family: var(--font-label);
-  color: var(--gold);
-  text-transform: uppercase;
-  letter-spacing: 0.12em;
-}
-
-.master-fader__value {
-  color: var(--text);
-  font-size: 1.1rem;
-  font-variant-numeric: tabular-nums;
-}
-
-.master-fader__input {
-  width: 100%;
-  height: 10px;
-  accent-color: var(--accent);
-}
+/* ---- Audio module ---- */
 
 .global-source-select {
-  border: 3px solid var(--border);
-  border-radius: 14px;
-  background: var(--bg-elevated);
-  padding: 1rem;
   display: flex;
   flex-direction: column;
-  justify-content: center;
-  gap: 0.75rem;
-}
-
-.global-source-select__head {
-  font-size: 0.8rem;
-  font-family: var(--font-label);
-  color: var(--gold);
-  text-transform: uppercase;
-  letter-spacing: 0.12em;
-}
-
-.global-source-select__input {
-  background: var(--bg);
-  color: inherit;
-  border: 1px solid var(--border);
-  border-radius: 5px;
-  padding: 0.35rem 0.5rem;
-  font-size: 0.9rem;
-}
-
-.hit-button {
-  border: 3px solid var(--border);
-  border-radius: 14px;
-  background: var(--bg-elevated);
-  padding: 1rem 1.5rem;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 0.6rem;
-  min-width: 150px;
-}
-
-.hit-button__btn {
-  width: 92px;
-  height: 92px;
-  border-radius: 50%;
-  border: 3px solid #b01059;
-  background: var(--accent);
-  box-shadow: 0 0 28px rgba(255, 46, 136, 0.45);
-  color: #40001c;
-  font-family: var(--font-display);
-  font-size: 1rem;
-  letter-spacing: 0.02em;
-  cursor: pointer;
-  transition:
-    transform 0.06s ease,
-    box-shadow 0.15s ease;
-}
-
-.hit-button__btn:hover {
-  box-shadow: 0 0 38px rgba(255, 46, 136, 0.6);
-}
-
-.hit-button__btn:active {
-  transform: scale(0.94);
-}
-
-.hit-button__meter {
-  width: 100%;
-  height: 8px;
-  border-radius: 4px;
-  background: var(--bg);
-  border: 2px solid var(--border);
-  overflow: hidden;
-}
-
-.hit-button__meter-fill {
-  height: 100%;
-  background: var(--ember);
-  box-shadow: 0 0 10px var(--ember);
-  transition: width 80ms linear;
+  gap: 0.4rem;
 }
 
 .audio-meter {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  gap: 1rem;
+  gap: 0.6rem 0.9rem;
 }
 
 .audio-meter__beat-dot {
-  width: 12px;
-  height: 12px;
+  width: 14px;
+  height: 14px;
   border-radius: 50%;
   background: var(--accent);
-  box-shadow: 0 0 10px var(--accent);
+  box-shadow: 0 0 12px var(--accent);
   flex-shrink: 0;
   transition:
     opacity 60ms linear,
@@ -312,24 +219,8 @@
 }
 
 .audio-meter__level {
-  width: 140px;
-  height: 14px;
-  background: var(--bg);
-  border: 2px solid var(--border);
-  border-radius: 5px;
-  overflow: hidden;
+  width: 150px;
   flex-shrink: 0;
-  display: flex;
-  align-items: center;
-  gap: 2px;
-  padding: 0 2px;
-}
-
-.audio-meter__level-segment {
-  flex: 1;
-  height: 70%;
-  border-radius: 1px;
-  background: var(--border);
 }
 
 .audio-meter__bands {
@@ -337,7 +228,8 @@
   display: flex;
   align-items: flex-end;
   gap: 3px;
-  height: 32px;
+  height: 40px;
+  padding: 4px 6px;
 }
 
 .audio-meter__band {
@@ -345,17 +237,18 @@
   min-width: 2px;
   background: var(--cyan);
   border-radius: 2px 2px 0 0;
+  box-shadow: 0 0 6px rgba(34, 225, 255, 0.5);
   transition: height 60ms linear;
 }
 
 .audio-meter__idle {
-  font-size: 0.75rem;
+  font-size: 0.72rem;
   color: var(--text-dim);
   align-self: center;
 }
 
 .audio-meter__bpm {
-  font-size: 0.75rem;
+  font-size: 0.72rem;
   color: var(--text-dim);
   font-variant-numeric: tabular-nums;
   flex-shrink: 0;
@@ -364,7 +257,7 @@
 .audio-source-picker {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.75rem 1.5rem;
+  gap: 0.6rem 1.25rem;
   align-items: center;
 }
 
@@ -384,8 +277,6 @@
   display: flex;
   align-items: center;
   gap: 0.4rem;
-  font-size: 0.8rem;
-  color: var(--text-dim);
   white-space: nowrap;
 }
 
@@ -394,12 +285,6 @@
 }
 
 .audio-source-picker__select {
-  background: var(--bg);
-  color: inherit;
-  border: 1px solid var(--border);
-  border-radius: 5px;
-  padding: 0.25rem 0.5rem;
-  font-size: 0.8rem;
   max-width: 220px;
 }
 
@@ -407,10 +292,66 @@
   opacity: 0.5;
 }
 
+/* ---- Fader bank / rack ---- */
+
+.console-page__rack {
+  flex: 1;
+  min-height: 260px;
+}
+
+.console-page__rack .console-card__body {
+  min-height: 0;
+}
+
+.console-page__faders {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+.console-page__hint {
+  color: var(--text-dim);
+  font-size: 0.88rem;
+  margin: 0;
+}
+
+/* Each effect is a rack module (a <ConsoleCard>, like every other card on
+   this page) with an accent stripe down the side; its params are a grid of
+   channel strips that reflows by width instead of only ever scrolling
+   sideways. */
+.fader-group {
+  background: var(--bg);
+  border-left: 5px solid var(--console-card-accent);
+}
+
+/* Select-type params (e.g. Position's axis) get their own row above the
+   numeric faders instead of sitting shoulder-to-shoulder with them -- they
+   read as settings, not channels to ride. */
+.fader-group__selects {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem 1.25rem;
+  margin-bottom: 0.75rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px dashed var(--border);
+}
+
+.fader-group__row {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-start;
+  gap: 1.25rem 1.5rem;
+}
+
+/* ---- Modal + scene editor (unchanged behaviour, refreshed chrome) ---- */
+
 .console-modal {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.55);
+  background: rgba(0, 0, 0, 0.6);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -421,7 +362,7 @@
 .scene-editor {
   background: var(--bg-elevated);
   border: 3px solid var(--border);
-  border-radius: 14px;
+  border-radius: var(--r-lg);
   padding: 1.25rem;
   width: min(640px, 100%);
   max-height: 85vh;
@@ -445,7 +386,7 @@
 
 .scene-editor__assignment {
   border: 2px solid var(--border);
-  border-radius: 10px;
+  border-radius: var(--r-md);
   padding: 0.75rem;
   display: flex;
   flex-direction: column;

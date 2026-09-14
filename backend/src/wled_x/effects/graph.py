@@ -19,6 +19,12 @@ from wled_x.audio.analysis import AudioFrame
 
 Value = float | np.ndarray
 
+# Fallback for EvalContext.color_scheme when the console has no active
+# ColorScheme (or it's empty) -- a single white swatch, so Scheme Color /
+# Scheme Random Color read as plain white until a scheme is actually picked,
+# matching how these effects looked before schemes existed.
+DEFAULT_COLOR_SCHEME = np.array([[1.0, 1.0, 1.0]], dtype=np.float32)
+
 
 class GraphError(ValueError):
     pass
@@ -44,6 +50,16 @@ class EvalContext:
     # this fixture's own position range (e.g. the debug preview's synthetic strip,
     # which has no wider "scene" to normalize against).
     scene_bounds: tuple[np.ndarray, np.ndarray] | None = None
+    # The console's active ColorScheme, as an (K, 3) float32 array in 0..1 --
+    # see wled_x.effects.color_schemes.resolve_scheme_colors. Always at least
+    # one row.
+    color_scheme: np.ndarray = field(default_factory=lambda: DEFAULT_COLOR_SCHEME)
+    # This fixture's id, and every fixture's (x, y, z) centroid keyed by id --
+    # for the Fixture Index node to rank this fixture among its scene-mates
+    # along a chosen axis. Empty outside a real scene render (e.g. the debug
+    # preview's single synthetic strip has no wider fixture set to rank against).
+    fixture_id: int = 0
+    fixture_centers: dict[int, np.ndarray] = field(default_factory=dict)
 
 
 ComputeFn = Callable[[dict[str, Any], dict[str, Value], EvalContext], "Value | dict[str, Value]"]
@@ -59,7 +75,7 @@ def evaluate_graph(
     graph: dict[str, Any],
     registry: dict[str, NodeDefinition],
     context: EvalContext,
-    param_overrides: dict[tuple[str, str], float] | None = None,
+    param_overrides: dict[tuple[str, str], float | str] | None = None,
 ) -> tuple[np.ndarray, dict[str, dict[str, Value]]]:
     """Returns (led colors, per-node output values) -- the latter is the raw
     `outputs` map keyed by node id then output socket key, used both to drive
@@ -175,7 +191,10 @@ def _default_for_socket(socket_type: str, n: int) -> Value:
         return 0.0
     if socket_type == "field":
         return np.zeros(n, dtype=np.float32)
-    if socket_type == "color":
+    # "vec3" is a per-LED spatial vector -- same (N, 3) shape as "color", but
+    # kept as its own type so the editor won't let you wire a position into a
+    # color slot (or vice versa).
+    if socket_type in ("color", "vec3"):
         return np.zeros((n, 3), dtype=np.float32)
     raise GraphError(f"unknown socket type {socket_type!r}")
 

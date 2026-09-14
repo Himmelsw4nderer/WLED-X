@@ -1,11 +1,22 @@
 import { useCallback, useMemo, useRef } from "react";
 import type { Dispatch, DragEvent, SetStateAction } from "react";
-import { addEdge, Background, Controls, MiniMap, ReactFlow, ReactFlowProvider, useReactFlow } from "reactflow";
+import {
+  addEdge,
+  Background,
+  BackgroundVariant,
+  ConnectionLineType,
+  Controls,
+  MiniMap,
+  ReactFlow,
+  ReactFlowProvider,
+  useReactFlow,
+} from "reactflow";
 import type { Connection, Edge, Node, NodeTypes, OnEdgesChange, OnNodesChange } from "reactflow";
 import "reactflow/dist/style.css";
 import type { NodeTypeDescriptor } from "../../types";
 import { EffectNode } from "./EffectNode";
-import { createNodeId, defaultDataForDescriptor, isValidSocketConnection, makeEdgeId, PALETTE_MIME } from "./graphUtils";
+import { createNodeId, defaultDataForDescriptor, edgeSocketType, isValidSocketConnection, makeEdgeId, PALETTE_MIME } from "./graphUtils";
+import { SOCKET_COLORS } from "./socketColors";
 import "./NodeCanvas.css";
 
 interface NodeCanvasProps {
@@ -51,6 +62,23 @@ function NodeCanvasInner({
     for (const descriptor of descriptors) map[descriptor.type] = EffectNode;
     return map;
   }, [descriptors]);
+
+  // Cables are drawn in the colour of whatever socket type flows through them,
+  // so a graph reads at a glance: gold = scalar, cyan = field, magenta = color.
+  const styledEdges = useMemo<Edge[]>(
+    () =>
+      edges.map((edge) => {
+        const socketType = edgeSocketType(edge, nodes, descriptorsByType);
+        const stroke = socketType ? SOCKET_COLORS[socketType] : "var(--text-dim)";
+        return {
+          ...edge,
+          type: edge.type ?? "smoothstep",
+          className: `effect-edge${socketType ? ` effect-edge--${socketType}` : ""}`,
+          style: { ...edge.style, stroke, strokeWidth: 2.5 },
+        };
+      }),
+    [edges, nodes, descriptorsByType],
+  );
 
   const handleNodesChange = useCallback<OnNodesChange>(
     (changes) => {
@@ -110,18 +138,21 @@ function NodeCanvasInner({
     <div className="node-canvas" ref={wrapperRef} onDragOver={handleDragOver} onDrop={handleDrop}>
       <ReactFlow
         nodes={nodes}
-        edges={edges}
+        edges={styledEdges}
         onNodesChange={handleNodesChange}
         onEdgesChange={handleEdgesChange}
         onConnect={handleConnect}
         isValidConnection={handleIsValidConnection}
         nodeTypes={nodeTypes}
         deleteKeyCode={["Backspace", "Delete"]}
+        connectionLineType={ConnectionLineType.SmoothStep}
+        connectionLineStyle={{ stroke: "var(--gold)", strokeWidth: 2.5 }}
+        proOptions={{ hideAttribution: true }}
         fitView
       >
-        <Background gap={18} />
+        <Background variant={BackgroundVariant.Dots} gap={20} size={1.5} color="rgba(139, 92, 246, 0.28)" />
         <Controls />
-        <MiniMap pannable zoomable />
+        <MiniMap pannable zoomable nodeColor="#241b3d" nodeStrokeColor="#2a2140" maskColor="rgba(8, 6, 13, 0.7)" />
       </ReactFlow>
     </div>
   );

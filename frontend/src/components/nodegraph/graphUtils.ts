@@ -53,9 +53,22 @@ function getSocketType(
   return socket?.type;
 }
 
+// The output socket type a given edge carries -- used to colour the cable by
+// what flows through it (scalar=gold, field=cyan, color=magenta).
+export function edgeSocketType(
+  edge: Pick<Edge, "source" | "sourceHandle">,
+  nodes: Node[],
+  descriptorsByType: Map<string, NodeTypeDescriptor>,
+): NodeSocketType | undefined {
+  return getSocketType(nodes, descriptorsByType, edge.source, edge.sourceHandle, "output");
+}
+
 // Deliberately permissive: scalars broadcast into fields on the backend, so any
-// non-color <-> non-color link is allowed. Only color <-> non-color is rejected,
-// since mixing a color triple into a numeric slot (or vice versa) is never meaningful.
+// scalar <-> field link is allowed. The two (N,3)-shaped types -- color and
+// vec3 -- are structural, not interchangeable: each only connects to its own
+// kind, never to a scalar/field or to each other.
+const STRUCTURAL_SOCKETS: readonly NodeSocketType[] = ["color", "vec3"];
+
 export function isValidSocketConnection(
   edgeOrConnection: Edge | Connection,
   nodes: Node[],
@@ -65,5 +78,5 @@ export function isValidSocketConnection(
   const targetType = getSocketType(nodes, descriptorsByType, edgeOrConnection.target, edgeOrConnection.targetHandle, "input");
   if (!sourceType || !targetType) return true;
   if (sourceType === targetType) return true;
-  return sourceType !== "color" && targetType !== "color";
+  return !STRUCTURAL_SOCKETS.includes(sourceType) && !STRUCTURAL_SOCKETS.includes(targetType);
 }

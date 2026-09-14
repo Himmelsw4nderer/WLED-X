@@ -84,6 +84,47 @@ def _compute_led_color(
     return inputs.get("color", np.zeros((context.n, 3), dtype=np.float32))
 
 
+def _kelvin_to_rgb(kelvin: np.ndarray) -> np.ndarray:
+    """Blackbody color temperature -> linear-ish 0..1 RGB (Tanner Helland's
+    widely-used polynomial fit to the Planckian locus). ~6500K reads as
+    near-white, ~2800K as the warm amber of a halogen/incandescent lamp,
+    ~10000K+ as cool blue daylight -- lets an effect be authored in "what
+    color temperature is this fixture" terms instead of guessing RGB values
+    by eye."""
+    temp = np.clip(kelvin, 1000.0, 40000.0).astype(np.float64) / 100.0
+
+    # np.where evaluates both branches everywhere, so e.g. the "cool" power()
+    # branch runs even at low temp where its base (temp - 60) is negative and
+    # its fractional exponent has no real result -- harmless since that
+    # branch is discarded, but it'd otherwise spam RuntimeWarnings.
+    with np.errstate(invalid="ignore"):
+        red = np.where(
+            temp <= 66.0,
+            255.0,
+            329.698727446 * np.power(temp - 60.0, -0.1332047592),
+        )
+        green = np.where(
+            temp <= 66.0,
+            99.4708025861 * np.log(temp) - 161.1195681661,
+            288.1221695283 * np.power(temp - 60.0, -0.0755148492),
+        )
+        blue = np.where(
+            temp >= 66.0,
+            255.0,
+            np.where(temp <= 19.0, 0.0, 138.5177312231 * np.log(temp - 10.0) - 305.0447927307),
+        )
+
+    rgb = np.stack([red, green, blue], axis=-1)
+    return (np.clip(rgb, 0.0, 255.0) / 255.0).astype(np.float32)
+
+
+def _compute_color_temperature(
+    data: dict[str, Any], inputs: dict[str, Value], context: EvalContext
+) -> Value:
+    kelvin = np.asarray(inputs.get("kelvin", data.get("kelvin", 2800.0)), dtype=np.float32)
+    return _kelvin_to_rgb(kelvin)
+
+
 COLOR_NODES: dict[str, NodeDefinition] = {
     "hsv": NodeDefinition(
         descriptor=NodeTypeDescriptor(
@@ -157,6 +198,19 @@ COLOR_NODES: dict[str, NodeDefinition] = {
             params=[NodeParam(key="t", type="float", default=0.5, min=0.0, max=1.0)],
         ),
         compute=_compute_mix_color,
+    ),
+    "color_temperature": NodeDefinition(
+        descriptor=NodeTypeDescriptor(
+            type="color_temperature",
+            category="color",
+            label="Color Temperature",
+            inputs=[NodeSocket(key="kelvin", type="field", label="Kelvin")],
+            outputs=[NodeSocket(key="value", type="color", label="Color")],
+            params=[
+                NodeParam(key="kelvin", type="float", default=2800.0, min=1000.0, max=12000.0),
+            ],
+        ),
+        compute=_compute_color_temperature,
     ),
     "led_color": NodeDefinition(
         descriptor=NodeTypeDescriptor(

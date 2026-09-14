@@ -1,0 +1,302 @@
+/* Physical console parts: faders, rotary knobs, segmented meters. All three
+   follow the WLED-X house rules -- bezeled housings, recessed tracks, glow for
+   brightness (never gradients), semantic color, Silkscreen legends. */
+
+/* ---------- Fader ---------- */
+
+.fader {
+  --fader-accent: var(--accent);
+  --fader-glow: var(--glow-accent);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  flex: none;
+}
+
+.fader--cyan {
+  --fader-accent: var(--cyan);
+  --fader-glow: var(--glow-cyan);
+}
+.fader--lime {
+  --fader-accent: var(--lime);
+  --fader-glow: var(--glow-lime);
+}
+.fader--gold {
+  --fader-accent: var(--gold);
+  --fader-glow: var(--glow-gold);
+}
+.fader--violet {
+  --fader-accent: var(--violet);
+  --fader-glow: var(--glow-violet);
+}
+.fader--ember {
+  --fader-accent: var(--ember);
+  --fader-glow: var(--glow-ember);
+}
+
+.fader__value {
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--text);
+  background: var(--void);
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+  padding: 0.1rem 0.4rem;
+  min-width: 3.4rem;
+  text-align: center;
+}
+
+.fader__slot {
+  position: relative;
+  width: 46px;
+  height: 190px;
+}
+
+.fader--sm .fader__slot {
+  height: 130px;
+}
+.fader--lg .fader__slot {
+  height: 260px;
+  width: 52px;
+}
+
+/* Tick marks flank the track on both sides. */
+.fader__ticks {
+  position: absolute;
+  inset: 8px 3px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  pointer-events: none;
+}
+
+.fader__ticks span {
+  height: 2px;
+  border-top: 2px solid var(--border);
+}
+
+.fader__track {
+  position: absolute;
+  top: 6px;
+  bottom: 6px;
+  left: 50%;
+  width: 10px;
+  transform: translateX(-50%);
+  overflow: hidden;
+}
+
+.fader__fill {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: var(--fader-pct, 0%);
+  background: var(--fader-accent);
+  box-shadow: var(--fader-glow);
+}
+
+/* The cap overhangs the narrow track, so it lives in the wider slot and rides
+   `bottom` from the fill percentage. */
+.fader__cap {
+  position: absolute;
+  left: 50%;
+  bottom: var(--fader-pct, 0%);
+  width: 38px;
+  height: 18px;
+  transform: translate(-50%, 50%);
+  background: var(--bg-raised);
+  border: 2px solid var(--border);
+  border-bottom-width: 4px;
+  border-radius: 4px;
+  pointer-events: none;
+}
+
+.fader__cap::after {
+  content: "";
+  position: absolute;
+  left: 4px;
+  right: 4px;
+  top: 50%;
+  height: 2px;
+  transform: translateY(-50%);
+  background: var(--fader-accent);
+  box-shadow: var(--fader-glow);
+}
+
+/* Transparent, full-slot, sits on top for interaction + a11y. */
+.fader__input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  background: transparent;
+  border: none;
+  writing-mode: vertical-lr;
+  direction: rtl;
+  -webkit-appearance: slider-vertical;
+  appearance: slider-vertical;
+  opacity: 0;
+  cursor: ns-resize;
+}
+
+.fader__input:focus-visible {
+  opacity: 1;
+  outline: 2px solid var(--fader-accent);
+  outline-offset: 2px;
+}
+
+.fader__label {
+  font-family: var(--font-label);
+  font-size: 0.6rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  text-align: center;
+  max-width: 6.5rem;
+  line-height: 1.3;
+}
+
+/* ---------- Knob ---------- */
+
+.knob {
+  --knob-accent: var(--cyan);
+  --knob-glow: var(--glow-cyan);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.3rem;
+  flex: none;
+}
+
+.knob--accent {
+  --knob-accent: var(--accent);
+  --knob-glow: var(--glow-accent);
+}
+.knob--lime {
+  --knob-accent: var(--lime);
+  --knob-glow: var(--glow-lime);
+}
+.knob--gold {
+  --knob-accent: var(--gold);
+  --knob-glow: var(--glow-gold);
+}
+.knob--violet {
+  --knob-accent: var(--violet);
+  --knob-glow: var(--glow-violet);
+}
+.knob--ember {
+  --knob-accent: var(--ember);
+  --knob-glow: var(--glow-ember);
+}
+
+.knob__dial {
+  width: 54px;
+  height: 54px;
+  border-radius: 50%;
+  background: var(--void);
+  border: 2px solid var(--border);
+  box-shadow: var(--well);
+  cursor: ns-resize;
+  touch-action: none;
+}
+
+.knob__dial:focus-visible {
+  outline: 2px solid var(--knob-accent);
+  outline-offset: 2px;
+}
+
+.knob__svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.knob__arc-track {
+  fill: none;
+  stroke: var(--border);
+  stroke-width: 3;
+  stroke-linecap: round;
+}
+
+.knob__arc {
+  fill: none;
+  stroke: var(--knob-accent);
+  stroke-width: 3;
+  stroke-linecap: round;
+  filter: drop-shadow(0 0 4px var(--knob-accent));
+}
+
+.knob__body {
+  fill: var(--bg-raised);
+  stroke: var(--border);
+  stroke-width: 2;
+}
+
+.knob__indicator {
+  stroke: var(--knob-accent);
+  stroke-width: 2.5;
+  stroke-linecap: round;
+  filter: drop-shadow(0 0 3px var(--knob-accent));
+}
+
+.knob__value {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--text);
+}
+
+.knob__label {
+  font-family: var(--font-label);
+  font-size: 0.58rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  text-align: center;
+}
+
+/* ---------- Segmented meter ---------- */
+
+.seg-meter {
+  display: flex;
+  gap: 2px;
+  padding: 3px;
+}
+
+.seg-meter--horizontal {
+  flex-direction: row;
+  align-items: stretch;
+  height: 16px;
+  width: 100%;
+}
+
+.seg-meter--vertical {
+  flex-direction: column;
+  width: 16px;
+  height: 100%;
+  min-height: 80px;
+}
+
+.seg-meter__seg {
+  flex: 1;
+  min-width: 2px;
+  min-height: 2px;
+  border-radius: 1px;
+  background: var(--border);
+  transition:
+    background 60ms linear,
+    box-shadow 60ms linear;
+}
+
+.seg-meter__seg--lit {
+  box-shadow: 0 0 6px currentColor;
+}
+
+.seg-meter__seg--peak {
+  background: var(--text) !important;
+  box-shadow: 0 0 8px var(--text);
+}

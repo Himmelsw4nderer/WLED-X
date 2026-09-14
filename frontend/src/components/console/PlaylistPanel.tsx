@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useLiveMessage } from "../../api/useLiveSocket";
 import { playlistsApi } from "../../api/resources";
 import { useSceneStore } from "../../store/useSceneStore";
+import { ConsoleCard } from "./ConsoleCard";
 import type {
   PhraseClockState,
   Playlist,
@@ -194,14 +195,16 @@ export function PlaylistPanel() {
   const activeId = playlists.find((p) => p.active)?.id ?? null;
 
   return (
-    <div className="playlist-panel">
-      <div className="playlist-panel__head">
-        <h2>Playlists</h2>
+    <ConsoleCard
+      title="Playlists"
+      accent="ember"
+      className="playlist-panel"
+      actions={
         <button className="btn btn--small" onClick={() => void createPlaylist()} disabled={busy}>
           + New
         </button>
-      </div>
-
+      }
+    >
       <div className="playlist-panel__status">
         {status?.playlist_id != null ? (
           <>
@@ -387,6 +390,6 @@ export function PlaylistPanel() {
           </div>
         </div>
       )}
-    </div>
+    </ConsoleCard>
   );
 }

@@ -22,6 +22,43 @@ def _subtract(data: dict[str, Any], inputs: dict[str, Value], context: EvalConte
     return _num(data, inputs, "a", 0.0) - _num(data, inputs, "b", 0.0)
 
 
+def _divide(data: dict[str, Any], inputs: dict[str, Value], context: EvalContext) -> Value:
+    a = np.asarray(_num(data, inputs, "a", 1.0), dtype=np.float32)
+    b = np.asarray(_num(data, inputs, "b", 1.0), dtype=np.float32)
+    safe_b = np.where(b == 0, 1e-6, b)
+    return (a / safe_b).astype(np.float32)
+
+
+def _power(data: dict[str, Any], inputs: dict[str, Value], context: EvalContext) -> Value:
+    """`value` raised to `exponent` -- the default exponent of 2 makes this
+    the square block; any other exponent (including negative or fractional)
+    works too. A negative base with a non-integer exponent has no real
+    result, and a large enough base/exponent can overflow -- both fall back
+    to 0 instead of NaN/inf, same convention as Root."""
+    value = np.asarray(_num(data, inputs, "value", 0.0), dtype=np.float64)
+    exponent = np.asarray(_num(data, inputs, "exponent", 2.0), dtype=np.float64)
+    with np.errstate(invalid="ignore", over="ignore"):
+        result = np.power(value, exponent).astype(np.float32)
+    return np.nan_to_num(result, nan=0.0, posinf=0.0, neginf=0.0)
+
+
+def _root(data: dict[str, Any], inputs: dict[str, Value], context: EvalContext) -> Value:
+    """The nth root of `value`: n=2 is square root, n=3 cube root, n=4 the
+    next one up, and so on. An odd root preserves the sign of a negative
+    input (the cube root of -8 is -2) instead of producing NaN; an even root
+    of a negative input has no real result, so it clamps to 0 instead."""
+    value = np.asarray(_num(data, inputs, "value", 0.0), dtype=np.float32)
+    n = np.asarray(_num(data, inputs, "n", 2.0), dtype=np.float32)
+    # A degree near zero would blow the exponent 1/n up to +-inf -- fall back
+    # to n=1 (identity) rather than let a bad param value produce inf/NaN.
+    safe_n = np.where(np.abs(n) < 1e-3, 1.0, n)
+    magnitude = np.power(np.abs(value), 1.0 / safe_n)
+    is_odd_degree = np.mod(np.round(safe_n), 2.0) == 1.0
+    negative_input = value < 0
+    result = np.where(negative_input, np.where(is_odd_degree, -magnitude, 0.0), magnitude)
+    return np.nan_to_num(result, nan=0.0, posinf=0.0, neginf=0.0).astype(np.float32)
+
+
 def _sine(data: dict[str, Any], inputs: dict[str, Value], context: EvalContext) -> Value:
     return np.sin(_num(data, inputs, "x", 0.0))
 
@@ -55,6 +92,19 @@ def _less_than(data: dict[str, Any], inputs: dict[str, Value], context: EvalCont
     return np.where(value < threshold, 1.0, 0.0).astype(np.float32)
 
 
+def _equal(data: dict[str, Any], inputs: dict[str, Value], context: EvalContext) -> Value:
+    """1.0 where `a` and `b` are within `tolerance` of each other, 0.0
+    otherwise -- a fuzzy equality check rather than exact float comparison,
+    since e.g. a Counter's count and a Fixture Index's index are ints in
+    spirit but pass through as floats. Replaces a Subtract -> Abs -> Less Than
+    chain when the two things you're comparing don't need to be exposed as
+    "how far apart", just "are they the same slot"."""
+    a = np.asarray(_num(data, inputs, "a", 0.0), dtype=np.float32)
+    b = np.asarray(_num(data, inputs, "b", 0.0), dtype=np.float32)
+    tolerance = np.asarray(_num(data, inputs, "tolerance", 0.5), dtype=np.float32)
+    return np.where(np.abs(a - b) < tolerance, 1.0, 0.0).astype(np.float32)
+
+
 def _and_or(data: dict[str, Any], inputs: dict[str, Value], context: EvalContext) -> Value:
     """Combines two 0/1 signals with AND or OR, clamped back to 0.0/1.0.
 
@@ -64,6 +114,14 @@ def _and_or(data: dict[str, Any], inputs: dict[str, Value], context: EvalContext
     b_true = np.asarray(_num(data, inputs, "b", 0.0), dtype=np.float32) >= 0.5
     combined = (a_true | b_true) if data.get("mode", "and") == "or" else (a_true & b_true)
     return combined.astype(np.float32)
+
+
+def _logic_not(data: dict[str, Any], inputs: dict[str, Value], context: EvalContext) -> Value:
+    """Boolean invert, clamped to 0.0/1.0: 1.0 where the input reads false
+    (< 0.5), 0.0 where it reads true. Chains off Greater Than / Less Than /
+    And / Or to flip a gate -- e.g. "not (distance > 0.5)"."""
+    is_true = np.asarray(_num(data, inputs, "value", 0.0), dtype=np.float32) >= 0.5
+    return (~is_true).astype(np.float32)
 
 
 def _clamp(data: dict[str, Any], inputs: dict[str, Value], context: EvalContext) -> Value:
@@ -155,6 +213,41 @@ MATH_NODES: dict[str, NodeDefinition] = {
     "add": _binary_node("add", "Add", _add, 0.0, 0.0),
     "multiply": _binary_node("multiply", "Multiply", _multiply, 1.0, 1.0),
     "subtract": _binary_node("subtract", "Subtract", _subtract, 0.0, 0.0),
+    "divide": _binary_node("divide", "Divide", _divide, 1.0, 1.0),
+    "power": NodeDefinition(
+        descriptor=NodeTypeDescriptor(
+            type="power",
+            category="math",
+            label="Power",
+            inputs=[
+                NodeSocket(key="value", type="field", label="Value"),
+                NodeSocket(key="exponent", type="field", label="Exponent"),
+            ],
+            outputs=[NodeSocket(key="value", type="field", label="Value")],
+            params=[
+                NodeParam(key="value", type="float", default=0.0),
+                NodeParam(key="exponent", type="float", default=2.0, min=-8.0, max=8.0),
+            ],
+        ),
+        compute=_power,
+    ),
+    "root": NodeDefinition(
+        descriptor=NodeTypeDescriptor(
+            type="root",
+            category="math",
+            label="Root",
+            inputs=[
+                NodeSocket(key="value", type="field", label="Value"),
+                NodeSocket(key="n", type="field", label="N"),
+            ],
+            outputs=[NodeSocket(key="value", type="field", label="Value")],
+            params=[
+                NodeParam(key="value", type="float", default=0.0),
+                NodeParam(key="n", type="int", default=2, min=1, max=8),
+            ],
+        ),
+        compute=_root,
+    ),
     "sine": NodeDefinition(
         descriptor=NodeTypeDescriptor(
             type="sine",
@@ -225,6 +318,25 @@ MATH_NODES: dict[str, NodeDefinition] = {
         ),
         compute=_less_than,
     ),
+    "equal": NodeDefinition(
+        descriptor=NodeTypeDescriptor(
+            type="equal",
+            category="math",
+            label="Equal",
+            inputs=[
+                NodeSocket(key="a", type="field", label="A"),
+                NodeSocket(key="b", type="field", label="B"),
+                NodeSocket(key="tolerance", type="field", label="Tolerance"),
+            ],
+            outputs=[NodeSocket(key="value", type="field", label="Value")],
+            params=[
+                NodeParam(key="a", type="float", default=0.0),
+                NodeParam(key="b", type="float", default=0.0),
+                NodeParam(key="tolerance", type="float", default=0.5, min=0.0),
+            ],
+        ),
+        compute=_equal,
+    ),
     "and_or": NodeDefinition(
         descriptor=NodeTypeDescriptor(
             type="and_or",
@@ -242,6 +354,17 @@ MATH_NODES: dict[str, NodeDefinition] = {
             ],
         ),
         compute=_and_or,
+    ),
+    "not": NodeDefinition(
+        descriptor=NodeTypeDescriptor(
+            type="not",
+            category="math",
+            label="Not",
+            inputs=[NodeSocket(key="value", type="field", label="Value")],
+            outputs=[NodeSocket(key="value", type="field", label="Value")],
+            params=[NodeParam(key="value", type="float", default=0.0)],
+        ),
+        compute=_logic_not,
     ),
     "clamp": NodeDefinition(
         descriptor=NodeTypeDescriptor(
@@ -329,6 +452,7 @@ MATH_NODES: dict[str, NodeDefinition] = {
             inputs=[
                 NodeSocket(key="trigger", type="scalar", label="Trigger"),
                 NodeSocket(key="reset", type="scalar", label="Reset"),
+                NodeSocket(key="max", type="scalar", label="Max"),
             ],
             outputs=[
                 NodeSocket(key="count", type="scalar", label="Count"),

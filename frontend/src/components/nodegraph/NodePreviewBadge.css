@@ -25,6 +25,16 @@
   gap: 0.3rem;
 }
 
+/* vec3: three stacked axis bars (X/Y/Z). */
+.node-preview-badge--vec3 {
+  flex-direction: column;
+  gap: 2px;
+}
+
+.node-preview-badge--vec3-axis {
+  height: 0.28rem;
+}
+
 .node-preview-badge__range {
   font-size: 0.62rem;
   color: var(--text-dim);

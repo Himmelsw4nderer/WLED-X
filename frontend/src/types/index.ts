@@ -41,7 +41,10 @@ export interface ExposedParam {
   label: string;
   min: number;
   max: number;
-  default: number;
+  // string when `options` is set (a select param, e.g. Position's axis) — the
+  // console then shows a dropdown instead of a fader.
+  default: number | string;
+  options?: string[] | null;
 }
 
 export interface GraphNode {
@@ -79,7 +82,10 @@ export type EffectUpdate = Partial<EffectCreate>;
 export interface SceneAssignment {
   fixture_ids: number[] | "all";
   effect_id: number;
-  params: Record<string, number>;
+  // Per-scene fader-bank values for this effect's console-exposed params,
+  // keyed "{node_id}:{param_key}" — where riding the console faders persists.
+  // number for faders, string for select params.
+  params: Record<string, number | string>;
   brightness: number;
 }
 
@@ -93,7 +99,16 @@ export interface Scene {
 export type SceneCreate = Omit<Scene, "id" | "active">;
 export type SceneUpdate = Partial<Omit<Scene, "id">>;
 
-export type NodeSocketType = "scalar" | "field" | "color";
+export interface ColorScheme {
+  id: number;
+  name: string;
+  colors: [number, number, number][];
+}
+
+export type ColorSchemeCreate = Omit<ColorScheme, "id">;
+export type ColorSchemeUpdate = Partial<Omit<ColorScheme, "id">>;
+
+export type NodeSocketType = "scalar" | "field" | "color" | "vec3";
 
 export interface NodeSocket {
   key: string;
@@ -117,32 +132,52 @@ export interface NodeTypeDescriptor {
   inputs: NodeSocket[];
   outputs: NodeSocket[];
   params: NodeParam[];
+  // Still rendered/evaluated for graphs that use it, but hidden from the
+  // palette so nothing new can add one.
+  deprecated?: boolean;
 }
 
 export interface ConsoleState {
   master_brightness: number;
   active_scene_id: number | null;
-  param_overrides: Record<string, number>;
+  // number for fader params, string for select params (see ExposedParam)
+  param_overrides: Record<string, number | string>;
   hype: number;
   audio_source: string;
+  // The ColorScheme every Scheme Color / Scheme Random Color node reads from --
+  // null falls back to a single white swatch (see ConsoleState in schemas.py).
+  active_color_scheme_id: number | null;
 }
 
 export interface PreviewRequest {
   graph: EffectGraph;
   led_count: number;
   length_meters?: number;
-  param_overrides?: Record<string, number>;
+  param_overrides?: Record<string, number | string>;
 }
 
 export interface NodePreviewValue {
   socket_type: NodeSocketType;
-  // scalar: length-1; field: one float per LED; color: one [r,g,b] (0-255) per LED.
+  // scalar: length-1; field: one float per LED; color: one [r,g,b] (0-255) per
+  // LED; vec3: one [x,y,z] (raw units) per LED.
   values: number[] | [number, number, number][];
 }
 
 export interface PreviewResponse {
   colors: [number, number, number][];
   nodes: Record<string, NodePreviewValue>;
+  warning: string | null;
+}
+
+export interface RoomPreviewRequest {
+  graph: EffectGraph;
+  param_overrides?: Record<string, number | string>;
+}
+
+// Keyed by fixture id (as a string) -- same shape as the live WS "frame"
+// message's `fixtures` field.
+export interface RoomPreviewResponse {
+  fixtures: Record<string, [number, number, number][]>;
   warning: string | null;
 }
 

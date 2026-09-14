@@ -37,6 +37,17 @@ def test_set_merges_param_overrides(monkeypatch):
     assert overrides == {"1:speed": 2.0, "1:brightness": 0.5}
 
 
+def test_clear_param_overrides_wipes_every_live_ride(monkeypatch):
+    monkeypatch.setattr(state_module, "manager", _NullManager())
+    console = state_module.Console()
+
+    asyncio.run(console.set({"param_overrides": {"1:c1:value": 0.2, "2:c1:value": 0.9}}))
+    assert console.snapshot().param_overrides != {}
+
+    asyncio.run(console.clear_param_overrides())
+    assert console.snapshot().param_overrides == {}
+
+
 def test_set_updates_master_brightness(monkeypatch):
     monkeypatch.setattr(state_module, "manager", _NullManager())
     console = state_module.Console()

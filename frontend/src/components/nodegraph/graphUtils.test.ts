@@ -73,7 +73,9 @@ describe("isValidSocketConnection", () => {
   const posNode: Node = { id: "pos", type: "position_x", position: { x: 0, y: 0 }, data: {} };
   const hsvNode: Node = { id: "hsv", type: "hsv", position: { x: 0, y: 0 }, data: {} };
   const rampNode: Node = { id: "ramp", type: "color_ramp", position: { x: 0, y: 0 }, data: {} };
-  const nodes = [posNode, hsvNode, rampNode];
+  const ledPosNode: Node = { id: "lp", type: "led_position", position: { x: 0, y: 0 }, data: {} };
+  const distNode: Node = { id: "dist", type: "distance", position: { x: 0, y: 0 }, data: {} };
+  const nodes = [posNode, hsvNode, rampNode, ledPosNode, distNode];
 
   const descriptorsByType = new Map<string, NodeTypeDescriptor>([
     [
@@ -91,6 +93,21 @@ describe("isValidSocketConnection", () => {
     [
       "color_ramp",
       descriptor({ type: "color_ramp", inputs: [{ key: "position", type: "field", label: "Position" }] }),
+    ],
+    [
+      "led_position",
+      descriptor({ type: "led_position", outputs: [{ key: "position", type: "vec3", label: "Position" }] }),
+    ],
+    [
+      "distance",
+      descriptor({
+        type: "distance",
+        inputs: [
+          { key: "a", type: "vec3", label: "From" },
+          { key: "b", type: "vec3", label: "To" },
+        ],
+        outputs: [{ key: "value", type: "field", label: "Value" }],
+      }),
     ],
   ]);
 
@@ -118,6 +135,36 @@ describe("isValidSocketConnection", () => {
     expect(
       isValidSocketConnection(
         { source: "hsv", sourceHandle: "value", target: "ramp", targetHandle: "position" },
+        nodes,
+        descriptorsByType,
+      ),
+    ).toBe(false);
+  });
+
+  it("allows a vec3 output into a vec3 input", () => {
+    expect(
+      isValidSocketConnection(
+        { source: "lp", sourceHandle: "position", target: "dist", targetHandle: "a" },
+        nodes,
+        descriptorsByType,
+      ),
+    ).toBe(true);
+  });
+
+  it("rejects a vec3 output feeding a field input", () => {
+    expect(
+      isValidSocketConnection(
+        { source: "lp", sourceHandle: "position", target: "ramp", targetHandle: "position" },
+        nodes,
+        descriptorsByType,
+      ),
+    ).toBe(false);
+  });
+
+  it("rejects a field output feeding a vec3 input", () => {
+    expect(
+      isValidSocketConnection(
+        { source: "pos", sourceHandle: "value", target: "dist", targetHandle: "b" },
         nodes,
         descriptorsByType,
       ),

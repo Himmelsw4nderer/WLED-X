@@ -11,6 +11,12 @@ const EffectEditorPage = lazy(() =>
   import("./pages/EffectEditorPage").then((m) => ({ default: m.EffectEditorPage })),
 );
 const ConsolePage = lazy(() => import("./pages/ConsolePage").then((m) => ({ default: m.ConsolePage })));
+const ColorSchemesPage = lazy(() =>
+  import("./pages/ColorSchemesPage").then((m) => ({ default: m.ColorSchemesPage })),
+);
+const DebugPopoutPage = lazy(() =>
+  import("./pages/DebugPopoutPage").then((m) => ({ default: m.DebugPopoutPage })),
+);
 
 export function App() {
   return (
@@ -28,6 +34,14 @@ export function App() {
         />
         <Route path="/effects" element={<EffectsListPage />} />
         <Route
+          path="/colors"
+          element={
+            <Suspense fallback={<div className="page">Loading…</div>}>
+              <ColorSchemesPage />
+            </Suspense>
+          }
+        />
+        <Route
           path="/effects/:effectId"
           element={
             <Suspense fallback={<div className="page">Loading…</div>}>
@@ -44,6 +58,16 @@ export function App() {
           }
         />
       </Route>
+      {/* No Layout wrapper -- this is a standalone window (see
+          EffectEditorPage's "Pop out" button), not a tab in the app shell. */}
+      <Route
+        path="/effects/:effectId/debug-popout"
+        element={
+          <Suspense fallback={null}>
+            <DebugPopoutPage />
+          </Suspense>
+        }
+      />
     </Routes>
   );
 }

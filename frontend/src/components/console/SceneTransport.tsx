@@ -5,20 +5,12 @@ interface SceneTransportProps {
   loading: boolean;
   activeSceneId: number | null;
   onSelect: (scene: Scene) => void;
-  onCreateNew: () => void;
   onEdit: (scene: Scene) => void;
 }
 
-export function SceneTransport({ scenes, loading, activeSceneId, onSelect, onCreateNew, onEdit }: SceneTransportProps) {
+export function SceneTransport({ scenes, loading, activeSceneId, onSelect, onEdit }: SceneTransportProps) {
   return (
     <div className="scene-transport">
-      <div className="scene-transport__head">
-        <h2>Scenes</h2>
-        <button className="btn btn--small" onClick={onCreateNew}>
-          + New scene
-        </button>
-      </div>
-
       {loading && scenes.length === 0 ? (
         <p className="scene-transport__empty">Loading…</p>
       ) : scenes.length === 0 ? (

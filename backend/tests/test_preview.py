@@ -1,3 +1,5 @@
+import pytest
+
 from wled_x.api import routes_preview
 
 
@@ -130,6 +132,40 @@ def test_preview_stateful_node_persists_across_polls(client):
     assert _preview_count(client, graph_plus, 1.0) == 1  # fresh run
 
 
+def test_preview_reports_vec3_socket_for_led_position(client):
+    graph = {
+        "nodes": [
+            {"id": "p", "type": "led_position", "data": {}},
+            {"id": "d", "type": "distance", "data": {"normalize": "radius_inv", "radius": 5.0}},
+            {"id": "hsv", "type": "hsv", "data": {"s": 1.0}},
+            {"id": "out", "type": "led_color", "data": {}},
+        ],
+        "edges": [
+            {
+                "id": "e1",
+                "source": "p",
+                "sourceHandle": "position",
+                "target": "d",
+                "targetHandle": "a",
+            },
+            _edge("e2", "d", "hsv", "v"),
+            _edge("e3", "hsv", "out", "color"),
+        ],
+    }
+    resp = client.post(
+        "/api/effects/preview", json={"graph": graph, "led_count": 4, "length_meters": 5.0}
+    )
+    assert resp.status_code == 200
+    body = resp.json()
+
+    assert body["nodes"]["p"]["socket_type"] == "vec3"
+    assert len(body["nodes"]["p"]["values"]) == 4
+    assert body["nodes"]["p"]["values"][0] == [0.0, 0.0, 0.0]
+    # Distance still resolves to an ordinary 0..1 field the rest of the graph reads.
+    assert body["nodes"]["d"]["socket_type"] == "field"
+    assert body["nodes"]["d"]["values"][0] == pytest.approx(1.0)  # LED at the origin, radius_inv
+
+
 def test_preview_length_meters_controls_global_x_but_not_position_x(client):
     # The debug strip defaults to exactly 1 meter, which makes Global X
     # (raw meters) numerically identical to Position X (0..1 normalized) --
@@ -149,3 +185,69 @@ def test_preview_length_meters_controls_global_x_but_not_position_x(client):
     body = resp.json()
     assert body["nodes"]["px"]["values"] == [0.0, 0.5, 1.0]
     assert body["nodes"]["gx"]["values"] == [0.0, 2.5, 5.0]
+
+
+def test_preview_room_with_no_fixtures_returns_empty_map_and_a_warning(client):
+    graph = {
+        "nodes": [
+            {"id": "c1", "type": "constant", "data": {"value": 0.5}},
+            {"id": "out", "type": "led_color", "data": {}},
+        ],
+        "edges": [_edge("e1", "c1", "out", "color")],
+    }
+    resp = client.post("/api/effects/preview_room", json={"graph": graph})
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["fixtures"] == {}
+    assert body["warning"] is not None
+
+
+def test_preview_room_evaluates_against_every_real_fixture(client):
+    device = client.post("/api/devices", json={"name": "d", "ip": "10.0.0.20"}).json()
+    fixture = client.post(
+        "/api/fixtures",
+        json={
+            "name": "strip",
+            "device_id": device["id"],
+            "led_count": 3,
+            "points": [[0, 0, 0], [1, 0, 0]],
+        },
+    ).json()
+
+    graph = {
+        "nodes": [
+            {"id": "c1", "type": "constant", "data": {"value": 0.5}},
+            {"id": "out", "type": "led_color", "data": {}},
+        ],
+        "edges": [_edge("e1", "c1", "out", "color")],
+    }
+    resp = client.post("/api/effects/preview_room", json={"graph": graph})
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["warning"] is None
+    assert set(body["fixtures"].keys()) == {str(fixture["id"])}
+    assert len(body["fixtures"][str(fixture["id"])]) == 3
+    assert all(c == [127, 127, 127] for c in body["fixtures"][str(fixture["id"])])
+
+
+def test_preview_room_rejects_an_invalid_graph(client):
+    graph = {
+        "nodes": [{"id": "a", "type": "add", "data": {}}, {"id": "b", "type": "add", "data": {}}],
+        "edges": [
+            {"id": "e1", "source": "a", "target": "b", "targetHandle": "a"},
+            {"id": "e2", "source": "b", "target": "a", "targetHandle": "a"},
+        ],
+    }
+    client.post("/api/devices", json={"name": "d2", "ip": "10.0.0.21"})
+    device = client.get("/api/devices").json()[0]
+    client.post(
+        "/api/fixtures",
+        json={
+            "name": "s",
+            "device_id": device["id"],
+            "led_count": 2,
+            "points": [[0, 0, 0], [1, 0, 0]],
+        },
+    )
+    resp = client.post("/api/effects/preview_room", json={"graph": graph})
+    assert resp.status_code == 422

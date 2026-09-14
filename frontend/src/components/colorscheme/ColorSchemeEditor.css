@@ -1,0 +1,123 @@
+.scheme-editor {
+  background: var(--bg-elevated);
+  border: 3px solid var(--border);
+  border-radius: var(--r-lg);
+  padding: 1.25rem;
+  width: min(640px, 100%);
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.scheme-editor__header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.scheme-editor__name {
+  flex: 1;
+  font-family: var(--font-display);
+  font-size: 1rem;
+}
+
+.scheme-editor__body {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 1.25rem;
+}
+
+@media (max-width: 560px) {
+  .scheme-editor__body {
+    grid-template-columns: 1fr;
+  }
+}
+
+.scheme-editor__picker {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.scheme-editor__harmonies {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.scheme-editor__colors {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.scheme-editor__swatch-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.scheme-editor__swatch-row--wrap {
+  align-content: flex-start;
+  min-height: 3rem;
+}
+
+.scheme-editor__swatch {
+  width: 32px;
+  height: 32px;
+  border-radius: var(--r-sm);
+  border: 2px solid var(--border);
+  cursor: pointer;
+  padding: 0;
+}
+
+.scheme-editor__swatch:hover {
+  border-color: var(--violet);
+}
+
+.scheme-editor__swatch--suggestion {
+  width: 28px;
+  height: 28px;
+}
+
+.scheme-editor__swatch-wrap {
+  position: relative;
+}
+
+.scheme-editor__swatch-wrap--selected .scheme-editor__swatch {
+  border-color: var(--gold);
+  box-shadow: var(--glow-gold);
+}
+
+.scheme-editor__swatch-remove {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  width: 16px;
+  height: 16px;
+  line-height: 14px;
+  padding: 0;
+  border-radius: 50%;
+  border: 2px solid var(--border);
+  background: var(--bg-raised);
+  color: var(--text-dim);
+  font-size: 0.7rem;
+  cursor: pointer;
+}
+
+.scheme-editor__swatch-remove:hover {
+  color: var(--accent);
+  border-color: var(--accent);
+}
+
+.scheme-editor__hint {
+  color: var(--text-dim);
+  font-size: 0.8rem;
+  margin: 0;
+}
+
+.scheme-editor__footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.6rem;
+}

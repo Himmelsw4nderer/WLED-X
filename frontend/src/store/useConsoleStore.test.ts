@@ -72,6 +72,19 @@ describe("useConsoleStore", () => {
     expect(liveSocket.send).toHaveBeenCalledWith({ type: "console_set", active_scene_id: 7 });
   });
 
+  it("setColorScheme updates local state and sends a console_set message", async () => {
+    const { useConsoleStore, liveSocket } = await freshStore();
+    useConsoleStore.getState().setColorScheme(4);
+    expect(useConsoleStore.getState().active_color_scheme_id).toBe(4);
+    expect(liveSocket.send).toHaveBeenCalledWith({
+      type: "console_set",
+      active_color_scheme_id: 4,
+    });
+
+    useConsoleStore.getState().setColorScheme(null);
+    expect(useConsoleStore.getState().active_color_scheme_id).toBeNull();
+  });
+
   it("hit sends a console_hit message without touching local state directly", async () => {
     const { useConsoleStore, liveSocket } = await freshStore();
     useConsoleStore.getState().hit();

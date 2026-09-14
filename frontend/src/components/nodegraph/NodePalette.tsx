@@ -10,6 +10,7 @@ interface NodePaletteProps {
 function groupByCategory(descriptors: NodeTypeDescriptor[]): Map<string, NodeTypeDescriptor[]> {
   const groups = new Map<string, NodeTypeDescriptor[]>();
   for (const d of descriptors) {
+    if (d.deprecated) continue; // still valid on the canvas, just not offered here
     const list = groups.get(d.category);
     if (list) list.push(d);
     else groups.set(d.category, [d]);
@@ -45,6 +46,22 @@ export function NodePalette({ descriptors }: NodePaletteProps) {
           ))}
         </div>
       ))}
+
+      <div className="node-palette__legend">
+        <div className="node-palette__group-title">Sockets</div>
+        <span className="node-palette__legend-row">
+          <i className="node-palette__socket node-palette__socket--scalar" /> scalar
+        </span>
+        <span className="node-palette__legend-row">
+          <i className="node-palette__socket node-palette__socket--field" /> field
+        </span>
+        <span className="node-palette__legend-row">
+          <i className="node-palette__socket node-palette__socket--color" /> color
+        </span>
+        <span className="node-palette__legend-row">
+          <i className="node-palette__socket node-palette__socket--vec3" /> vec3
+        </span>
+      </div>
     </aside>
   );
 }

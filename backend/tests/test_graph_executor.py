@@ -281,6 +281,89 @@ def test_modulo_with_zero_divisor_does_not_raise_or_produce_nan():
     assert np.all(np.isfinite(outputs["mod"]["value"]))
 
 
+def test_divide_computes_a_over_b():
+    graph = {"nodes": [{"id": "d", "type": "divide", "data": {"a": 9.0, "b": 2.0}}], "edges": []}
+    _, outputs = evaluate_graph(graph, NODE_REGISTRY, _context(1))
+    assert outputs["d"]["value"] == pytest.approx(4.5)
+
+
+def test_divide_by_zero_does_not_raise_or_produce_nan():
+    graph = {"nodes": [{"id": "d", "type": "divide", "data": {"a": 5.0, "b": 0.0}}], "edges": []}
+    _, outputs = evaluate_graph(graph, NODE_REGISTRY, _context(1))
+    assert np.all(np.isfinite(outputs["d"]["value"]))
+
+
+def test_root_matches_hand_computed_values():
+    def root(value: float, n: float) -> float:
+        graph = {
+            "nodes": [{"id": "r", "type": "root", "data": {"value": value, "n": n}}],
+            "edges": [],
+        }
+        _, outputs = evaluate_graph(graph, NODE_REGISTRY, _context(1))
+        return float(outputs["r"]["value"])
+
+    assert root(9.0, 2) == pytest.approx(3.0)
+    assert root(27.0, 3) == pytest.approx(3.0)
+    assert root(16.0, 4) == pytest.approx(2.0)
+    assert root(4.0, 1) == pytest.approx(4.0)
+
+
+def test_root_of_a_negative_value_preserves_sign_for_odd_degrees():
+    graph = {"nodes": [{"id": "r", "type": "root", "data": {"value": -8.0, "n": 3}}], "edges": []}
+    _, outputs = evaluate_graph(graph, NODE_REGISTRY, _context(1))
+    assert outputs["r"]["value"] == pytest.approx(-2.0)
+
+
+def test_root_of_a_negative_value_clamps_to_zero_for_even_degrees():
+    graph = {"nodes": [{"id": "r", "type": "root", "data": {"value": -9.0, "n": 2}}], "edges": []}
+    _, outputs = evaluate_graph(graph, NODE_REGISTRY, _context(1))
+    assert outputs["r"]["value"] == pytest.approx(0.0)
+
+
+def test_root_with_a_zero_degree_does_not_raise_or_produce_nan():
+    graph = {"nodes": [{"id": "r", "type": "root", "data": {"value": 4.0, "n": 0}}], "edges": []}
+    _, outputs = evaluate_graph(graph, NODE_REGISTRY, _context(1))
+    assert np.all(np.isfinite(outputs["r"]["value"]))
+
+
+def test_power_defaults_to_squaring():
+    graph = {"nodes": [{"id": "p", "type": "power", "data": {"value": 3.0}}], "edges": []}
+    _, outputs = evaluate_graph(graph, NODE_REGISTRY, _context(1))
+    assert outputs["p"]["value"] == pytest.approx(9.0)
+
+
+def test_power_supports_negative_and_fractional_exponents():
+    def power(value: float, exponent: float) -> float:
+        graph = {
+            "nodes": [{"id": "p", "type": "power", "data": {"value": value, "exponent": exponent}}],
+            "edges": [],
+        }
+        _, outputs = evaluate_graph(graph, NODE_REGISTRY, _context(1))
+        return float(outputs["p"]["value"])
+
+    assert power(2.0, -1.0) == pytest.approx(0.5)
+    assert power(9.0, 0.5) == pytest.approx(3.0)
+    assert power(5.0, 0.0) == pytest.approx(1.0)
+
+
+def test_power_of_a_negative_base_with_fractional_exponent_does_not_raise_or_produce_nan():
+    graph = {
+        "nodes": [{"id": "p", "type": "power", "data": {"value": -4.0, "exponent": 0.5}}],
+        "edges": [],
+    }
+    _, outputs = evaluate_graph(graph, NODE_REGISTRY, _context(1))
+    assert np.all(np.isfinite(outputs["p"]["value"]))
+
+
+def test_power_overflow_does_not_raise_or_produce_inf():
+    graph = {
+        "nodes": [{"id": "p", "type": "power", "data": {"value": 1e30, "exponent": 8.0}}],
+        "edges": [],
+    }
+    _, outputs = evaluate_graph(graph, NODE_REGISTRY, _context(1))
+    assert np.all(np.isfinite(outputs["p"]["value"]))
+
+
 def test_square_wave_is_hard_on_off_at_default_duty():
     graph = {"nodes": [{"id": "sq", "type": "square", "data": {"x": 0.0}}], "edges": []}
     cases = [(0.0, 1.0), (0.49, 1.0), (0.5, 0.0), (0.9, 0.0), (1.0, 1.0), (1.49, 1.0), (1.5, 0.0)]
@@ -339,6 +422,32 @@ def test_less_than_fires_below_threshold_only():
     _, below_out = evaluate_graph(below, NODE_REGISTRY, _context(1))
     assert above_out["lt"]["value"] == pytest.approx(0.0)
     assert below_out["lt"]["value"] == pytest.approx(1.0)
+
+
+def test_not_inverts_a_gate():
+    def _run(value: float) -> float:
+        graph = {
+            "nodes": [{"id": "n", "type": "not", "data": {"value": value}}],
+            "edges": [],
+        }
+        _, outputs = evaluate_graph(graph, NODE_REGISTRY, _context(1))
+        return outputs["n"]["value"]
+
+    assert _run(1.0) == pytest.approx(0.0)
+    assert _run(0.0) == pytest.approx(1.0)
+    assert _run(0.2) == pytest.approx(1.0)
+
+
+def test_not_chains_off_greater_than():
+    graph = {
+        "nodes": [
+            {"id": "gt", "type": "greater_than", "data": {"value": 0.9, "threshold": 0.5}},
+            {"id": "n", "type": "not", "data": {}},
+        ],
+        "edges": [{"source": "gt", "sourceHandle": "value", "target": "n", "targetHandle": "value"}],
+    }
+    _, outputs = evaluate_graph(graph, NODE_REGISTRY, _context(1))
+    assert outputs["n"]["value"] == pytest.approx(0.0)
 
 
 def test_and_or_combines_two_gates():
@@ -427,6 +536,147 @@ def test_counter_reset_forces_count_back_to_zero():
     assert _tick(1.0, 1.0) == 0.0  # reset wins over a simultaneous trigger
 
 
+_DIST_POINTS = np.array(
+    [[0.0, 0.0, 0.0], [3.0, 4.0, 0.0], [1.0, 0.0, 0.0]], dtype=np.float32
+)
+
+
+def _distance_field(metric_data: dict, positions: np.ndarray = _DIST_POINTS) -> np.ndarray:
+    """LED Position -> Distance (b unconnected == the origin), returning the field."""
+    graph = {
+        "nodes": [
+            {"id": "p", "type": "led_position", "data": {}},
+            {"id": "d", "type": "distance", "data": metric_data},
+        ],
+        "edges": [
+            {
+                "id": "e1",
+                "source": "p",
+                "sourceHandle": "position",
+                "target": "d",
+                "targetHandle": "a",
+            }
+        ],
+    }
+    _, outputs = evaluate_graph(
+        graph, NODE_REGISTRY, _context(positions.shape[0], positions=positions)
+    )
+    return outputs["d"]["value"]
+
+
+def test_led_position_emits_raw_xyz_on_one_wire():
+    graph = {"nodes": [{"id": "p", "type": "led_position", "data": {}}], "edges": []}
+    _, outputs = evaluate_graph(
+        graph, NODE_REGISTRY, _context(3, positions=_DIST_POINTS)
+    )
+    assert np.asarray(outputs["p"]["position"]).shape == (3, 3)
+    assert np.allclose(outputs["p"]["position"], _DIST_POINTS)
+
+
+def test_led_position_scene_space_normalizes_each_axis_against_scene_bounds():
+    positions = np.array([[4.0, 0.0, 0.0], [6.0, 0.0, 0.0]], dtype=np.float32)
+    scene_bounds = (np.array([0.0, 0.0, 0.0]), np.array([10.0, 0.0, 0.0]))
+    graph = {
+        "nodes": [{"id": "p", "type": "led_position", "data": {"space": "scene"}}],
+        "edges": [],
+    }
+    _, outputs = evaluate_graph(
+        graph, NODE_REGISTRY, _context(2, positions=positions, scene_bounds=scene_bounds)
+    )
+    assert np.allclose(np.asarray(outputs["p"]["position"])[:, 0], [0.4, 0.6])
+
+
+def test_const_position_is_a_single_fixed_point():
+    graph = {
+        "nodes": [
+            {"id": "c", "type": "const_position", "data": {"x": 1.0, "y": 2.0, "z": 3.0}}
+        ],
+        "edges": [],
+    }
+    _, outputs = evaluate_graph(graph, NODE_REGISTRY, _context(4))
+    assert np.allclose(outputs["c"]["position"], [1.0, 2.0, 3.0])
+
+
+def test_distance_metric_family_matches_hand_computed_norms():
+    # LED at (3, 4, 0) vs the origin: L2=5, L1=7, Linf=4, L2^2=25, planar(xy)=5.
+    def field(metric: str) -> np.ndarray:
+        return _distance_field({"metric": metric, "normalize": "none"})
+
+    assert np.allclose(field("euclidean"), [0.0, 5.0, 1.0])
+    assert np.allclose(field("manhattan"), [0.0, 7.0, 1.0])
+    assert np.allclose(field("chebyshev"), [0.0, 4.0, 1.0])
+    assert np.allclose(field("squared"), [0.0, 25.0, 1.0])
+    assert np.allclose(field("planar_xy"), [0.0, 5.0, 1.0])
+
+
+def test_distance_minkowski_p1_equals_manhattan_p2_equals_euclidean():
+    l1 = _distance_field({"metric": "minkowski", "p": 1.0, "normalize": "none"})
+    l2 = _distance_field({"metric": "minkowski", "p": 2.0, "normalize": "none"})
+    assert np.allclose(l1, [0.0, 7.0, 1.0])
+    assert np.allclose(l2, [0.0, 5.0, 1.0])
+
+
+def test_distance_normalize_modes_scale_into_0_1():
+    # raw euclidean field is [0, 5, 1].
+    assert np.allclose(
+        _distance_field({"metric": "euclidean", "normalize": "radius", "radius": 5.0}),
+        [0.0, 1.0, 0.2],
+    )
+    assert np.allclose(
+        _distance_field({"metric": "euclidean", "normalize": "radius_inv", "radius": 5.0}),
+        [1.0, 0.0, 0.8],
+    )
+    # auto rescales the frame's own min..max onto 0..1.
+    assert np.allclose(
+        _distance_field({"metric": "euclidean", "normalize": "auto"}), [0.0, 1.0, 0.2]
+    )
+    # radius mode clips anything past the radius to 1.
+    assert np.allclose(
+        _distance_field({"metric": "euclidean", "normalize": "radius", "radius": 2.0}),
+        [0.0, 1.0, 0.5],
+    )
+
+
+def test_distance_measures_led_to_a_wired_const_position():
+    positions = np.array(
+        [[0.0, 0.0, 0.0], [2.0, 0.0, 0.0], [10.0, 0.0, 0.0]], dtype=np.float32
+    )
+    graph = {
+        "nodes": [
+            {"id": "p", "type": "led_position", "data": {}},
+            {"id": "c", "type": "const_position", "data": {"x": 2.0, "y": 0.0, "z": 0.0}},
+            {"id": "d", "type": "distance", "data": {"normalize": "none"}},
+        ],
+        "edges": [
+            {
+                "id": "e1",
+                "source": "p",
+                "sourceHandle": "position",
+                "target": "d",
+                "targetHandle": "a",
+            },
+            {
+                "id": "e2",
+                "source": "c",
+                "sourceHandle": "position",
+                "target": "d",
+                "targetHandle": "b",
+            },
+        ],
+    }
+    _, outputs = evaluate_graph(graph, NODE_REGISTRY, _context(3, positions=positions))
+    assert np.allclose(outputs["d"]["value"], [2.0, 0.0, 8.0])
+
+
+def test_distance_with_nothing_wired_is_zero_everywhere():
+    graph = {
+        "nodes": [{"id": "d", "type": "distance", "data": {"normalize": "none"}}],
+        "edges": [],
+    }
+    _, outputs = evaluate_graph(graph, NODE_REGISTRY, _context(4))
+    assert np.allclose(outputs["d"]["value"], 0.0)
+
+
 def test_and_or_chains_off_threshold_gates():
     graph = {
         "nodes": [
@@ -443,3 +693,507 @@ def test_and_or_chains_off_threshold_gates():
     assert outputs["gt"]["value"] == pytest.approx(1.0)
     assert outputs["lt"]["value"] == pytest.approx(0.0)
     assert outputs["c"]["value"] == pytest.approx(1.0)
+
+
+# --- Unified Position node -------------------------------------------------
+
+_POS_TRIANGLE = np.array(
+    [[0.0, 0.0, 0.0], [3.0, 0.0, 4.0], [1.5, 2.0, 2.0]], dtype=np.float32
+)
+
+
+def _position_field(data: dict, positions=_POS_TRIANGLE, scene_bounds=None) -> np.ndarray:
+    graph = {"nodes": [{"id": "p", "type": "position", "data": data}], "edges": []}
+    _, outputs = evaluate_graph(
+        graph,
+        NODE_REGISTRY,
+        _context(positions.shape[0], positions=positions, scene_bounds=scene_bounds),
+    )
+    return outputs["p"]["value"]
+
+
+def test_position_single_axis_matches_the_legacy_nodes_it_replaced():
+    scene_bounds = (np.array([0.0, 0.0, 0.0]), np.array([10.0, 10.0, 10.0]))
+    space_to_prefix = {"scene": "position", "local": "local", "meters": "global"}
+    for space, prefix in space_to_prefix.items():
+        for axis in ("x", "y", "z"):
+            legacy_graph = {
+                "nodes": [{"id": "l", "type": f"{prefix}_{axis}", "data": {}}],
+                "edges": [],
+            }
+            _, legacy_out = evaluate_graph(
+                legacy_graph,
+                NODE_REGISTRY,
+                _context(3, positions=_POS_TRIANGLE, scene_bounds=scene_bounds),
+            )
+            new_out = _position_field({"space": space, "axis": axis}, scene_bounds=scene_bounds)
+            assert np.allclose(new_out, legacy_out["l"]["value"]), f"{space}/{axis}"
+
+
+def test_position_meters_xyz_equals_the_old_distance_from_origin():
+    new_out = _position_field({"space": "meters", "axis": "xyz"})
+    # points at 0, 5 (3-4-5), and sqrt(1.5^2+2^2+2^2)
+    assert np.allclose(new_out, [0.0, 5.0, np.sqrt(1.5**2 + 2**2 + 2**2)])
+
+
+def test_position_planar_xz_ignores_height():
+    # xz distance of (3,0,4) from origin is 5 regardless of the y component.
+    pts = np.array([[0.0, 9.0, 0.0], [3.0, 9.0, 4.0]], dtype=np.float32)
+    out = _position_field({"space": "meters", "axis": "xz"}, positions=pts)
+    assert np.allclose(out, [0.0, 5.0])
+
+
+def test_position_scene_multi_axis_stays_in_0_1():
+    scene_bounds = (np.array([0.0, 0.0, 0.0]), np.array([4.0, 4.0, 4.0]))
+    out = _position_field({"space": "scene", "axis": "xyz"}, scene_bounds=scene_bounds)
+    assert out.min() >= 0.0 and out.max() <= 1.0
+    # the far corner (relative to bounds) reads 1.0, the origin reads 0.0
+    corner = _position_field(
+        {"space": "scene", "axis": "xyz"},
+        positions=np.array([[0.0, 0.0, 0.0], [4.0, 4.0, 4.0]], dtype=np.float32),
+        scene_bounds=scene_bounds,
+    )
+    assert np.allclose(corner, [0.0, 1.0])
+
+
+def test_position_is_unbreakable_on_bad_params_and_degenerate_input():
+    # unknown space/axis fall back to scene/x rather than raising
+    fallback = _position_field({"space": "nonsense", "axis": "q"})
+    baseline = _position_field({"space": "scene", "axis": "x"})
+    assert np.allclose(fallback, baseline)
+    # a single-LED fixture (degenerate range) is finite and in-range, not NaN
+    single = _position_field(
+        {"space": "local", "axis": "xy"}, positions=np.array([[2.0, 2.0, 2.0]], dtype=np.float32)
+    )
+    assert single.shape == (1,)
+    assert np.all(np.isfinite(single)) and single[0] == pytest.approx(0.0)
+
+
+def test_legacy_position_nodes_are_marked_deprecated_and_position_is_not():
+    assert NODE_REGISTRY["position"].descriptor.deprecated is False
+    for legacy in ("position_x", "local_y", "global_z", "distance_from_origin"):
+        assert NODE_REGISTRY[legacy].descriptor.deprecated is True
+
+
+def test_string_param_override_switches_the_position_axis_live():
+    # A console-exposed select param arrives as a string in param_overrides and
+    # must reach the node as-is (this is how the console flips Position's axis
+    # while a scene is live).
+    graph = {
+        "nodes": [{"id": "p", "type": "position", "data": {"space": "meters", "axis": "x"}}],
+        "edges": [],
+    }
+    positions = np.array([[1.0, 2.0, 3.0], [4.0, 5.0, 6.0]], dtype=np.float32)
+    ctx = _context(2, positions=positions)
+
+    _, on_x = evaluate_graph(graph, NODE_REGISTRY, ctx, {("p", "axis"): "x"})
+    _, on_z = evaluate_graph(graph, NODE_REGISTRY, ctx, {("p", "axis"): "z"})
+
+    assert np.allclose(on_x["p"]["value"], [1.0, 4.0])
+    assert np.allclose(on_z["p"]["value"], [3.0, 6.0])
+
+
+# --- Color scheme nodes -----------------------------------------------------
+
+_SCHEME = np.array([[1.0, 0.0, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, 1.0]], dtype=np.float32)
+
+
+def _scheme_context(
+    n: int = 1, scheme: np.ndarray = _SCHEME, state: dict | None = None, time: float = 0.0
+) -> EvalContext:
+    ctx = _context(n)
+    ctx.color_scheme = scheme
+    ctx.time = time
+    if state is not None:
+        ctx.state = state
+    return ctx
+
+
+def test_scheme_color_defaults_to_white_with_no_scheme_active():
+    graph = {"nodes": [{"id": "s", "type": "scheme_color", "data": {}}], "edges": []}
+    _, outputs = evaluate_graph(graph, NODE_REGISTRY, _context(1))
+    assert np.allclose(outputs["s"]["value"], [1.0, 1.0, 1.0])
+
+
+def test_scheme_color_picks_the_indexed_swatch():
+    graph = {"nodes": [{"id": "s", "type": "scheme_color", "data": {"index": 1}}], "edges": []}
+    _, outputs = evaluate_graph(graph, NODE_REGISTRY, _scheme_context())
+    assert np.allclose(outputs["s"]["value"], [0.0, 1.0, 0.0])
+
+
+def test_scheme_color_wraps_out_of_range_indices():
+    graph = {"nodes": [{"id": "s", "type": "scheme_color", "data": {"index": 4}}], "edges": []}
+    _, outputs = evaluate_graph(graph, NODE_REGISTRY, _scheme_context())
+    assert np.allclose(outputs["s"]["value"], [0.0, 1.0, 0.0])  # 4 % 3 == 1
+
+
+def test_scheme_color_gathers_per_led_when_index_is_a_field():
+    # index_normalized*2 over 3 LEDs lands exactly on swatches 0, 1, 2 --
+    # each LED should pick its own color, not one shared scalar swatch.
+    graph = {
+        "nodes": [
+            {"id": "idx", "type": "index_normalized", "data": {}},
+            {"id": "mul", "type": "multiply", "data": {"b": 2.0}},
+            {"id": "s", "type": "scheme_color", "data": {}},
+        ],
+        "edges": [
+            {"source": "idx", "target": "mul", "targetHandle": "a"},
+            {"source": "mul", "target": "s", "targetHandle": "index"},
+        ],
+    }
+    _, outputs = evaluate_graph(graph, NODE_REGISTRY, _scheme_context(3))
+    assert np.allclose(outputs["s"]["value"], _SCHEME)
+
+
+def test_scheme_random_color_holds_until_a_rising_trigger_edge():
+    graph = {
+        "nodes": [{"id": "r", "type": "scheme_random_color", "data": {"seed": 1}}],
+        "edges": [],
+    }
+    state: dict = {}
+
+    def _tick(trigger: float) -> np.ndarray:
+        graph["nodes"][0]["data"]["trigger"] = trigger
+        _, outputs = evaluate_graph(graph, NODE_REGISTRY, _scheme_context(state=state))
+        return np.asarray(outputs["r"]["value"])
+
+    first = _tick(0.0)
+    assert any(np.allclose(first, row) for row in _SCHEME)
+    # No rising edge -- must hold the same color across ticks.
+    assert np.allclose(_tick(0.0), first)
+    assert np.allclose(_tick(0.0), first)
+    # A rising edge may (or may not, by chance) redraw a different color, but
+    # must still land on one of the scheme's swatches.
+    redrawn = _tick(1.0)
+    assert any(np.allclose(redrawn, row) for row in _SCHEME)
+
+
+def test_scheme_random_color_varies_across_fresh_activations():
+    # Regression test: seeding purely off the fixed `seed` param made every
+    # "effect start" (a fresh, empty state bucket) redraw to the exact same
+    # index -- real-looking on the first run, but never actually random.
+    # Each activation lands on a different tick, i.e. a different
+    # `context.time` -- simulate 20 of those and expect them to scatter
+    # across more than one color.
+    graph = {
+        "nodes": [{"id": "r", "type": "scheme_random_color", "data": {"seed": 7}}],
+        "edges": [],
+    }
+    draws = set()
+    for tick in range(20):
+        context = _scheme_context(state={}, time=tick * 0.5)
+        _, outputs = evaluate_graph(graph, NODE_REGISTRY, context)
+        draws.add(tuple(np.asarray(outputs["r"]["value"]).tolist()))
+    assert len(draws) > 1
+
+
+def test_scheme_random_color_is_the_same_across_fixtures_on_the_same_tick():
+    # Every fixture keeps its own independent state bucket (see
+    # RenderLoop._node_state, keyed by fixture id), but two fixtures running
+    # the *same* Scheme Random Color node on the *same* tick must still draw
+    # the same color -- otherwise a single node feeding several fixtures
+    # renders each one a different color, which defeats the point of sharing
+    # one node across them.
+    graph = {
+        "nodes": [{"id": "r", "type": "scheme_random_color", "data": {"seed": 3}}],
+        "edges": [],
+    }
+    now = 42.0
+    _, fixture_a = evaluate_graph(graph, NODE_REGISTRY, _scheme_context(state={}, time=now))
+    _, fixture_b = evaluate_graph(graph, NODE_REGISTRY, _scheme_context(state={}, time=now))
+    assert np.allclose(fixture_a["r"]["value"], fixture_b["r"]["value"])
+
+
+def test_brightness_scales_color_by_a_uniform_amount():
+    graph = {
+        "nodes": [
+            {"id": "rgb", "type": "rgb", "data": {"r": 1.0, "g": 1.0, "b": 1.0}},
+            {"id": "b", "type": "brightness", "data": {"amount": 0.5}},
+        ],
+        "edges": [{"source": "rgb", "target": "b", "targetHandle": "color"}],
+    }
+    _, outputs = evaluate_graph(graph, NODE_REGISTRY, _context(2))
+    assert np.allclose(outputs["b"]["value"], 0.5)
+
+
+def test_brightness_applies_per_pixel_when_amount_is_a_field():
+    graph = {
+        "nodes": [
+            {"id": "rgb", "type": "rgb", "data": {"r": 1.0, "g": 1.0, "b": 1.0}},
+            {"id": "idx", "type": "index_normalized", "data": {}},
+            {"id": "b", "type": "brightness", "data": {}},
+        ],
+        "edges": [
+            {"source": "rgb", "target": "b", "targetHandle": "color"},
+            {"source": "idx", "target": "b", "targetHandle": "amount"},
+        ],
+    }
+    _, outputs = evaluate_graph(graph, NODE_REGISTRY, _context(3))
+    assert np.allclose(outputs["b"]["value"][:, 0], [0.0, 0.5, 1.0])
+
+
+# --- Noise scale as a wireable input ----------------------------------------
+
+
+def test_noise_scale_defaults_to_the_param_when_unwired():
+    graph = {
+        "nodes": [
+            {"id": "idx", "type": "index_normalized", "data": {}},
+            {"id": "n", "type": "noise", "data": {"seed": 3, "scale": 1.0}},
+        ],
+        "edges": [{"source": "idx", "target": "n", "targetHandle": "x"}],
+    }
+    _, outputs = evaluate_graph(graph, NODE_REGISTRY, _context(3))
+    assert outputs["n"]["value"].shape == (3,)
+    assert np.all(np.isfinite(outputs["n"]["value"]))
+
+
+def test_noise_scale_can_be_wired_from_another_node():
+    # Same seed and X, different wired-in scale -- a different zoom level
+    # must produce a different noise field, proving the wire actually reaches
+    # the compute function rather than the node falling back to its own param.
+    def sample(scale: float) -> np.ndarray:
+        graph = {
+            "nodes": [
+                {"id": "idx", "type": "index_normalized", "data": {}},
+                {"id": "s", "type": "constant", "data": {"value": scale}},
+                {"id": "n", "type": "noise", "data": {"seed": 3}},
+            ],
+            "edges": [
+                {"source": "idx", "target": "n", "targetHandle": "x"},
+                {"source": "s", "target": "n", "targetHandle": "scale"},
+            ],
+        }
+        _, outputs = evaluate_graph(graph, NODE_REGISTRY, _context(3))
+        return np.asarray(outputs["n"]["value"])
+
+    assert not np.allclose(sample(1.0), sample(5.0))
+
+
+def test_noise_scale_accepts_a_per_led_field():
+    graph = {
+        "nodes": [
+            {"id": "idx", "type": "index_normalized", "data": {}},
+            {"id": "n", "type": "noise", "data": {"seed": 1}},
+        ],
+        "edges": [
+            {"source": "idx", "target": "n", "targetHandle": "x"},
+            {"source": "idx", "target": "n", "targetHandle": "scale"},
+        ],
+    }
+    _, outputs = evaluate_graph(graph, NODE_REGISTRY, _context(3))
+    assert outputs["n"]["value"].shape == (3,)
+    assert np.all(np.isfinite(outputs["n"]["value"]))
+
+
+# --- Fixture Index node ------------------------------------------------------
+
+
+def _fixture_context(fixture_id: int, centers: dict[int, np.ndarray]) -> EvalContext:
+    ctx = _context(1)
+    ctx.fixture_id = fixture_id
+    ctx.fixture_centers = centers
+    return ctx
+
+
+_CENTERS = {
+    1: np.array([5.0, 0.0, 0.0]),
+    2: np.array([0.0, 0.0, 0.0]),
+    3: np.array([10.0, 0.0, 0.0]),
+}
+
+
+def test_fixture_index_ranks_by_centroid_along_the_chosen_axis():
+    graph = {"nodes": [{"id": "f", "type": "fixture_index", "data": {"axis": "x"}}], "edges": []}
+    _, outputs = evaluate_graph(graph, NODE_REGISTRY, _fixture_context(2, _CENTERS))
+    assert outputs["f"]["index"] == pytest.approx(0.0)
+    assert outputs["f"]["count"] == pytest.approx(3.0)
+
+    _, outputs = evaluate_graph(graph, NODE_REGISTRY, _fixture_context(1, _CENTERS))
+    assert outputs["f"]["index"] == pytest.approx(1.0)
+    assert outputs["f"]["normalized"] == pytest.approx(0.5)
+
+    _, outputs = evaluate_graph(graph, NODE_REGISTRY, _fixture_context(3, _CENTERS))
+    assert outputs["f"]["index"] == pytest.approx(2.0)
+    assert outputs["f"]["normalized"] == pytest.approx(1.0)
+
+
+def test_fixture_index_reverse_flips_the_ranking():
+    graph = {
+        "nodes": [{"id": "f", "type": "fixture_index", "data": {"axis": "x", "reverse": "true"}}],
+        "edges": [],
+    }
+    _, outputs = evaluate_graph(graph, NODE_REGISTRY, _fixture_context(2, _CENTERS))
+    assert outputs["f"]["index"] == pytest.approx(2.0)
+
+
+def test_fixture_index_alone_in_the_scene_is_index_zero_of_one():
+    graph = {"nodes": [{"id": "f", "type": "fixture_index", "data": {}}], "edges": []}
+    _, outputs = evaluate_graph(graph, NODE_REGISTRY, _context(1))
+    assert outputs["f"]["index"] == pytest.approx(0.0)
+    assert outputs["f"]["count"] == pytest.approx(1.0)
+
+
+def test_envelope_ramps_up_holds_and_decays_exponentially():
+    graph = {
+        "nodes": [
+            {
+                "id": "e",
+                "type": "envelope",
+                "data": {"attack": 0.1, "hold": 0.2, "decay": 1.0},
+            }
+        ],
+        "edges": [],
+    }
+    audio = AudioFrame(
+        level=0.0, bands=np.zeros(NUM_BANDS, dtype=np.float32), low=0.0, mid=0.0, high=0.0, beat=0.0
+    )
+    state: dict = {}
+
+    def _tick(time: float, trigger: float) -> float:
+        graph["nodes"][0]["data"]["trigger"] = trigger
+        context = EvalContext(
+            n=1, positions=np.zeros((1, 3), dtype=np.float32), time=time, audio=audio,
+            hype=0.0, state=state,
+        )
+        _, outputs = evaluate_graph(graph, NODE_REGISTRY, context)
+        return float(outputs["e"]["value"])
+
+    assert _tick(0.0, 0.0) == pytest.approx(0.0)  # never triggered -> silent
+    assert _tick(0.0, 1.0) == pytest.approx(0.0)  # rising edge -> attack starts now
+    assert _tick(0.05, 1.0) == pytest.approx(0.5)  # halfway through attack
+    assert _tick(0.1, 1.0) == pytest.approx(1.0)  # attack complete -> into hold
+    assert _tick(0.25, 1.0) == pytest.approx(1.0)  # still within hold
+    assert _tick(1.3, 1.0) == pytest.approx(np.exp(-3.0))  # 1.0s into a 1.0s decay
+    assert _tick(2.3, 0.0) == pytest.approx(np.exp(-6.0))  # fully decayed, not retriggered
+
+
+def test_envelope_retriggers_on_a_fresh_rising_edge():
+    graph = {"nodes": [{"id": "e", "type": "envelope", "data": {"attack": 0.1, "decay": 1.0}}], "edges": []}
+    audio = AudioFrame(
+        level=0.0, bands=np.zeros(NUM_BANDS, dtype=np.float32), low=0.0, mid=0.0, high=0.0, beat=0.0
+    )
+    state: dict = {}
+
+    def _tick(time: float, trigger: float) -> float:
+        graph["nodes"][0]["data"]["trigger"] = trigger
+        context = EvalContext(
+            n=1, positions=np.zeros((1, 3), dtype=np.float32), time=time, audio=audio,
+            hype=0.0, state=state,
+        )
+        _, outputs = evaluate_graph(graph, NODE_REGISTRY, context)
+        return float(outputs["e"]["value"])
+
+    _tick(0.0, 1.0)
+    _tick(0.5, 0.0)  # falls back to 0 -> re-arms
+    assert _tick(1.0, 1.0) == pytest.approx(0.0)  # new rising edge -> attack restarts
+
+
+def test_envelope_linear_curve_decays_to_zero_at_decay_time():
+    graph = {
+        "nodes": [
+            {"id": "e", "type": "envelope", "data": {"attack": 0.0001, "decay": 1.0, "curve": "linear"}}
+        ],
+        "edges": [],
+    }
+    audio = AudioFrame(
+        level=0.0, bands=np.zeros(NUM_BANDS, dtype=np.float32), low=0.0, mid=0.0, high=0.0, beat=0.0
+    )
+    state: dict = {}
+    context = EvalContext(
+        n=1, positions=np.zeros((1, 3), dtype=np.float32), time=0.0, audio=audio, hype=0.0, state=state
+    )
+    graph["nodes"][0]["data"]["trigger"] = 1.0
+    evaluate_graph(graph, NODE_REGISTRY, context)
+
+    context = EvalContext(
+        n=1, positions=np.zeros((1, 3), dtype=np.float32), time=1.0001, audio=audio, hype=0.0, state=state
+    )
+    graph["nodes"][0]["data"]["trigger"] = 0.0
+    _, outputs = evaluate_graph(graph, NODE_REGISTRY, context)
+    assert outputs["e"]["value"] == pytest.approx(0.0, abs=1e-3)
+
+
+def test_color_temperature_2800k_is_warm_amber_like_a_halogen_lamp():
+    graph = {"nodes": [{"id": "c", "type": "color_temperature", "data": {"kelvin": 2800.0}}], "edges": []}
+    _, outputs = evaluate_graph(graph, NODE_REGISTRY, _context(1))
+    r, g, b = outputs["c"]["value"]
+    assert r == pytest.approx(1.0, abs=1e-3)
+    assert g == pytest.approx(0.668, abs=0.01)
+    assert b == pytest.approx(0.374, abs=0.01)
+    assert r > g > b  # warm: red-heavy, blue-starved
+
+
+def test_color_temperature_6500k_is_close_to_neutral_white():
+    graph = {"nodes": [{"id": "c", "type": "color_temperature", "data": {"kelvin": 6500.0}}], "edges": []}
+    _, outputs = evaluate_graph(graph, NODE_REGISTRY, _context(1))
+    r, g, b = outputs["c"]["value"]
+    assert r == pytest.approx(1.0, abs=1e-3)
+    assert g == pytest.approx(1.0, abs=0.03)
+    assert b == pytest.approx(1.0, abs=0.03)
+
+
+def test_brightness_with_a_uniform_amount_keeps_a_swatch_broadcastable_to_led_color():
+    """Regression: Brightness used to force a single-swatch color (shape (3,))
+    to (1, 3), which numpy math tolerated but the final LedColor -> LED
+    broadcast rejected, breaking any RGB/HSV/Color Temperature -> Brightness
+    -> LED Color chain whenever `amount` was a plain scalar instead of a
+    per-pixel field."""
+    graph = {
+        "nodes": [
+            {"id": "rgb", "type": "rgb", "data": {"r": 1.0, "g": 1.0, "b": 1.0}},
+            {"id": "b", "type": "brightness", "data": {"amount": 0.5}},
+            {"id": "lc", "type": "led_color", "data": {}},
+        ],
+        "edges": [
+            {"source": "rgb", "target": "b", "targetHandle": "color"},
+            {"source": "b", "target": "lc", "targetHandle": "color"},
+        ],
+    }
+    colors, _outputs = evaluate_graph(graph, NODE_REGISTRY, _context(5))
+    assert colors.shape == (5, 3)
+    assert np.allclose(colors, 0.5)
+
+
+def test_equal_fires_within_tolerance_and_off_outside_it():
+    graph = {
+        "nodes": [{"id": "e", "type": "equal", "data": {"a": 3.0, "b": 3.2, "tolerance": 0.5}}],
+        "edges": [],
+    }
+    _, outputs = evaluate_graph(graph, NODE_REGISTRY, _context(1))
+    assert outputs["e"]["value"] == pytest.approx(1.0)
+
+    graph["nodes"][0]["data"]["b"] = 4.0
+    _, outputs = evaluate_graph(graph, NODE_REGISTRY, _context(1))
+    assert outputs["e"]["value"] == pytest.approx(0.0)
+
+
+def test_counters_max_can_be_wired_from_another_node_instead_of_the_param():
+    graph = {
+        "nodes": [
+            {"id": "m", "type": "constant", "data": {"value": 3.0}},
+            {"id": "c", "type": "counter", "data": {"max": 64}},
+        ],
+        "edges": [{"source": "m", "target": "c", "targetHandle": "max"}],
+    }
+    state: dict = {}
+    audio = AudioFrame(
+        level=0.0, bands=np.zeros(NUM_BANDS, dtype=np.float32), low=0.0, mid=0.0, high=0.0, beat=0.0
+    )
+
+    def _tick(trigger: float) -> float:
+        graph["nodes"][1]["data"]["trigger"] = trigger
+        context = EvalContext(
+            n=1, positions=np.zeros((1, 3), dtype=np.float32), time=0.0, audio=audio,
+            hype=0.0, state=state,
+        )
+        _, outputs = evaluate_graph(graph, NODE_REGISTRY, context)
+        return outputs["c"]["count"]
+
+    assert _tick(1.0) == pytest.approx(1.0)
+    assert _tick(0.0) == pytest.approx(1.0)
+    assert _tick(1.0) == pytest.approx(2.0)
+    assert _tick(0.0) == pytest.approx(2.0)
+    assert _tick(1.0) == pytest.approx(3.0)
+    assert _tick(0.0) == pytest.approx(3.0)
+    assert _tick(1.0) == pytest.approx(1.0)  # wraps at the wired max of 3, not the param's 64

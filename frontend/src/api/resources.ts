@@ -3,6 +3,9 @@ import type {
   AudioDeviceOption,
   AudioSource,
   AudioSourceUpdate,
+  ColorScheme,
+  ColorSchemeCreate,
+  ColorSchemeUpdate,
   Device,
   DeviceCreate,
   Effect,
@@ -18,6 +21,8 @@ import type {
   PlaylistUpdate,
   PreviewRequest,
   PreviewResponse,
+  RoomPreviewRequest,
+  RoomPreviewResponse,
   Scene,
   SceneCreate,
   SceneUpdate,
@@ -58,6 +63,8 @@ export const effectsApi = {
   duplicate: (id: number) => api.post<Effect>(`/api/effects/${id}/duplicate`),
   remove: (id: number) => api.delete<void>(`/api/effects/${id}`),
   preview: (payload: PreviewRequest) => api.post<PreviewResponse>("/api/effects/preview", payload),
+  previewRoom: (payload: RoomPreviewRequest) =>
+    api.post<RoomPreviewResponse>("/api/effects/preview_room", payload),
 };
 
 export const scenesApi = {
@@ -78,6 +85,14 @@ export const playlistsApi = {
   next: (id: number) => api.post<PlaylistStatus>(`/api/playlists/${id}/next`),
   prev: (id: number) => api.post<PlaylistStatus>(`/api/playlists/${id}/prev`),
   status: () => api.get<PlaylistStatus>("/api/playlists/status"),
+};
+
+export const colorSchemesApi = {
+  list: () => api.get<ColorScheme[]>("/api/color-schemes"),
+  create: (payload: ColorSchemeCreate) => api.post<ColorScheme>("/api/color-schemes", payload),
+  update: (id: number, payload: ColorSchemeUpdate) =>
+    api.patch<ColorScheme>(`/api/color-schemes/${id}`, payload),
+  remove: (id: number) => api.delete<void>(`/api/color-schemes/${id}`),
 };
 
 export const nodesApi = {

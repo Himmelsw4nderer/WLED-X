@@ -13,7 +13,8 @@ export function ExposedParamsPanel({ params, onUpdate, onRemove }: ExposedParams
       <div className="exposed-params-panel__title">Console-exposed params</div>
       {params.length === 0 ? (
         <p className="exposed-params-panel__empty">
-          Pin a numeric param on a node to expose it as a slider in the live console.
+          Pin a numeric param to expose it as a console slider, or a select param (e.g. Position's
+          axis) to expose it as a console dropdown.
         </p>
       ) : (
         <ul className="exposed-params-panel__list">
@@ -27,19 +28,25 @@ export function ExposedParamsPanel({ params, onUpdate, onRemove }: ExposedParams
                 value={p.label}
                 onChange={(e) => onUpdate(index, { label: e.target.value })}
               />
-              <div className="exposed-params-panel__minmax">
-                <input
-                  type="number"
-                  value={p.min}
-                  onChange={(e) => onUpdate(index, { min: Number(e.target.value) })}
-                />
-                <span>to</span>
-                <input
-                  type="number"
-                  value={p.max}
-                  onChange={(e) => onUpdate(index, { max: Number(e.target.value) })}
-                />
-              </div>
+              {p.options && p.options.length > 0 ? (
+                <div className="exposed-params-panel__options" title={p.options.join(" · ")}>
+                  {p.options.join(" · ")}
+                </div>
+              ) : (
+                <div className="exposed-params-panel__minmax">
+                  <input
+                    type="number"
+                    value={p.min}
+                    onChange={(e) => onUpdate(index, { min: Number(e.target.value) })}
+                  />
+                  <span>to</span>
+                  <input
+                    type="number"
+                    value={p.max}
+                    onChange={(e) => onUpdate(index, { max: Number(e.target.value) })}
+                  />
+                </div>
+              )}
               <button className="btn btn--small btn--danger" onClick={() => onRemove(index)}>
                 Remove
               </button>

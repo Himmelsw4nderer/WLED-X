@@ -43,6 +43,16 @@ class Console:
                 setattr(self._state, key, value)
         await self._broadcast()
 
+    async def clear_param_overrides(self) -> None:
+        """Drop every live fader-bank override. The render loop calls this the
+        moment the active scene changes so one scene's rides can't bleed onto
+        the next -- each scene's values live on its own row (Scene.assignments
+        [].params) and the fader bank reseeds from there."""
+        if not self._state.param_overrides:
+            return
+        self._state.param_overrides = {}
+        await self._broadcast()
+
     async def hit(self) -> None:
         self._hit_at = time.monotonic()
         self._state.hype = 1.0
