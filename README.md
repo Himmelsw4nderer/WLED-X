@@ -43,15 +43,19 @@ Open http://localhost:5173.
 
 ## Using it
 
-1. **Devices** — scan the LAN (mDNS + a subnet fallback) for WLED units, or
+1. **Gear** — scan the LAN (mDNS + a subnet fallback) for WLED units, or
    add one manually by IP. Make sure DDP receive is enabled on the device
    (see Requirements above).
-2. **Builder** — add fixtures: pick a device, set an LED count and a path (2+
+2. **Room** — add fixtures: pick a device, set an LED count and a path (2+
    points in meters), and see the strip laid out in the 3D viewer.
-3. **Effects** — build a node graph (position/time/audio/noise/math/color
+3. **Patch** — build a node graph (position/time/audio/noise/math/color
    nodes feeding a final LED Color output) and optionally expose a few
    params as console sliders.
-4. **Console** — create a scene assigning effects to fixtures, activate it,
+4. **Colors** — build named palettes (a handful of swatches each), then pull
+   from one in an effect graph with the Scheme Color / Scheme Random Color
+   nodes. Activating a scheme overrides those nodes across every effect at
+   once.
+5. **Show** — create a scene assigning effects to fixtures, activate it,
    then ride the exposed faders, master brightness, and the "hit" button for
    a pre-drop energy boost, all live against real desktop audio.
 
