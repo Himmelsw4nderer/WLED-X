@@ -1032,3 +1032,168 @@ def test_fixture_index_alone_in_the_scene_is_index_zero_of_one():
     _, outputs = evaluate_graph(graph, NODE_REGISTRY, _context(1))
     assert outputs["f"]["index"] == pytest.approx(0.0)
     assert outputs["f"]["count"] == pytest.approx(1.0)
+
+
+def test_envelope_ramps_up_holds_and_decays_exponentially():
+    graph = {
+        "nodes": [
+            {
+                "id": "e",
+                "type": "envelope",
+                "data": {"attack": 0.1, "hold": 0.2, "decay": 1.0},
+            }
+        ],
+        "edges": [],
+    }
+    audio = AudioFrame(
+        level=0.0, bands=np.zeros(NUM_BANDS, dtype=np.float32), low=0.0, mid=0.0, high=0.0, beat=0.0
+    )
+    state: dict = {}
+
+    def _tick(time: float, trigger: float) -> float:
+        graph["nodes"][0]["data"]["trigger"] = trigger
+        context = EvalContext(
+            n=1, positions=np.zeros((1, 3), dtype=np.float32), time=time, audio=audio,
+            hype=0.0, state=state,
+        )
+        _, outputs = evaluate_graph(graph, NODE_REGISTRY, context)
+        return float(outputs["e"]["value"])
+
+    assert _tick(0.0, 0.0) == pytest.approx(0.0)  # never triggered -> silent
+    assert _tick(0.0, 1.0) == pytest.approx(0.0)  # rising edge -> attack starts now
+    assert _tick(0.05, 1.0) == pytest.approx(0.5)  # halfway through attack
+    assert _tick(0.1, 1.0) == pytest.approx(1.0)  # attack complete -> into hold
+    assert _tick(0.25, 1.0) == pytest.approx(1.0)  # still within hold
+    assert _tick(1.3, 1.0) == pytest.approx(np.exp(-3.0))  # 1.0s into a 1.0s decay
+    assert _tick(2.3, 0.0) == pytest.approx(np.exp(-6.0))  # fully decayed, not retriggered
+
+
+def test_envelope_retriggers_on_a_fresh_rising_edge():
+    graph = {"nodes": [{"id": "e", "type": "envelope", "data": {"attack": 0.1, "decay": 1.0}}], "edges": []}
+    audio = AudioFrame(
+        level=0.0, bands=np.zeros(NUM_BANDS, dtype=np.float32), low=0.0, mid=0.0, high=0.0, beat=0.0
+    )
+    state: dict = {}
+
+    def _tick(time: float, trigger: float) -> float:
+        graph["nodes"][0]["data"]["trigger"] = trigger
+        context = EvalContext(
+            n=1, positions=np.zeros((1, 3), dtype=np.float32), time=time, audio=audio,
+            hype=0.0, state=state,
+        )
+        _, outputs = evaluate_graph(graph, NODE_REGISTRY, context)
+        return float(outputs["e"]["value"])
+
+    _tick(0.0, 1.0)
+    _tick(0.5, 0.0)  # falls back to 0 -> re-arms
+    assert _tick(1.0, 1.0) == pytest.approx(0.0)  # new rising edge -> attack restarts
+
+
+def test_envelope_linear_curve_decays_to_zero_at_decay_time():
+    graph = {
+        "nodes": [
+            {"id": "e", "type": "envelope", "data": {"attack": 0.0001, "decay": 1.0, "curve": "linear"}}
+        ],
+        "edges": [],
+    }
+    audio = AudioFrame(
+        level=0.0, bands=np.zeros(NUM_BANDS, dtype=np.float32), low=0.0, mid=0.0, high=0.0, beat=0.0
+    )
+    state: dict = {}
+    context = EvalContext(
+        n=1, positions=np.zeros((1, 3), dtype=np.float32), time=0.0, audio=audio, hype=0.0, state=state
+    )
+    graph["nodes"][0]["data"]["trigger"] = 1.0
+    evaluate_graph(graph, NODE_REGISTRY, context)
+
+    context = EvalContext(
+        n=1, positions=np.zeros((1, 3), dtype=np.float32), time=1.0001, audio=audio, hype=0.0, state=state
+    )
+    graph["nodes"][0]["data"]["trigger"] = 0.0
+    _, outputs = evaluate_graph(graph, NODE_REGISTRY, context)
+    assert outputs["e"]["value"] == pytest.approx(0.0, abs=1e-3)
+
+
+def test_color_temperature_2800k_is_warm_amber_like_a_halogen_lamp():
+    graph = {"nodes": [{"id": "c", "type": "color_temperature", "data": {"kelvin": 2800.0}}], "edges": []}
+    _, outputs = evaluate_graph(graph, NODE_REGISTRY, _context(1))
+    r, g, b = outputs["c"]["value"]
+    assert r == pytest.approx(1.0, abs=1e-3)
+    assert g == pytest.approx(0.668, abs=0.01)
+    assert b == pytest.approx(0.374, abs=0.01)
+    assert r > g > b  # warm: red-heavy, blue-starved
+
+
+def test_color_temperature_6500k_is_close_to_neutral_white():
+    graph = {"nodes": [{"id": "c", "type": "color_temperature", "data": {"kelvin": 6500.0}}], "edges": []}
+    _, outputs = evaluate_graph(graph, NODE_REGISTRY, _context(1))
+    r, g, b = outputs["c"]["value"]
+    assert r == pytest.approx(1.0, abs=1e-3)
+    assert g == pytest.approx(1.0, abs=0.03)
+    assert b == pytest.approx(1.0, abs=0.03)
+
+
+def test_brightness_with_a_uniform_amount_keeps_a_swatch_broadcastable_to_led_color():
+    """Regression: Brightness used to force a single-swatch color (shape (3,))
+    to (1, 3), which numpy math tolerated but the final LedColor -> LED
+    broadcast rejected, breaking any RGB/HSV/Color Temperature -> Brightness
+    -> LED Color chain whenever `amount` was a plain scalar instead of a
+    per-pixel field."""
+    graph = {
+        "nodes": [
+            {"id": "rgb", "type": "rgb", "data": {"r": 1.0, "g": 1.0, "b": 1.0}},
+            {"id": "b", "type": "brightness", "data": {"amount": 0.5}},
+            {"id": "lc", "type": "led_color", "data": {}},
+        ],
+        "edges": [
+            {"source": "rgb", "target": "b", "targetHandle": "color"},
+            {"source": "b", "target": "lc", "targetHandle": "color"},
+        ],
+    }
+    colors, _outputs = evaluate_graph(graph, NODE_REGISTRY, _context(5))
+    assert colors.shape == (5, 3)
+    assert np.allclose(colors, 0.5)
+
+
+def test_equal_fires_within_tolerance_and_off_outside_it():
+    graph = {
+        "nodes": [{"id": "e", "type": "equal", "data": {"a": 3.0, "b": 3.2, "tolerance": 0.5}}],
+        "edges": [],
+    }
+    _, outputs = evaluate_graph(graph, NODE_REGISTRY, _context(1))
+    assert outputs["e"]["value"] == pytest.approx(1.0)
+
+    graph["nodes"][0]["data"]["b"] = 4.0
+    _, outputs = evaluate_graph(graph, NODE_REGISTRY, _context(1))
+    assert outputs["e"]["value"] == pytest.approx(0.0)
+
+
+def test_counters_max_can_be_wired_from_another_node_instead_of_the_param():
+    graph = {
+        "nodes": [
+            {"id": "m", "type": "constant", "data": {"value": 3.0}},
+            {"id": "c", "type": "counter", "data": {"max": 64}},
+        ],
+        "edges": [{"source": "m", "target": "c", "targetHandle": "max"}],
+    }
+    state: dict = {}
+    audio = AudioFrame(
+        level=0.0, bands=np.zeros(NUM_BANDS, dtype=np.float32), low=0.0, mid=0.0, high=0.0, beat=0.0
+    )
+
+    def _tick(trigger: float) -> float:
+        graph["nodes"][1]["data"]["trigger"] = trigger
+        context = EvalContext(
+            n=1, positions=np.zeros((1, 3), dtype=np.float32), time=0.0, audio=audio,
+            hype=0.0, state=state,
+        )
+        _, outputs = evaluate_graph(graph, NODE_REGISTRY, context)
+        return outputs["c"]["count"]
+
+    assert _tick(1.0) == pytest.approx(1.0)
+    assert _tick(0.0) == pytest.approx(1.0)
+    assert _tick(1.0) == pytest.approx(2.0)
+    assert _tick(0.0) == pytest.approx(2.0)
+    assert _tick(1.0) == pytest.approx(3.0)
+    assert _tick(0.0) == pytest.approx(3.0)
+    assert _tick(1.0) == pytest.approx(1.0)  # wraps at the wired max of 3, not the param's 64

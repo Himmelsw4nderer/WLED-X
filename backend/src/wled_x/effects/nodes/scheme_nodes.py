@@ -58,11 +58,22 @@ def _brightness(data: dict[str, Any], inputs: dict[str, Value], context: EvalCon
     """Per-pixel brightness for a color: scales `color` by `amount`, which can
     be a single float (uniform dimming) or a field (e.g. Position, Noise, or
     Distance) wired in for a brightness ramp across the strip -- the block the
-    scheme colors above need for "same hue, but not every pixel at full tilt"."""
+    scheme colors above need for "same hue, but not every pixel at full tilt".
+
+    `color` can arrive as a single (3,) swatch (RGB/HSV/Color Temperature with
+    no field wired in) or an already-per-pixel (N, 3) field -- only broadcast
+    the swatch out to (N, 3) when `amount` is itself a per-pixel field, since
+    that's the only case that actually needs two different values per pixel.
+    A uniform (scalar) amount must leave a (3,) swatch as (3,): forcing it to
+    (1, 3) here (as this used to) reads the same via numpy broadcasting for
+    every consumer *except* the final LedColor -> LED broadcast, which only
+    accepts an exact (N, 3), (3,), or scalar shape and rejected (1, 3)."""
     default_color = np.zeros((context.n, 3), dtype=np.float32)
-    color = np.atleast_2d(np.asarray(inputs.get("color", default_color), dtype=np.float32))
+    color = np.asarray(inputs.get("color", default_color), dtype=np.float32)
     amount = np.asarray(inputs.get("amount", data.get("amount", 1.0)), dtype=np.float32)
-    if amount.ndim == 1 and color.ndim == 2:
+    if amount.ndim == 1:
+        if color.ndim == 1:
+            color = np.tile(color, (amount.shape[0], 1))
         amount = amount[:, None]
     return (color * amount).astype(np.float32)
 

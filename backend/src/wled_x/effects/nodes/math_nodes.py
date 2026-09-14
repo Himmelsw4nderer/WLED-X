@@ -92,6 +92,19 @@ def _less_than(data: dict[str, Any], inputs: dict[str, Value], context: EvalCont
     return np.where(value < threshold, 1.0, 0.0).astype(np.float32)
 
 
+def _equal(data: dict[str, Any], inputs: dict[str, Value], context: EvalContext) -> Value:
+    """1.0 where `a` and `b` are within `tolerance` of each other, 0.0
+    otherwise -- a fuzzy equality check rather than exact float comparison,
+    since e.g. a Counter's count and a Fixture Index's index are ints in
+    spirit but pass through as floats. Replaces a Subtract -> Abs -> Less Than
+    chain when the two things you're comparing don't need to be exposed as
+    "how far apart", just "are they the same slot"."""
+    a = np.asarray(_num(data, inputs, "a", 0.0), dtype=np.float32)
+    b = np.asarray(_num(data, inputs, "b", 0.0), dtype=np.float32)
+    tolerance = np.asarray(_num(data, inputs, "tolerance", 0.5), dtype=np.float32)
+    return np.where(np.abs(a - b) < tolerance, 1.0, 0.0).astype(np.float32)
+
+
 def _and_or(data: dict[str, Any], inputs: dict[str, Value], context: EvalContext) -> Value:
     """Combines two 0/1 signals with AND or OR, clamped back to 0.0/1.0.
 
@@ -305,6 +318,25 @@ MATH_NODES: dict[str, NodeDefinition] = {
         ),
         compute=_less_than,
     ),
+    "equal": NodeDefinition(
+        descriptor=NodeTypeDescriptor(
+            type="equal",
+            category="math",
+            label="Equal",
+            inputs=[
+                NodeSocket(key="a", type="field", label="A"),
+                NodeSocket(key="b", type="field", label="B"),
+                NodeSocket(key="tolerance", type="field", label="Tolerance"),
+            ],
+            outputs=[NodeSocket(key="value", type="field", label="Value")],
+            params=[
+                NodeParam(key="a", type="float", default=0.0),
+                NodeParam(key="b", type="float", default=0.0),
+                NodeParam(key="tolerance", type="float", default=0.5, min=0.0),
+            ],
+        ),
+        compute=_equal,
+    ),
     "and_or": NodeDefinition(
         descriptor=NodeTypeDescriptor(
             type="and_or",
@@ -420,6 +452,7 @@ MATH_NODES: dict[str, NodeDefinition] = {
             inputs=[
                 NodeSocket(key="trigger", type="scalar", label="Trigger"),
                 NodeSocket(key="reset", type="scalar", label="Reset"),
+                NodeSocket(key="max", type="scalar", label="Max"),
             ],
             outputs=[
                 NodeSocket(key="count", type="scalar", label="Count"),
