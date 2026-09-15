@@ -33,6 +33,18 @@ class Settings(BaseSettings):
     render_enabled: bool = True
     """Set False in tests: skips starting the render loop (audio capture, background task)."""
 
+    reload: bool = True
+    """Uvicorn's file-watching auto-reload. On for the `uv run wled-x` dev
+    workflow (the whole point of running from source); a packaged build (see
+    packaging/appimage) has no source tree to watch and turns this off."""
+
+    frontend_dist: str | None = None
+    """Path to a built frontend (`npm run build`'s `dist/`) to serve at `/`
+    alongside the API. None = don't serve one (the normal dev setup, where
+    Vite's own dev server on :5173 proxies API calls here instead). Defaults
+    to a `static/` directory next to this package if one exists, which is
+    where packaging drops the built frontend."""
+
     preview_window: bool = False
     """Open a local Tk window fed straight from the render loop -- the real
     active scene, real audio, the exact colours going to the fixtures, with no

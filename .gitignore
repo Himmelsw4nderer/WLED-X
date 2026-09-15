@@ -29,3 +29,7 @@ frontend/.vite/
 
 # Claude Code agent worktrees
 .claude/worktrees/
+
+# AppImage packaging (built artifacts, not source)
+packaging/appimage/build/
+packaging/appimage/dist/

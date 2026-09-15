@@ -41,6 +41,24 @@ npm run dev
 
 Open http://localhost:5173.
 
+### Packaged (AppImage)
+
+`packaging/appimage/build.sh` builds a self-contained `WLED-X-*.AppImage`: a
+production frontend build served by the backend itself (one process, one
+port), a portable CPython with the backend's dependencies pip-installed into
+it, and `libportaudio`/`libasound` bundled so it runs without Python, Node,
+or `libportaudio2` preinstalled. Needs internet access (fetches a portable
+Python build + `appimagetool`, cached under `packaging/appimage/build/` after
+the first run), npm, and ImageMagick (`magick`, for the app icon):
+
+```sh
+./packaging/appimage/build.sh
+```
+
+Output lands in `packaging/appimage/dist/`. Launching it opens your browser
+at the running console; app data (the SQLite DB) goes to
+`~/.local/share/wled-x/`.
+
 ## Using it
 
 1. **Gear** — scan the LAN (mDNS + a subnet fallback) for WLED units, or
