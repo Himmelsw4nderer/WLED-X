@@ -2,7 +2,6 @@ import { useEffect, useMemo, useState } from "react";
 import { useFixtureStore } from "../store/useFixtureStore";
 import { useDeviceStore } from "../store/useDeviceStore";
 import { SceneViewer } from "../components/3d/SceneViewer";
-import { Knob } from "../components/controls/Knob";
 import { SegMeter } from "../components/controls/SegMeter";
 import { polylineLength } from "../utils/polyline";
 import type { Fixture, FixtureCreate, Point3 } from "../types";
@@ -260,15 +259,16 @@ export function BuilderPage() {
             </label>
 
             <div className="fixture-editor__row fixture-editor__row--controls">
-              <Knob
-                label="LED count"
-                value={draft.led_count}
-                min={1}
-                max={300}
-                step={1}
-                accent="cyan"
-                onChange={(v) => updateDraft({ led_count: v })}
-              />
+              <label className="fixture-editor__num">
+                LED count
+                <input
+                  type="number"
+                  min={1}
+                  max={300}
+                  value={draft.led_count}
+                  onChange={(e) => updateDraft({ led_count: Number(e.target.value) })}
+                />
+              </label>
               <label className="fixture-editor__num">
                 Start channel
                 <input
